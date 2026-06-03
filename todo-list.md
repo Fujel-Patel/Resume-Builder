@@ -25,17 +25,7 @@
 
 ## Pending — needs external credentials
 
-### Observability & Errors
-- [x] Sentry error monitoring — provide `SENTRY_DSN`
-
-### Email
-- [x] Resend transactional emails — provide `RESEND_API_KEY` + `EMAIL_FROM`
-
-### Billing
-- [x] Stripe billing integration — provide Stripe keys
-
-### Analytics
-- [x] PostHog / GA — provide tracking key
+- [ ] No external payment, monitoring, or analytics credentials required for local-only use
 
 ## Pending — no credentials needed
 

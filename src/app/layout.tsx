@@ -1,10 +1,5 @@
 import '@/app/globals.css';
 import type { ReactNode } from 'react';
-import { initSentry } from '@/lib/sentry/server';
-import * as Sentry from '@sentry/nextjs';
-
-// Initialize Sentry (server-side)
-initSentry();
 
 export const metadata = {
   title: {
@@ -47,7 +42,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         {children}
-        <Sentry.NextjsClient />
       </body>
     </html>
   );

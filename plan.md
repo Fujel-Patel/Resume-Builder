@@ -118,10 +118,7 @@ A full-stack, AI-powered resume and cover letter platform that allows users to:
 | Tool | Purpose |
 |---|---|
 | Vercel | Deployment, edge functions, CI/CD |
-| Stripe | Subscription billing |
-| Resend | Transactional email (magic links, receipts) |
-| Sentry | Error monitoring |
-| PostHog / Vercel Analytics | Product analytics |
+| Localhost | Personal local development |
 
 ---
 
@@ -208,7 +205,7 @@ A full-stack, AI-powered resume and cover letter platform that allows users to:
 | `/cover-letter` | Generate or edit a cover letter |
 | `/cover-letter/[id]` | Edit specific cover letter |
 | `/templates/[id]` | Preview and apply a specific template |
-| `/settings` | User profile, subscription, notifications |
+| `/settings` | User profile and notifications |
 
 ---
 
@@ -287,11 +284,9 @@ resume-ai/
 │   │       └── user/
 │   │           ├── profile/
 │   │           │   └── route.ts      # GET, PUT user profile
-│   │           └── subscription/
-│   │               └── route.ts      # POST: manage Stripe subscription
 │   │   └── webhooks/
-│   │       └── stripe/
-│   │           └── route.ts      # Stripe webhook handler
+│   │       └── internal/
+│   │           └── route.ts      # Internal webhook handler
 │   │
 │   ├── components/
 │   │   ├── ui/                       # shadcn/ui base components (copy‑owned)
@@ -326,7 +321,7 @@ resume-ai/
 │   │       ├── Sidebar.tsx
 │   │       ├── FileUploader.tsx      # Drag-and-drop PDF/DOCX upload
 │   │       ├── StreamingText.tsx     # Renders AI stream token‑by‑token
-│   │       └── SubscriptionGate.tsx  # Blocks feature for free users
+│   │       └── LocalOnlyNotice.tsx   # Indicates local personal-use mode
 │   │
 │   ├── lib/
 │   │   ├── ai.ts                     # Claude API client + prompt builders
@@ -338,8 +333,6 @@ resume-ai/
 │   │   ├── ats.ts                    # ATS scoring algorithm
 │   │   ├── prisma.ts                 # Prisma client singleton
 │   │   ├── auth.ts                   # NextAuth.js config
-│   │   ├── stripe.ts                 # Stripe client
-│   │   ├── resend.ts                 # Resend email client
 │   │   ├── redis.ts                  # Upstash Redis client
 │   │   ├── rate-limit.ts             # Rate limiter factory
 │   │   ├── pdf-parser.ts             # pdf-parse wrapper
@@ -351,7 +344,7 @@ resume-ai/
 │   │   ├── useResume.ts              # Resume CRUD state
 │   │   ├── useAI.ts                  # AI streaming hook
 │   │   ├── useATSScore.ts            # ATS score fetching
-│   │   └── useSubscription.ts        # Current user plan
+│   │   └── useUser.ts                # Current user profile state
 │   │
 │   ├── types/
 │   │   ├── resume.ts                 # ResumeData, Section, Experience, etc.
@@ -401,7 +394,6 @@ model User {
   name          String?
   image         String?
   emailVerified DateTime?
-  plan          Plan      @default(FREE)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
@@ -410,7 +402,6 @@ model User {
   resumes       Resume[]
   coverLetters  CoverLetter[]
   atsReports    ATSReport[]
-  subscription  Subscription?
 }
 // Rate limiting handled by Upstash Redis only. No DB tracking needed.
 
@@ -465,20 +456,6 @@ model ATSReport {
 }
 
 // Templates are static React components. Use lib/templates.ts for metadata config. No DB model needed.
-model Subscription {
-  id                   String    @id @default(cuid())
-  userId               String    @unique
-  stripeCustomerId     String    @unique
-  stripeSubscriptionId String?   @unique
-  stripePriceId        String?
-  status               SubStatus @default(INACTIVE)
-  currentPeriodEnd     DateTime?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -505,18 +482,6 @@ model Session {
   expires      DateTime
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-enum Plan {
-  FREE
-  PRO
-}
-
-enum SubStatus {
-  ACTIVE
-  INACTIVE
-  PAST_DUE
-  CANCELED
 }
 ```
 
@@ -566,13 +531,12 @@ DELETE /api/cover-letters/[id]     Delete
 ```
 ### User
 ```
-GET    /api/user/profile           Get current user profile + plan
+GET    /api/user/profile           Get current user profile
 PUT    /api/user/profile           Update name, preferences
-POST   /api/user/subscription      Create/cancel Stripe subscription
 ```
 ### Webhooks
 ```
-POST   /api/webhooks/stripe        Stripe webhook handler (subscription events)
+POST   /api/webhooks/internal      Internal webhook handler
 ```
 ---
 
@@ -583,7 +547,6 @@ POST   /api/webhooks/stripe        Stripe webhook handler (subscription events)
 **Providers:**
 - Google OAuth (`GOOGLE_CLIENT_ID` + `GOOGLE_CLIENT_SECRET`)
 - GitHub OAuth (`GITHUB_CLIENT_ID` + `GITHUB_CLIENT_SECRET`)
-- Email Magic Link via Resend (`RESEND_API_KEY`)
 
 **Session strategy:** JWT (edge‑compatible)
 
@@ -798,12 +761,8 @@ return <ActiveTemplate data={resumeData} />;
 - [ ] DOCX export via docx npm
 
 ### Phase 4 — Launch (Week 8)
-- [ ] Stripe billing integration (Free/Pro plans)
 - [ ] Rate limiting on AI endpoints (Upstash Redis)
-- [ ] Resend transactional emails (magic link, receipt)
-- [ ] Sentry error monitoring
 - [ ] SEO meta tags, Open Graph images, sitemap
-- [ ] PostHog analytics
 - [ ] Vercel production deployment
 - [ ] E2E testing (Playwright) for critical paths
 
@@ -834,23 +793,11 @@ NEXT_PUBLIC_SUPABASE_URL=""
 NEXT_PUBLIC_SUPABASE_ANON_KEY=""
 SUPABASE_SERVICE_ROLE_KEY=""
 
-# Email
-RESEND_API_KEY=""
-EMAIL_FROM="noreply@yourapp.com"
-
-# Payments
-STRIPE_SECRET_KEY=""
-STRIPE_WEBHOOK_SECRET=""
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=""
-STRIPE_PRO_PRICE_ID=""
-
 # Rate Limiting
 UPSTASH_REDIS_REST_URL=""
 UPSTASH_REDIS_REST_TOKEN=""
 
 # Monitoring
-SENTRY_DSN=""
-NEXT_PUBLIC_POSTHOG_KEY=""
 ```
 
 ---
@@ -872,7 +819,6 @@ NEXT_PUBLIC_POSTHOG_KEY=""
 - **Rate limiting** — Upstash Redis sliding window on all AI endpoints
 - **CORS** — configured in `next.config.ts` to only allow your domain
 - **File uploads** — validate MIME type and size server‑side before storing
-- **Stripe webhooks** — verified with `stripe.webhooks.constructEvent` signature check
 
 ### Performance
 - **RSC (React Server Components)** for all data‑fetching pages — no client waterfalls

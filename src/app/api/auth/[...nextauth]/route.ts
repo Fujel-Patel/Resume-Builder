@@ -1,6 +1,5 @@
 import NextAuth from "next-auth";
 // GoogleProvider removed – OAuth via Google is disabled.
-// TODO: Consider adding email provider back when Resend is configured (see TODO list)
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 
@@ -8,7 +7,6 @@ export const authOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     // No external OAuth providers configured.
-    // Email provider removed to avoid dependency on `next-auth/providers/resend`.
     // Add additional providers here as needed.
   ],
   session: { strategy: "jwt" },
