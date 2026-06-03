@@ -1,0 +1,1 @@
+- [Project State June 2026](project-state.md) — Current build state, completed vs missing features
