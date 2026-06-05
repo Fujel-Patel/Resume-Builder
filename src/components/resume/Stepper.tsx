@@ -1,5 +1,6 @@
 "use client";
 import React from 'react';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
 
 interface StepperProps {
   steps: string[];
@@ -8,26 +9,48 @@ interface StepperProps {
 
 export default function Stepper({ steps, activeStep }: StepperProps) {
   return (
-    <nav className="flex items-center" aria-label="Progress">
-      {steps.map((label, idx) => (
-        <React.Fragment key={label}>
-          <div className="flex items-center">
-            <div
-              className={`flex items-center justify-center w-8 h-8 rounded-full border-2 ${
-                idx <= activeStep ? 'bg-indigo-600 border-indigo-600 text-white' : 'bg-white border-gray-300 text-gray-600'
-              }`}
-            >
-              {idx + 1}
+    <div className="w-full">
+      <div className="relative h-12">
+        {/* Progress bar background */}
+        <div className="absolute inset-y-0 left-0 right-0 h-0.5 bg-[--border]"></div>
+        {/* Progress bar fill */}
+        <div
+          className={`absolute inset-y-0 left-0 right-0 h-0.5 bg-gradient-to-r from-[--color-primary] to-[--color-accent]
+          ${activeStep > 0 ? `width-${((activeStep) / (steps.length - 1)) * 100}%` : 'w-0'} transition-all duration-500`}
+        ></div>
+
+        {/* Steps */}
+        <div className="flex justify-between">
+          {steps.map((label, idx) => (
+            <div key={label} className="flex flex-col items-center">
+              {/* Step circle */}
+              <div className={`relative flex h-9 w-9 items-center justify-center
+                ${idx < activeStep
+                  ? 'bg-[--color-primary]/20 text-[--color-primary]' // completed: filled with indigo 20% bg
+                  : idx === activeStep
+                    ? 'border-2 border-[--color-primary] bg-[--bg-surface]/50' // active: outline
+                    : 'border-2 border-[--border]/50 bg-[--bg-surface]/20' // pending
+                }
+                rounded-full flex items-center justify-center transition-all duration-300
+              `}>
+                {idx < activeStep ? (
+                  <CheckCircleIcon className="h-4 w-4" />
+                ) : idx === activeStep ? (
+                  // Active step: we can add a pulsing animation with a ring
+                  <div className="animate-pulse h-6 w-6 bg-[--color-primary]/20 rounded-full"></div>
+                ) : (
+                  // Pending step: just a number or nothing? We'll show the step number.
+                  <div className="text-[--text-muted] text-sm">{idx + 1}</div>
+                )}
+              </div>
+              {/* Step label */}
+              <div className="mt-2 text-[--text-muted] text-xs text-center">
+                {label}
+              </div>
             </div>
-            <div className="ml-2 text-sm font-medium text-gray-700">
-              {label}
-            </div>
-          </div>
-          {idx !== steps.length - 1 && (
-            <div className="flex-1 h-0.5 bg-gray-200 mx-4" aria-hidden="true"></div>
-          )}
-        </React.Fragment>
-      ))}
-    </nav>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

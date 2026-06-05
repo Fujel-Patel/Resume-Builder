@@ -1,5 +1,6 @@
 import '@/app/globals.css';
 import type { ReactNode } from 'react';
+import ThemeProvider from '@/components/shared/ThemeProvider';
 
 export const metadata = {
   title: {
@@ -41,7 +42,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body>
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );

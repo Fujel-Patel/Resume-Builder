@@ -28,7 +28,7 @@ export default async function BuilderPage({ searchParams }: { searchParams?: { [
   }
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen">
+    <div className="page-container p-6">
       <BuilderWizard initialDraft={initialDraft} />
     </div>
   );

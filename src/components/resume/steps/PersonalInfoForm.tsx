@@ -27,26 +27,26 @@ export default function PersonalInfoForm({ onNext }: Props) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700">Full Name</label>
+        <label className="block text-sm font-medium text-[--text-secondary]">Full Name</label>
         <input
           type="text"
           {...register('name', { required: 'Name is required' })}
-          className="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          className="mt-1 block w-full rounded border-[--border] bg-[--bg-elevated] text-[--text-primary] focus:ring-2 focus:ring-[--color-primary] focus:border-[--color-primary]"
         />
-        {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
+        {errors.name && <p className="mt-1 text-sm text-[--color-danger]">{errors.name.message}</p>}
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Email</label>
+        <label className="block text-sm font-medium text-[--text-secondary]">Email</label>
         <input
           type="email"
           {...register('email', { required: 'Email is required' })}
-          className="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          className="mt-1 block w-full rounded border-[--border] bg-[--bg-elevated] text-[--text-primary] focus:ring-2 focus:ring-[--color-primary] focus:border-[--color-primary]"
         />
-        {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
+        {errors.email && <p className="mt-1 text-sm text-[--color-danger]">{errors.email.message}</p>}
       </div>
       <div className="flex justify-end space-x-2">
         <button type="submit" disabled={!isValid}
-          className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+          className="px-5 py-2.5 btn-primary"
         >
           Next
         </button>

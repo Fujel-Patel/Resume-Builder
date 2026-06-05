@@ -1,3 +1,12 @@
+import { ModernProfessionalTemplate } from './ModernProfessionalTemplate';
+import { ClassicConservativeTemplate } from './ClassicConservativeTemplate';
+import { MinimalCleanTemplate } from './MinimalCleanTemplate';
+import { CreativeBoldTemplate } from './CreativeBoldTemplate';
+import { ExecutiveSeniorTemplate } from './ExecutiveSeniorTemplate';
+import { TechnicalDeveloperTemplate } from './TechnicalDeveloperTemplate';
+import { AcademicScholarTemplate } from './AcademicScholarTemplate';
+import { FreshGraduateTemplate } from './FreshGraduateTemplate';
+
 export { ModernProfessionalTemplate } from './ModernProfessionalTemplate';
 export { ClassicConservativeTemplate } from './ClassicConservativeTemplate';
 export { MinimalCleanTemplate } from './MinimalCleanTemplate';

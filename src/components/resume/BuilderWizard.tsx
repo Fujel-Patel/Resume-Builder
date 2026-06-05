@@ -104,11 +104,11 @@ export default function BuilderWizard({ initialDraft }: BuilderWizardProps) {
 
  return (
  <ResumeContext.Provider value={{ draftId, data: resumeData, setData, saveStep }}>
- <div className="max-w-6xl mx-auto bg-white p-6 rounded shadow">
+ <div className="page-container max-w-6xl mx-auto bg-[--bg-surface]/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-[--border]">
  <Stepper steps={steps.map(s => s.label)} activeStep={currentStep} />
  <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
  <div className="flex-1">
- <label className="block text-sm font-medium text-gray-700 mb-2">
+ <label className="block text-sm font-medium text-[--text-secondary] mb-2">
  Template
  </label>
  <div className="flex flex-wrap gap-2">
@@ -116,12 +116,11 @@ export default function BuilderWizard({ initialDraft }: BuilderWizardProps) {
  <button
  key={t.id}
  onClick={() => setSelectedTemplateId(t.id)}
- className={
- 'rounded-full border px-3 py-1 text-xs font-medium transition-colors ' +
- (selectedTemplateId === t.id
- ? 'border-indigo-600 bg-indigo-600 text-white'
- : 'border-gray-200 bg-white text-gray-700 hover:border-indigo-400')
- }
+ className={`flex items-center gap-2 px-3 py-2 rounded-full text-[--text-primary] font-medium transition-all duration-200 border border-[--border]/50
+  ${selectedTemplateId === t.id
+    ? 'bg-gradient-to-r from-[--color-primary] to-[--color-accent] text-white border-[--color-primary]/20'
+    : 'bg-[--bg-surface]/50 hover:bg-[--bg-elevated]/50 border-[--border]/30'}
+ `}
  >
  {t.name}
  </button>
@@ -132,7 +131,7 @@ export default function BuilderWizard({ initialDraft }: BuilderWizardProps) {
  type="button"
  onClick={handleExportPDF}
  disabled={exporting}
- className="w-full rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:opacity-50 sm:w-auto"
+ className="btn-primary w-full sm:w-auto"
  >
  {exporting ? 'Generating PDF…' : 'Download PDF'}
  </button>
@@ -144,7 +143,7 @@ export default function BuilderWizard({ initialDraft }: BuilderWizardProps) {
  onBack={() => setCurrentStep(prev => Math.max(prev - 1, 0))}
  />
  </div>
- <div className="lg:w-1/2 border-l border-gray-200 lg:pl-6">
+ <div className="lg:w-1/2 border-l border-[--border]/50 lg:pl-6">
  <ResumePreview data={resumeData} selectedTemplateId={selectedTemplateId} />
  </div>
  </div>
