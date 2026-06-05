@@ -1,49 +1,77 @@
 "use client";
-import React, { useState } from 'react';
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useResume } from '@/components/resume/BuilderWizard';
 import type { ResumeData } from '@/types/resume';
+import { summaryFormSchema } from '@/lib/validation/schemas';
+import FormField from '@/components/ui/FormField';
+import Textarea from '@/components/ui/Textarea';
+import Button from '@/components/ui/Button';
+import { useToast } from '@/components/ui/ToastProvider';
 
-export default function SummaryForm({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+type Props = {
+  onNext: () => void;
+  onBack: () => void;
+};
+
+export default function SummaryForm({ onNext, onBack }: Props) {
   const { data, saveStep } = useResume();
-  const [summary, setSummary] = useState<string>((data as any).summary || '');
-  const [error, setError] = useState<string>('');
+  const { addToast } = useToast();
 
-  const handleNext = async () => {
-    if (!summary.trim()) {
-      setError('Summary cannot be empty');
-      return;
-    }
-    await saveStep({ summary } as Partial<ResumeData>);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    watch,
+  } = useForm<{ summary: string }>({
+    resolver: zodResolver(summaryFormSchema),
+    defaultValue: { summary: (data as any).summary || '' },
+  });
+
+  const summary = watch('summary');
+  const charCount = summary.length;
+
+  const onSubmit = async (data: { summary: string }) => {
+    await saveStep({ summary: data.summary } as Partial<ResumeData>);
+    addToast({ message: '✅ Saved', variant: 'success', duration: 2000 });
     onNext();
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold section-heading">Professional Summary</h2>
-      <textarea
-        value={summary}
-        onChange={e => setSummary(e.target.value)}
-        placeholder="Brief professional summary"
-        rows={4}
-        className="w-full"
-      />
-      {error && <p className="mt-1 text-sm text-[--color-danger]">{error}</p>}
-      <div className="flex space-x-3 mt-4">
-        <button
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <FormField
+        label="Professional Summary"
+        helpText="Brief overview of your professional background and goals"
+        error={errors.summary?.message ?? ''}
+        required
+      >
+        <Textarea
+          {...register('summary')}
+          placeholder="Brief professional summary"
+          rows={4}
+        />
+        <div className="mt-2 flex justify-end text-[--text-muted] text-xs">
+          {charCount} / 500 characters
+        </div>
+      </FormField>
+
+      <div className="flex justify-end space-x-2">
+        <Button
           type="button"
           onClick={onBack}
-          className="btn-secondary"
+          variant="secondary"
         >
           Back
-        </button>
-        <button
-          type="button"
-          onClick={handleNext}
-          className="btn-primary"
+        </Button>
+        <Button
+          type="submit"
+          disabled={Object.keys(errors).length > 0}
+          variant="primary"
         >
           Next
-        </button>
+        </Button>
       </div>
-    </div>
+    </form>
   );
 }

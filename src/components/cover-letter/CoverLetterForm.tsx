@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { createClient as createSupabaseClient } from "@/utils/supabase/client";
+import Button from "@/components/ui/Button";
 
 /**
  * Simple multi‑step form (single step for now) to generate a cover letter.
@@ -93,13 +94,14 @@ export default function CoverLetterForm() {
           />
         </div>
         {error && <p className="text-red-600">{error}</p>}
-        <button
+        <Button
           type="submit"
           disabled={loading}
-          className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+          variant="primary"
+          size="md"
         >
           {loading ? "Generating…" : "Generate Cover Letter"}
-        </button>
+        </Button>
       </form>
       {coverLetter && (
         <div className="mt-8">

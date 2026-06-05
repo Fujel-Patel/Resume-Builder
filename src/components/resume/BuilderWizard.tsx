@@ -9,6 +9,8 @@ import SummaryForm from './steps/SummaryForm';
 import GenerateResumeStep from './steps/GenerateResumeStep';
 import ResumePreview from './ResumePreview';
 import { getAllTemplates } from '@/components/templates';
+import Button from '@/components/ui/Button';
+import TemplateCard from '@/components/templates/TemplateCard';
 import type { ResumeData } from '@/types/resume';
 
 interface ResumeContextValue {
@@ -53,6 +55,23 @@ export default function BuilderWizard({ initialDraft }: BuilderWizardProps) {
  setResumeData({ ...(initialDraft.data as ResumeData) });
  }
  }, [initialDraft]);
+
+  // Warn user if they try to leave with unsaved changes
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      const hasData = Object.values(resumeData).some(v => {
+        if (Array.isArray(v)) return v.length > 0;
+        if (v && typeof v === 'object') return Object.keys(v).length > 0;
+        return !!v;
+      });
+      if (hasData) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [resumeData]);
 
  const setData = (partial: Partial<ResumeData>) => {
  setResumeData(prev => ({ ...prev, ...partial }));
@@ -111,20 +130,15 @@ export default function BuilderWizard({ initialDraft }: BuilderWizardProps) {
  <label className="block text-sm font-medium text-[--text-secondary] mb-2">
  Template
  </label>
- <div className="flex flex-wrap gap-2">
- {templates.map(t => (
- <button
- key={t.id}
- onClick={() => setSelectedTemplateId(t.id)}
- className={`flex items-center gap-2 px-3 py-2 rounded-full text-[--text-primary] font-medium transition-all duration-200 border border-[--border]/50
-  ${selectedTemplateId === t.id
-    ? 'bg-gradient-to-r from-[--color-primary] to-[--color-accent] text-white border-[--color-primary]/20'
-    : 'bg-[--bg-surface]/50 hover:bg-[--bg-elevated]/50 border-[--border]/30'}
- `}
- >
- {t.name}
- </button>
- ))}
+ <div className="flex flex-wrap gap-4">
+   {templates.map(t => (
+     <TemplateCard
+       key={t.id}
+       template={t}
+       selected={selectedTemplateId === t.id}
+       onSelect={() => setSelectedTemplateId(t.id)}
+     />
+   ))}
  </div>
  </div>
  <button

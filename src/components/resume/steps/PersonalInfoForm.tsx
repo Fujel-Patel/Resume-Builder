@@ -1,8 +1,14 @@
 "use client";
 import React from 'react';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useResume } from '@/components/resume/BuilderWizard';
 import type { ContactInfo } from '@/types/resume';
+import { personalInfoFormSchema } from '@/lib/validation/schemas';
+import FormField from '@/components/ui/FormField';
+import { useToast } from '@/components/ui/ToastProvider';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
 
 type Props = {
   onNext: () => void;
@@ -11,45 +17,63 @@ type Props = {
 
 export default function PersonalInfoForm({ onNext }: Props) {
   const { data, saveStep } = useResume();
+  const { addToast } = useToast();
   const defaultValues: ContactInfo = data.contact ?? { name: '', email: '' };
 
   const {
     register,
     handleSubmit,
     formState: { errors, isValid },
-  } = useForm<ContactInfo>({ defaultValues, mode: 'onBlur' });
+  } = useForm<ContactInfo>({
+    resolver: zodResolver(personalInfoFormSchema),
+    defaultValues,
+    mode: 'onBlur',
+  });
 
   const onSubmit = async (values: ContactInfo) => {
     await saveStep({ contact: values });
+    addToast({ message: '✅ Saved', variant: 'success', duration: 2000 });
     onNext();
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-[--text-secondary]">Full Name</label>
-        <input
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <FormField
+        label="Full Name"
+        helpText="Your full legal name"
+        error={errors.name?.message ?? ''}
+        required
+      >
+        <Input
+          id="name"
           type="text"
-          {...register('name', { required: 'Name is required' })}
-          className="mt-1 block w-full rounded border-[--border] bg-[--bg-elevated] text-[--text-primary] focus:ring-2 focus:ring-[--color-primary] focus:border-[--color-primary]"
+          placeholder="Enter your full name"
+          {...register('name')}
         />
-        {errors.name && <p className="mt-1 text-sm text-[--color-danger]">{errors.name.message}</p>}
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-[--text-secondary]">Email</label>
-        <input
+      </FormField>
+
+      <FormField
+        label="Email"
+        helpText="We'll use this to contact you"
+        error={errors.email?.message ?? ''}
+        required
+      >
+        <Input
+          id="email"
           type="email"
-          {...register('email', { required: 'Email is required' })}
-          className="mt-1 block w-full rounded border-[--border] bg-[--bg-elevated] text-[--text-primary] focus:ring-2 focus:ring-[--color-primary] focus:border-[--color-primary]"
+          placeholder="Enter your email address"
+          {...register('email')}
         />
-        {errors.email && <p className="mt-1 text-sm text-[--color-danger]">{errors.email.message}</p>}
-      </div>
+      </FormField>
+
       <div className="flex justify-end space-x-2">
-        <button type="submit" disabled={!isValid}
-          className="px-5 py-2.5 btn-primary"
+        <Button
+          type="submit"
+          disabled={!isValid}
+          variant="primary"
         >
           Next
-        </button>
+        </Button>
       </div>
     </form>
   );

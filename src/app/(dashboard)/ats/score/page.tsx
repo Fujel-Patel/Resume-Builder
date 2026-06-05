@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import { CheckCircleIcon } from '@heroicons/react/24/solid';
+import Button from '@/components/ui/Button';
+import { useToast } from '@/components/ui/ToastProvider';
+import FormField from '@/components/ui/FormField';
+import Textarea from '@/components/ui/Textarea';
 
 export default function AtsScorePage() {
   const [resumeText, setResumeText] = useState("");
@@ -9,6 +13,7 @@ export default function AtsScorePage() {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { addToast } = useToast();
 
   const handleScore = async () => {
     setLoading(true);
@@ -85,13 +90,14 @@ export default function AtsScorePage() {
         </div>
       </div>
 
-      <button
+      <Button
         onClick={handleScore}
         disabled={loading || resumeText.length < 50 || jobDescription.length < 50}
-        className="btn-primary w-full mb-8"
+        variant="primary"
+        className="w-full mb-8"
       >
         {loading ? "Analyzing…" : "Score Resume"}
-      </button>
+      </Button>
 
       {error && (
         <div className="bg-[--color-danger]/10 border border-[--color-danger]/20 rounded-xl p-6">

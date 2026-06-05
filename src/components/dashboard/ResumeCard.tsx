@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Button from '@/components/ui/Button';
 
 interface Resume {
   id: string;
@@ -26,15 +27,17 @@ export default function ResumeCard({ resume }: { resume: Resume }) {
           >
             Edit Resume
           </Link>
-          <button
+          <Button
+            variant="outline"
+            size="lg"
+            className="border-0 bg-transparent text-[--color-danger] hover:bg-transparent hover:underline px-0 py-0"
             onClick={() => {
               // Placeholder for delete functionality
               alert('Delete functionality not implemented yet');
             }}
-            className="text-[--color-danger] hover:underline font-medium"
           >
             Delete
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -1,50 +1,70 @@
 "use client";
-import React, { useState } from 'react';
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useResume } from '@/components/resume/BuilderWizard';
 import type { ResumeData } from '@/types/resume';
+import { skillsFormSchema } from '@/lib/validation/schemas';
+import FormField from '@/components/ui/FormField';
+import Textarea from '@/components/ui/Textarea';
+import Button from '@/components/ui/Button';
+import { useToast } from '@/components/ui/ToastProvider';
 
-export default function SkillsForm({ onNext, onBack }: { onNext: () => void; onBack: () => void }) {
+type Props = {
+  onNext: () => void;
+  onBack: () => void;
+};
+
+export default function SkillsForm({ onNext, onBack }: Props) {
   const { data, saveStep } = useResume();
-  const [skills, setSkills] = useState<string>((data.skills || []).join(', '));
-  const [error, setError] = useState<string>('');
+  const { addToast } = useToast();
 
-  const handleNext = async () => {
-    if (!skills.trim()) {
-      setError('Please enter at least one skill');
-      return;
-    }
-    const skillArray = skills.split(',').map(s => s.trim()).filter(Boolean);
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = useForm<string>({
+    resolver: zodResolver(skillsFormSchema),
+    defaultValue: (data.skills || []).join(', '),
+  });
+
+  const onSubmit = async (value: string) => {
+    const skillArray = value.split(',').map(s => s.trim()).filter(Boolean);
     await saveStep({ skills: skillArray } as Partial<ResumeData>);
+    addToast({ message: '✅ Saved', variant: 'success', duration: 2000 });
     onNext();
   };
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-semibold">Skills</h2>
-      <textarea
-        value={skills}
-        onChange={e => setSkills(e.target.value)}
-        placeholder="Comma separated skills, e.g., JavaScript, React, Node.js"
-        rows={4}
-        className="w-full p-2 border rounded"
-      />
-      {error && <p className="text-red-600">{error}</p>}
-      <div className="flex space-x-2">
-        <button
-          type="button"
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <FormField
+        label="Skills"
+        helpText="Comma-separated list of your skills (e.g., JavaScript, React, Node.js)"
+        error={errors?.message ?? ''}
+        required
+      >
+        <Textarea
+          {...register('value')}
+          placeholder="Comma separated skills, e.g., JavaScript, React, Node.js"
+          rows={4}
+        />
+      </FormField>
+
+      <div className="flex justify-end space-x-2">
+        <Button
           onClick={onBack}
-          className="px-4 py-2 bg-gray-200 rounded"
+          variant="secondary"
         >
           Back
-        </button>
-        <button
-          type="button"
-          onClick={handleNext}
-          className="px-4 py-2 bg-blue-600 text-white rounded"
+        </Button>
+        <Button
+          type="submit"
+          disabled={!isValid}
+          variant="primary"
         >
           Next
-        </button>
+        </Button>
       </div>
-    </div>
+    </form>
   );
 }

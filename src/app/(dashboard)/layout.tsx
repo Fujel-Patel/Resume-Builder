@@ -7,10 +7,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen bg-[--bg-base]">
       {/* Sidebar - sticky on left */}
       <aside className="w-[260px] flex-shrink-0 border-r border-[--border] bg-[--sidebar-bg] text-[--sidebar-text] sticky top-0">
-        {/* The sidebar component will be rendered here */}
         <div className="h-full px-4 py-6">
-          {/* We'll render the Sidebar component next (task 4) */}
-          {/* For now, we'll leave it empty and let the Sidebar component fill it */}
+          <SidebarNavigation />
         </div>
       </aside>
 

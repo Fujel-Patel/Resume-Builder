@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Button from '@/components/ui/Button';
 
 export default function UploadResumeForm() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -40,9 +41,16 @@ export default function UploadResumeForm() {
     <div className="border rounded p-4 mb-6">
       <h2 className="text-xl font-semibold mb-2">Upload Existing Resume</h2>
       <input type="file" accept="application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleFileChange} className="mb-2" />
-      <button type="button" onClick={handleUpload} disabled={!selectedFile || loading} className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50">
-        {loading ? 'Uploading...' : 'Upload & Parse'}
-      </button>
+      <Button
+        type="button"
+        onClick={handleUpload}
+        disabled={!selectedFile}
+        variant="primary"
+        size="md"
+        loading={loading}
+      >
+        Upload & Parse
+      </Button>
       {error && <p className="text-red-600 mt-2">{error}</p>}
       {parsedText && (
         <div className="mt-4 max-h-64 overflow-y-auto whitespace-pre-wrap border p-2 bg-gray-50">

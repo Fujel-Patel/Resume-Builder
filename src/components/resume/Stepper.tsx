@@ -44,7 +44,7 @@ export default function Stepper({ steps, activeStep }: StepperProps) {
                 )}
               </div>
               {/* Step label */}
-              <div className="mt-2 text-[--text-muted] text-xs text-center">
+              <div className="mt-2 text-[--text-muted] text-xs text-center" title={label} tabIndex={0}>
                 {label}
               </div>
             </div>

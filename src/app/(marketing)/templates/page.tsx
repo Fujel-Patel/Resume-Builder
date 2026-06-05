@@ -80,7 +80,7 @@ export default function TemplatesGalleryPage() {
           </p>
           <div className="mt-6">
             <Link
-              href="/app/(dashboard)/resume-builder"
+              href="/builder"
               className="inline-flex rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700"
             >
               Open resume builder

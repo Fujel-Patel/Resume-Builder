@@ -1,7 +1,8 @@
 import React from "react";
 import clsx from "clsx";
+import { Loader2 } from "lucide-react";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive" | "outline" | "link";
 type ButtonSize = "sm" | "md" | "lg";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -9,6 +10,7 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   size?: ButtonSize;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  loading?: boolean;
 }
 
 function sizeClasses(size: ButtonSize) {
@@ -31,6 +33,10 @@ function variantClasses(variant: ButtonVariant) {
       return "rounded-xl bg-transparent text-white hover:bg-white/[0.08]";
     case "destructive":
       return "rounded-xl bg-gradient-to-r from-red-500 to-rose-600 text-white hover:from-red-400 hover:to-rose-500 shadow-lg shadow-red-500/20";
+    case "outline":
+      return "rounded-xl border border-white/[0.2] bg-transparent text-white hover:bg-white/[0.05]";
+    case "link":
+      return "rounded-xl bg-transparent text-white underline-offset-4 hover:underline hover:underline-offset-2";
     case "primary":
     default:
       return "relative rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-medium shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40";
@@ -65,29 +71,37 @@ export default function Button({
   disabled,
   onClick,
   type,
+  loading = false,
   ...props
 }: ButtonProps) {
   return (
     <button
       type={type ?? "button"}
-      disabled={disabled}
+      disabled={disabled || loading}
       onClick={(e) => {
-        if (disabled) return;
+        if (disabled || loading) return;
         if (variant === "primary" && !props.disableRipple) handleRipple(e);
         onClick?.(e);
       }}
       className={clsx(
-        "inline-flex items-center gap-2 justify-center transition-all duration-200 ease-out active:scale-95 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-background",
+        "inline-flex items-center gap-2 justify-center transition-all duration-200 ease-out active:scale-95 focus:outline-none focus:ring-2 focus:ring-[--color-primary] focus:ring-offset-2 focus-ring-offset-background",
         sizeClasses(size),
         variantClasses(variant),
         disabled && "opacity-50 cursor-not-allowed",
+        loading && "pointer-events-none opacity-70",
         className
       )}
       {...props}
     >
-      {leftIcon}
-      {props.children}
-      {rightIcon}
+      {loading ? (
+        <Loader2 className="h-4 w-4 animate-spin" />
+      ) : (
+        <>
+          {leftIcon}
+          {props.children}
+          {rightIcon}
+        </>
+      )}
     </button>
   );
 }

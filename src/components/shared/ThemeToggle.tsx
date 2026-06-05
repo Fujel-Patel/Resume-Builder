@@ -2,6 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
+import Button from '@/components/ui/Button';
+
+import { useEffect, useState } from 'react';
+import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
+import Button from '@/components/ui/Button';
 
 export default function ThemeToggle() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -26,9 +31,11 @@ export default function ThemeToggle() {
   };
 
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="sm"
+      className="p-2 h-10 w-10 rounded-full hover:bg-[--bg-hover] transition-colors duration-200"
       onClick={toggleTheme}
-      className="flex items-center gap-2 p-2 rounded-full hover:bg-[--bg-hover] transition-colors duration-200"
       aria-label="Toggle theme"
     >
       {theme === 'dark' ? (
@@ -36,6 +43,6 @@ export default function ThemeToggle() {
       ) : (
         <MoonIcon className="h-4 w-4 text-gray-400" />
       )}
-    </button>
+    </Button>
   );
 }
