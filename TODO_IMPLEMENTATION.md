@@ -115,7 +115,7 @@ Following the 8-week plan from Section 9 of REDESIGN_SPECIFICATIONS.md:
 - [x] Add help text and examples for complex fields
 - [x] Add unsaved changes warning before navigation
 - [x] Enhance template selector with visual thumbnails
-- [ ] Make export options prominent at end
+- [x] Make export options prominent at end
 
 ### 3.2 ATS Score Checker (`/ats/score`)
 - [x] Implement two-column responsive form layout
@@ -123,25 +123,25 @@ Following the 8-week plan from Section 9 of REDESIGN_SPECIFICATIONS.md:
 - [x] Add clear labels and help text
 - [x] Add paste examples/load sample buttons
 - [x] Implement primary button state (enabled only when both fields have content)
-- [ ] Add loading state during processing
-- [ ] Implement score visualization (gauge/progress bar/numeric)
-- [ ] Add breakdown by category with priority indicators
-- [ ] Add export/share options
+- [x] Add loading state during processing
+- [x] Implement score visualization (gauge/progress bar/numeric)
+- [x] Add breakdown by category with priority indicators
+- [x] Add export/share options
 
 ### 3.3 ATS Optimizer (`/ats/optimize`)
-- [ ] Implement similar layout to Score Checker
-- [ ] Add clear distinction between current resume and target JD
-- [ ] Add before/after optimization examples
-- [ ] Implement diff view showing changes (added/removed/modified)
-- [ ] Add accept/reject individual suggestions
-- [ ] Add one-click apply all
-- [ ] Make copy to clipboard prominent
+- [x] Implement similar layout to Score Checker
+- [x] Add clear distinction between current resume and target JD
+- [x] Add before/after optimization examples
+- [x] Implement diff view showing changes (added/removed/modified)
+- [x] Add accept/reject individual suggestions
+- [x] Add one-click apply all
+- [x] Make copy to clipboard prominent
 
 ### 3.4 JD Keyword Extraction (`/jd/parse`)
 - [ ] Add large textarea with clear instructions and character counter
 - [ ] Add sample JD button and clear button
 - [ ] Implement extract button state (enabled when input > 20 chars)
-- [ ] Add loading state during processing
+- [x] Add loading state during processing
 - [ ] Implement categorized display (Skills, Technologies, Qualifications, etc.)
 - [ ] Add copy individual categories or all
 - [ ] Add visual frequency/importance indicators

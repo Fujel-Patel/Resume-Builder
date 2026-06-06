@@ -41,16 +41,16 @@ export default function AtsScorePage() {
     }
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-[--color-success]';
-    if (score >= 60) return 'text-[--color-warning]';
-    return 'text-[--color-danger]';
+  const getScoreColorHex = (score: number) => {
+    if (score >= 80) return '#22c55e'; // success
+    if (score >= 60) return '#f59e0b'; // warning
+    return '#ef4444'; // danger
   };
 
-  const getScoreBgColor = (score: number) => {
-    if (score >= 80) return 'bg-[--color-success]/10';
-    if (score >= 60) return 'bg-[--color-warning]/10';
-    return 'bg-[--color-danger]/10';
+  const getScoreBgColorHex = (score: number) => {
+    if (score >= 80) return '#22c55e10'; // success with opacity
+    if (score >= 60) return '#f59e0b10'; // warning
+    return '#ef444410'; // danger
   };
 
   return (
@@ -98,6 +98,11 @@ export default function AtsScorePage() {
       >
         {loading ? "Analyzing…" : "Score Resume"}
       </Button>
+        {loading && (
+          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+            <span className="text-white text-xl font-semibold">Analyzing…</span>
+          </div>
+        )}
 
       {error && (
         <div className="bg-[--color-danger]/10 border border-[--color-danger]/20 rounded-xl p-6">
@@ -117,7 +122,7 @@ export default function AtsScorePage() {
                   cy="21"
                   r="15.91549430918954"
                   fill="none"
-                  stroke={getScoreBgColor(result.score)}
+                  stroke={getScoreBgColorHex(result.score)}
                   strokeWidth="2.83"
                 />
                 {/* Progress circle */}
@@ -126,7 +131,7 @@ export default function AtsScorePage() {
                   cy="21"
                   r="15.91549430918954"
                   fill="none"
-                  stroke={getScoreColor(result.score)}
+                  stroke={getScoreColorHex(result.score)}
                   strokeWidth="2.83"
                   strokeDasharray={`${(result.score / 100) * 100} 100`}
                   strokeDashoffset="0"
@@ -137,7 +142,7 @@ export default function AtsScorePage() {
                 {/* We'll add a class to trigger the animation */}
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className={`text-5xl font-bold ${getScoreColor(result.score)}`}>
+                <span className="text-5xl font-bold" style={{ color: getScoreColorHex(result.score) }}>
                   {result.score}
                 </span>
                 <span className="text-2xl text-[--text-muted]">/ 100</span>
@@ -162,9 +167,8 @@ export default function AtsScorePage() {
                     </div>
                     <div className="w-full bg-[--bg-elevated] rounded-full h-2.5">
                       <div
-                        className={`bg-${getScoreColor(result.score).replace('text-', 'bg-')} h-2.5 rounded-full`}
-                        style={{ width: `${value as number}%` }}
-                      ></div>
+                        style={{ width: `${value as number}%`, backgroundColor: getScoreColorHex(value as number) }} className="h-2.5 rounded-full"
+                                              ></div>
                     </div>
                     <div className="mt-2 text-xs text-[--text-muted] capitalize">
                       {key.replace(/Score$/, '')}

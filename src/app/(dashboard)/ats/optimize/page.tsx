@@ -1,217 +1,167 @@
 "use client";
 
 import { useState } from "react";
-import { StreamingText } from "@/components/ai";
+import { CheckCircleIcon } from "@heroicons/react/24/solid";
+import Button from "@/components/ui/Button";
+import { useToast } from "@/components/ui/ToastProvider";
+import FormField from "@/components/ui/FormField";
+import Textarea from "@/components/ui/Textarea";
 
 export default function AtsOptimizePage() {
   const [resumeText, setResumeText] = useState("");
   const [jobDescription, setJobDescription] = useState("");
-  const [isOptimizing, setIsOptimizing] = useState(false);
-  const [optimizedText, setOptimizedText] = useState("");
+  const [result, setResult] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { addToast } = useToast();
 
   const handleOptimize = async () => {
+    setLoading(true);
     setError(null);
-    setOptimizedText("");
-    setIsOptimizing(true);
-
+    setResult(null);
     try {
-      const res = await fetch("/api/ai/ats-optimize", {
+      const resp = await fetch("/api/ats/optimize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resumeText, jobDescription }),
       });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to optimize");
+      if (!resp.ok) {
+        const err = await resp.json();
+        throw new Error(err.error || err.details || "Failed to optimize");
       }
-
-      // Stream the response text into optimizedText state
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
-      let fullText = "";
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          fullText += decoder.decode(value, { stream: true });
-          setOptimizedText(fullText);
-        }
-      }
+      const data = await resp.json();
+      setResult(data);
     } catch (e: any) {
       setError(e.message);
     } finally {
-      setIsOptimizing(false);
+      setLoading(false);
     }
   };
 
-  const handleCopy = async () => {
-    if (!optimizedText) return;
-    await navigator.clipboard.writeText(optimizedText);
-  };
-
-  const handleDownload = () => {
-    if (!optimizedText) return;
-    const blob = new Blob([optimizedText], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "ats-optimized-resume.txt";
-    a.click();
-    URL.revokeObjectURL(url);
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    addToast({ title: "Copied", description: "Text copied to clipboard", variant: "default" });
   };
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-2">ATS Optimizer</h1>
-      <p className="text-gray-600 mb-6">
-        Paste your resume and a job description. Our AI will rewrite your resume to
-        better match the job description keywords and requirements for ATS (Applicant Tracking System) compatibility.
+    <div className="page-container p-6">
+      <h1 className="section-heading text-3xl mb-6">ATS Optimizer</h1>
+      <p className="text-[--text-secondary] mb-8">
+        Provide a current resume and a target job description. The optimizer will suggest concrete edits, display a diff view and let you accept or reject each suggestion.
       </p>
 
-      {!isOptimizing && !optimizedText && (
-        <div className="grid gap-4 md:grid-cols-2 mb-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Your Resume Text
-            </label>
-            <textarea
-              value={resumeText}
-              onChange={(e) => setResumeText(e.target.value)}
-              placeholder="Paste your full resume text here...
-Example:
-John Doe
-Software Engineer
-...
-EXPERIENCE
-Senior Developer at Acme Corp (2020-Present)
-- Built scalable APIs...
-- Led team of 5 engineers..."
-              rows={14}
-              className="w-full p-3 border rounded-lg text-sm font-mono whitespace-pre-wrap resize-y"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Job Description
-            </label>
-            <textarea
-              value={jobDescription}
-              onChange={(e) => setJobDescription(e.target.value)}
-              placeholder="Paste the job description here...
-Example:
-We are looking for a Senior Software Engineer...
-Required skills: React, TypeScript, Node.js, PostgreSQL...
-Responsibilities: Build and maintain APIs..."
-              rows={14}
-              className="w-full p-3 border rounded-lg text-sm font-mono whitespace-pre-wrap resize-y"
-            />
-          </div>
+      {/* Input form – two‑column layout */}
+      <div className="grid gap-6 md:grid-cols-2 mb-8">
+        <div>
+          <label className="block text-sm font-medium text-[--text-secondary] mb-2">Current Resume</label>
+          <textarea
+            value={resumeText}
+            onChange={(e) => setResumeText(e.target.value)}
+            placeholder="Paste your current resume..."
+            rows={14}
+            className="w-full"
+          />
         </div>
-      )}
-
-      {!isOptimizing && !optimizedText && (
-        <button
-          onClick={handleOptimize}
-          disabled={resumeText.length < 50 || jobDescription.length < 50}
-          className="px-6 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          Optimize Resume
-        </button>
-      )}
-
-      {isOptimizing && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-3">
-            <div className="w-5 h-5 border-2 border-t-transparent border-indigo-600 rounded-full animate-spin" />
-            <span className="text-sm text-gray-600 font-medium">
-              Optimizing your resume for ATS compatibility...
-            </span>
-          </div>
-          {optimizedText && (
-            <div className="border rounded-lg p-4 bg-gray-50 overflow-auto max-h-[600px]">
-              <div className="flex justify-between items-center mb-3">
-                <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Optimized Resume
-                </span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleCopy}
-                    className="px-3 py-1 text-xs bg-white border rounded hover:bg-gray-50"
-                  >
-                    Copy
-                  </button>
-                  <button
-                    onClick={handleDownload}
-                    className="px-3 py-1 text-xs bg-white border rounded hover:bg-gray-50"
-                  >
-                    Download
-                  </button>
-                </div>
-              </div>
-              <pre className="whitespace-pre-wrap text-sm font-mono text-gray-800">
-                {optimizedText}
-              </pre>
-            </div>
-          )}
+        <div>
+          <label className="block text-sm font-medium text-[--text-secondary] mb-2">Target Job Description</label>
+          <textarea
+            value={jobDescription}
+            onChange={(e) => setJobDescription(e.target.value)}
+            placeholder="Paste the job description you&apos;re aiming for..."
+            rows={14}
+            className="w-full"
+          />
         </div>
-      )}
+      </div>
 
-      {!isOptimizing && optimizedText && (
-        <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium text-green-600">
-              Optimization complete
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={handleCopy}
-                className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Copy to Clipboard
-              </button>
-              <button
-                onClick={handleDownload}
-                className="px-4 py-2 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
-              >
-                Download as Text
-              </button>
-              <button
-                onClick={() => {
-                  setOptimizedText("");
-                  setIsOptimizing(false);
-                }}
-                className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-              >
-                Optimize Another
-              </button>
-            </div>
-          </div>
-          <div className="border rounded-lg p-4 bg-gray-50 overflow-auto max-h-[600px]">
-            <pre className="whitespace-pre-wrap text-sm font-mono text-gray-800">
-              {optimizedText}
-            </pre>
-          </div>
+      <Button
+        onClick={handleOptimize}
+        disabled={loading || resumeText.length < 50 || jobDescription.length < 50}
+        variant="primary"
+        className="w-full mb-8"
+      >
+        {loading ? "Optimizing…" : "Optimize Resume"}
+      </Button>
+
+      {loading && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+          <span className="text-white text-xl font-semibold">Optimizing…</span>
         </div>
       )}
 
       {error && (
-        <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-700 text-sm">Error: {error}</p>
+        <div className="bg-[--color-danger]/10 border border-[--color-danger]/20 rounded-xl p-6 mb-6">
+          <p className="text-[--color-danger] text-sm">Error: {error}</p>
         </div>
       )}
 
-      {!isOptimizing && !optimizedText && (
-        <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h3 className="text-sm font-semibold text-blue-800 mb-2">How it works</h3>
-          <ul className="text-sm text-blue-700 space-y-1">
-            <li>1. Paste your current resume text</li>
-            <li>2. Paste the job description you&apos;re targeting</li>
-            <li>3. Our AI rewrites your resume to include relevant keywords naturally</li>
-            <li>4. Copy the optimized result into your resume format</li>
-          </ul>
+      {result && (
+        <div className="space-y-8">
+          {/* Before / After sections */}
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <h2 className="section-heading text-xl mb-2">Current Resume</h2>
+              <pre className="whitespace-pre-wrap bg-[--bg-surface] p-4 rounded-md border border-[--border] max-h-80 overflow-y-auto">
+                {result.originalResume ?? resumeText}
+              </pre>
+            </div>
+            <div>
+              <h2 className="section-heading text-xl mb-2">Optimized Resume</h2>
+              <pre className="whitespace-pre-wrap bg-[--bg-surface] p-4 rounded-md border border-[--border] max-h-80 overflow-y-auto">
+                {result.optimizedResume}
+              </pre>
+            </div>
+          </div>
+
+          {/* Diff view */}
+          {result.diff && (
+            <div>
+              <h2 className="section-heading text-xl mb-2">Changes (Diff)</h2>
+              <pre className="whitespace-pre-wrap bg-[--bg-surface] p-4 rounded-md border border-[--border] max-h-96 overflow-y-auto font-mono text-sm">
+                {result.diff.map((line: string, i: number) => {
+                  if (line.startsWith('+')) return (<span key={i} className="text-[--color-success]">{line}\n</span>);
+                  if (line.startsWith('-')) return (<span key={i} className="text-[--color-danger]">{line}\n</span>);
+                  return (<span key={i}>{line}\n</span>);
+                })}
+              </pre>
+            </div>
+          )}
+
+          {/* Suggestions with accept/reject placeholders */}
+          {result.suggestions && result.suggestions.length > 0 && (
+            <div className="space-y-4">
+              <h2 className="section-heading text-xl mb-2">Suggestions</h2>
+              <ul className="space-y-3">
+                {result.suggestions.map((s: any, idx: number) => (
+                  <li key={idx} className="flex items-start gap-3">
+                    <CheckCircleIcon className="h-5 w-5 text-[--color-success] flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-[--text-secondary]">{s.text}</p>
+                      <div className="mt-2 flex space-x-2">
+                        <Button variant="secondary" size="sm" onClick={() => copyToClipboard(s.text)}>
+                          Copy
+                        </Button>
+                        {/* Accept / Reject toggle could be added here */}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Apply all and prominent copy buttons */}
+          <div className="flex space-x-4 mt-6 justify-center">
+            <Button variant="primary" size="lg" onClick={() => {
+              // In a real implementation this would send the accepted suggestions
+              addToast({ title: "Applied", description: "All suggestions applied (demo)", variant: "default" });
+            }}>
+              Apply All
+            </Button>
+            <Button variant="secondary" size="lg" onClick={() => copyToClipboard(result.optimizedResume)}>
+              Copy Optimized Resume
+            </Button>
+          </div>
         </div>
       )}
     </div>

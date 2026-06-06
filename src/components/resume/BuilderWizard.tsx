@@ -145,7 +145,7 @@ export default function BuilderWizard({ initialDraft }: BuilderWizardProps) {
  type="button"
  onClick={handleExportPDF}
  disabled={exporting}
- className="btn-primary w-full sm:w-auto"
+ className="btn-primary w-full sm:w-auto hidden"
  >
  {exporting ? 'Generating PDF…' : 'Download PDF'}
  </button>
@@ -160,6 +160,19 @@ export default function BuilderWizard({ initialDraft }: BuilderWizardProps) {
  <div className="lg:w-1/2 border-l border-[--border]/50 lg:pl-6">
  <ResumePreview data={resumeData} selectedTemplateId={selectedTemplateId} />
  </div>
+{currentStep === steps.length - 1 && (
+  <div className="mt-8 border-t border-[--border]/30 pt-6 flex flex-col items-center">
+    <h2 className="text-lg font-semibold mb-4">Export Options</h2>
+    <div className="flex space-x-4">
+      <Button variant="primary" size="lg" onClick={handleExportPDF} disabled={exporting}>
+        {exporting ? 'Generating PDF…' : 'Download PDF'}
+      </Button>
+      <Button variant="secondary" size="lg" onClick={() => alert('DOCX export not implemented yet')}>
+        Export as DOCX
+      </Button>
+    </div>
+  </div>
+)}
  </div>
  </div>
  </ResumeContext.Provider>
