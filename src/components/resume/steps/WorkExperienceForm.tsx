@@ -102,7 +102,7 @@ export default function WorkExperienceForm({ onNext, onBack }: Props) {
             <Textarea
               id={`bullets-${field.id}`}
               placeholder="Enter bullet points, one per line"
-              rows={3}
+              rows={3} maxLength={2000}
               {...register(`experience.${index}.bullets`)}
             />
           </FormField>

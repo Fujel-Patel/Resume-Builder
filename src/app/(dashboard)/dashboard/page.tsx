@@ -1,9 +1,11 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { prisma } from '@/lib/prisma';
-import ResumeCard from '@/components/dashboard/ResumeCard';
-import StatsBar from '@/components/dashboard/StatsBar';
+import VirtualizedResumeList from '@/components/dashboard/VirtualizedResumeList';
+import dynamic from 'next/dynamic';
+const StatsBar = dynamic(() => import('@/components/dashboard/StatsBar'));
 import { SparklesIcon, DocumentTextIcon, Squares2X2Icon, MagnifyingGlassIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
+import ResumeCard from '@/components/dashboard/ResumeCard';
 import MetaSetter from '@/components/dashboard/MetaSetter';
 
 export const metadata: Metadata = {
@@ -89,18 +91,28 @@ export default async function DashboardPage() {
           Your Resumes
         </h2>
         {resumes.length ? (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {resumes.map((r) => (
-              <ResumeCard
-                key={r.id}
-                resume={{
-                  ...r,
-                  createdAt: r.createdAt.toISOString(),
-                  updatedAt: r.updatedAt.toISOString(),
-                }}
-              />
-            ))}
-          </div>
+          resumes.length > 20 ? (
+            <VirtualizedResumeList
+              resumes={resumes.map(r => ({
+                ...r,
+                createdAt: r.createdAt.toISOString(),
+                updatedAt: r.updatedAt.toISOString(),
+              }))}
+            />
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {resumes.map(r => (
+                <ResumeCard
+                  key={r.id}
+                  resume={{
+                    ...r,
+                    createdAt: r.createdAt.toISOString(),
+                    updatedAt: r.updatedAt.toISOString(),
+                  }}
+                />
+              ))}
+            </div>
+          )
         ) : (
           <div className="text-center py-12">
             {/* Illustration placeholder - we can use a simple graphic or emoji for now */}

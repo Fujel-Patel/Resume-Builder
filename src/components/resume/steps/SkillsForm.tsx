@@ -1,5 +1,6 @@
 "use client";
 import React from 'react';
+import useDebounce from '@/hooks/useDebounce';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useResume } from '@/components/resume/BuilderWizard';
@@ -46,7 +47,7 @@ export default function SkillsForm({ onNext, onBack }: Props) {
         <Textarea
           {...register('value')}
           placeholder="Comma separated skills, e.g., JavaScript, React, Node.js"
-          rows={4}
+          rows={4} maxLength={2000}
         />
       </FormField>
 

@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { getAllTemplates, getTemplateComponent } from "@/components/templates";
+import { getAllTemplates } from "@/components/templates";
+import LazyTemplatePreview from "@/components/templates/LazyTemplatePreview";
 import TemplateCard from "@/components/templates/TemplateCard";
 import Button from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -111,7 +112,7 @@ export default function TemplatesPage() {
             <h2 className="text-2xl font-bold mb-4">{previewTemplate.name} Preview</h2>
             <div className="border border-[--border] rounded p-4 mb-4">
               {/* Render the actual template component. Assuming it accepts no required props for a demo. */}
-              {React.createElement(getTemplateComponent(previewTemplate.id)?.Component || (() => <p>Preview not available</p>))}
+              <LazyTemplatePreview templateId={previewTemplate.id} />
             </div>
             <div className="flex justify-end space-x-2">
               <Button variant="secondary" size="sm" onClick={() => handleSelect(previewTemplate)}>

@@ -1,5 +1,6 @@
 "use client";
 import React from 'react';
+import useDebounce from '@/hooks/useDebounce';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useResume } from '@/components/resume/BuilderWizard';
@@ -30,7 +31,8 @@ export default function SummaryForm({ onNext, onBack }: Props) {
   });
 
   const summary = watch('summary');
-  const charCount = summary.length;
+  const debouncedSummary = useDebounce(summary, 300);
+  const charCount = debouncedSummary.length;
 
   const onSubmit = async (data: { summary: string }) => {
     await saveStep({ summary: data.summary } as Partial<ResumeData>);
@@ -49,7 +51,7 @@ export default function SummaryForm({ onNext, onBack }: Props) {
         <Textarea
           {...register('summary')}
           placeholder="Brief professional summary"
-          rows={4}
+          rows={4} maxLength={2000}
         />
         <div className="mt-2 flex justify-end text-[--text-muted] text-xs">
           {charCount} / 500 characters

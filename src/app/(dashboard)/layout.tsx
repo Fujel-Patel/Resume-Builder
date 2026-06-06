@@ -1,5 +1,6 @@
 // globals.css imported in root layout
 import PageTransition from '@/components/ui/PageTransition';
+import ErrorBoundary from '@/components/shared/ErrorBoundary';
 import type { ReactNode } from 'react';
 import ThemeToggle from '@/components/shared/ThemeToggle';
 
@@ -57,7 +58,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
         {/* Page content */}
         <main className="flex-1 p-6 overflow-auto">
+          <ErrorBoundary>
           <PageTransition>{children}</PageTransition>
+        </ErrorBoundary>
         </main>
       </div>
     </div>

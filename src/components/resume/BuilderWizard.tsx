@@ -7,7 +7,7 @@ import EducationForm from './steps/EducationForm';
 import SkillsForm from './steps/SkillsForm';
 import SummaryForm from './steps/SummaryForm';
 import GenerateResumeStep from './steps/GenerateResumeStep';
-import ResumePreview from './ResumePreview';
+import LazyResumePreview from './LazyResumePreview';
 import { getAllTemplates } from '@/components/templates';
 import Button from '@/components/ui/Button';
 import TemplateCard from '@/components/templates/TemplateCard';
@@ -157,7 +157,7 @@ export default function BuilderWizard({ initialDraft }: BuilderWizardProps) {
 
  return (
  <ResumeContext.Provider value={{ draftId, data: resumeData, setData, saveStep }}>
- <div className="page-container max-w-6xl mx-auto bg-[--bg-surface]/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-[--border]">
+ <div data-testid="builder-wizard" className="page-container max-w-6xl mx-auto bg-[--bg-surface]/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-[--border]">
  <div className="flex items-center justify-between">
   <Stepper steps={steps.map(s => s.label)} activeStep={currentStep} />
   <div className="space-x-2">
@@ -198,7 +198,7 @@ export default function BuilderWizard({ initialDraft }: BuilderWizardProps) {
  />
  </div>
  <div className="lg:w-1/2 border-l border-[--border]/50 lg:pl-6">
- <ResumePreview data={resumeData} selectedTemplateId={selectedTemplateId} />
+ <LazyResumePreview data={resumeData} selectedTemplateId={selectedTemplateId} />
  </div>
 {currentStep === steps.length - 1 && (
   <div className="mt-8 border-t border-[--border]/30 pt-6 flex flex-col items-center">

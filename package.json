@@ -4,10 +4,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "test:visual": "playwright test e2e/visual.test.ts --project=chromium",
+    "test:accessibility": "vitest run src/**/*.test.{ts,tsx} --environment=jsdom",
+    "test:accessibility:lighthouse": "node scripts/lighthouse.js",
+    "test:storybook": "storybook dev -p 6006",
     "dev": "next dev",
     "add-deps": "npm install pdf-parse mammoth",
     "test": "vitest",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch",
+    "analyze": "ANALYZE=true next build"
   },
   "keywords": [],
   "author": "",
@@ -40,22 +45,21 @@
     "react-dom": "^18.2.0",
     "react-hook-form": "^7.77.0",
     "uuid": "^14.0.0",
-    "zod": "^3.25.76"
+    "zod": "^3.25.76",
+    "react-window": "^1.8.10"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.0",
+    "webpack-bundle-analyzer": "^4.10.2",
+
+        "@testing-library/react": "^15.0.0",
     "@testing-library/jest-dom": "^6.5.0",
-    "@testing-library/react": "^15.0.0",
     "@testing-library/user-event": "^14.5.0",
-    "@types/next-auth": "^3.13.0",
-    "@types/node": "^25.9.1",
-    "@types/react": "^18.2.0",
-    "autoprefixer": "^10.5.0",
-    "dotenv": "^17.4.2",
-    "jsdom": "^29.1.1",
-    "postcss": "^8.5.15",
-    "tailwindcss": "^4.3.0",
-    "typescript": "^6.0.3",
-    "vitest": "^4.1.7"
+    "jest-axe": "^7.0.0",
+    "playwright": "^1.44.0",
+    "@playwright/test": "^1.44.0",
+    "storybook": "^8.0.0",
+    "@storybook/addon-essentials": "^8.0.0",
+    "@storybook/react": "^8.0.0",
+    "lighthouse": "^12.0.0",
+    "chrome-launcher": "^1.1.0"
   }
-}

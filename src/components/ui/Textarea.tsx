@@ -14,6 +14,20 @@ export default function Textarea({
   size = "md",
   ...props
 }: TextareaProps) {
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null);
+
+  // Adjust height to fit content (autosize)
+  const adjustHeight = () => {
+    const el = textareaRef.current;
+    if (el) {
+      el.style.height = 'auto';
+      el.style.height = `${el.scrollHeight}px`;
+    }
+  };
+
+  React.useEffect(() => {
+    adjustHeight();
+  }, [props.value]);
   const sizeClasses = {
     sm: "min-h-[80px] px-3 py-2.5 text-sm",
     md: "min-h-[100px] px-3.5 py-3 text-base",
@@ -32,7 +46,7 @@ export default function Textarea({
           {rightIcon}
         </div>
       )}
-      <textarea
+      <textarea ref={textareaRef} onInput={adjustHeight}
         {...props}
         className={clsx(
           "w-full rounded-xl bg-[--bg-elevated] border border-[--border] text-[--text-primary]",
