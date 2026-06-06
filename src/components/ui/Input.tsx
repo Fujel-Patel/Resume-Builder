@@ -37,7 +37,7 @@ export default function Input({
         className={clsx(
           "w-full rounded-xl bg-[--bg-elevated] border border-[--border] text-[--text-primary]",
           sizeClasses,
-          "focus:ring-2 focus-ring-[--color-primary] focus:border-transparent focus:shadow-[0_0_8px_var(--color-primary)] transition-all duration-200 hover:bg-[--bg-elevated]/90",
+          "focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 focus:border-transparent focus:shadow-[0_0_8px_var(--color-primary)] transition-all duration-200 hover:bg-[--bg-elevated]/90",
           disabled && "bg-[--bg-disabled]/50 text-[--text-disabled]",
           className
         )}

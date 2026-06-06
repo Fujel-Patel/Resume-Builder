@@ -16,12 +16,12 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 function sizeClasses(size: ButtonSize) {
   switch (size) {
     case "sm":
-      return "px-4 py-2.5 text-sm";
+      return "min-h-[44px] px-4 py-2.5 text-sm"
     case "lg":
-      return "px-6 py-3 text-base";
+      return "min-h-[44px] px-6 py-3 text-base"
     case "md":
     default:
-      return "px-6 py-2.5 text-sm";
+      return "min-h-[44px] px-6 py-2.5 text-sm"
   }
 }
 
@@ -84,7 +84,7 @@ export default function Button({
         onClick?.(e);
       }}
       className={clsx(
-        "inline-flex items-center gap-2 justify-center transition-all duration-200 ease-out active:scale-95 focus:outline-none focus:ring-2 focus:ring-[--color-primary] focus:ring-offset-2 focus-ring-offset-background",
+        "inline-flex items-center gap-2 justify-center transition-all duration-200 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2",
         sizeClasses(size),
         variantClasses(variant),
         disabled && "opacity-50 cursor-not-allowed",

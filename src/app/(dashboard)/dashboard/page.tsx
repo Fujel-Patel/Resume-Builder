@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma';
 import ResumeCard from '@/components/dashboard/ResumeCard';
 import StatsBar from '@/components/dashboard/StatsBar';
 import { SparklesIcon, DocumentTextIcon, Squares2X2Icon, MagnifyingGlassIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
+import MetaSetter from '@/components/dashboard/MetaSetter';
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -41,7 +42,9 @@ export default async function DashboardPage() {
   const coverLettersCount = 0; // Placeholder
 
   return (
-    <div className="space-y-6">
+    <>
+      <MetaSetter title="Dashboard" breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Dashboard' }]} />
+      <div className="space-y-6">
       {/* Gradient Hero Banner */}
       <div className="relative bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 opacity-20"></div>
@@ -119,5 +122,6 @@ export default async function DashboardPage() {
         )}
       </section>
     </div>
+    </>
   );
 }

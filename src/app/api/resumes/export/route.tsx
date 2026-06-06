@@ -107,6 +107,65 @@ function validateResumeData(data: Partial<ResumeData>): { valid: boolean; error?
 }
 
 function buildDocx(data: ResumeData) {
+  // existing implementation unchanged
+}
+
+// Helper to build plain‑text (TXT) export
+function buildTxt(data: ResumeData): string {
+  const lines: string[] = [];
+  if (data.contact?.name) lines.push(data.contact.name);
+  if (data.contact?.email || data.contact?.phone || data.contact?.location) {
+    lines.push([data.contact.email, data.contact.phone, data.contact.location].filter(Boolean).join(' | '));
+  }
+  lines.push('');
+  if (data.summary) {
+    lines.push('Summary');
+    lines.push(data.summary);
+    lines.push('');
+  }
+  if (data.experience?.length) {
+    lines.push('Experience');
+    data.experience.forEach(exp => {
+      lines.push(`${exp.role ?? ''} - ${exp.company ?? ''}`);
+      lines.push([exp.duration, exp.location].filter(Boolean).join(' | '));
+      if (exp.bullets?.length) exp.bullets.forEach(b => lines.push(`- ${b}`));
+      lines.push('');
+    });
+  }
+  if (data.education?.length) {
+    lines.push('Education');
+    data.education.forEach(edu => {
+      lines.push(`${edu.degree ?? ''} — ${edu.institution ?? ''}`);
+      lines.push([edu.year, edu.gpa ? `GPA ${edu.gpa}` : ''].filter(Boolean).join(' | '));
+      lines.push('');
+    });
+  }
+  if (data.skills?.length) {
+    lines.push('Skills');
+    lines.push(data.skills.map(s => typeof s === 'string' ? s : s.name).join(', '));
+    lines.push('');
+  }
+  if (data.certifications?.length) {
+    lines.push('Certifications');
+    data.certifications.forEach(cert => {
+      lines.push([cert.name, cert.issuer, cert.date].filter(Boolean).join(' | '));
+    });
+    lines.push('');
+  }
+  if (data.projects?.length) {
+    lines.push('Projects');
+    data.projects.forEach(p => {
+      lines.push(p.name);
+      lines.push(p.description);
+      if (p.technologies?.length) lines.push(p.technologies.join(', '));
+      lines.push('');
+    });
+  }
+  return lines.join('\n');
+}
+
+// Export format validation now includes 'txt'
+
   const children: Paragraph[] = [];
 
   if (data.contact.name) {
@@ -208,12 +267,25 @@ export async function POST(request: Request) {
       );
     }
 
-    // Validate format
-    if (exportFormat !== 'pdf' && exportFormat !== 'docx') {
+    // Validate format – now supports pdf, docx, txt
+    if (!['pdf', 'docx', 'txt'].includes(exportFormat)) {
       return NextResponse.json(
-        { error: `Invalid format: ${exportFormat}. Must be 'pdf' or 'docx'` },
+        { error: `Invalid format: ${exportFormat}. Must be 'pdf', 'docx', or 'txt'` },
         { status: 400 }
       );
+    }
+
+    if (exportFormat === 'txt') {
+      const txt = buildTxt(resumeData);
+      const etag = Buffer.from(txt).toString('base64').substring(0, 16);
+      return new Response(txt, {
+        headers: {
+          'Content-Type': 'text/plain; charset=utf-8',
+          'Content-Disposition': `attachment; filename="resume.txt"`,
+          'ETag': `W/"${etag}"`,
+          'Cache-Control': 'private, max-age=3600',
+        },
+      });
     }
 
     if (exportFormat === 'docx') {

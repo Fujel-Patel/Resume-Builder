@@ -6,6 +6,7 @@ import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui/ToastProvider';
 import FormField from '@/components/ui/FormField';
 import Textarea from '@/components/ui/Textarea';
+import MetaSetter from '@/components/dashboard/MetaSetter';
 
 export default function AtsScorePage() {
   const [resumeText, setResumeText] = useState("");
@@ -54,7 +55,9 @@ export default function AtsScorePage() {
   };
 
   return (
-    <div className="page-container p-6">
+    <>
+      <MetaSetter title="ATS Score Checker" breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'ATS Tools' }, { label: 'Score Checker' }]} />
+      <div className="page-container p-6">
       <h1 className="section-heading text-3xl mb-6">
         ATS Score Checker
       </h1>
@@ -201,5 +204,6 @@ export default function AtsScorePage() {
         </div>
       )}
     </div>
+    </>
   );
 }

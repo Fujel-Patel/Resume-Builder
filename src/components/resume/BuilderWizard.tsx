@@ -45,9 +45,15 @@ export default function BuilderWizard({ initialDraft }: BuilderWizardProps) {
  const [currentStep, setCurrentStep] = useState(0);
  const [draftId, setDraftId] = useState<string>('');
  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('modern-professional');
+  // Template customization – color (hex) and font (name)
+  const [selectedColor, setSelectedColor] = useState<string>(localStorage.getItem('templateColor') || '#000000');
+  const [selectedFont, setSelectedFont] = useState<string>(localStorage.getItem('templateFont') || 'sans-serif');
  const [exporting, setExporting] = useState(false);
  const templates = getAllTemplates();
  const [resumeData, setResumeData] = useState<ResumeData>({ contact: { name: '', email: '' }, experience: [], education: [], skills: [] } as ResumeData);
+  // Undo/Redo stacks
+  const [history, setHistory] = useState<ResumeData[]>([]);
+  const [future, setFuture] = useState<ResumeData[]>([]);
 
  useEffect(() => {
  if (initialDraft) {
@@ -55,6 +61,12 @@ export default function BuilderWizard({ initialDraft }: BuilderWizardProps) {
  setResumeData({ ...(initialDraft.data as ResumeData) });
  }
  }, [initialDraft]);
+
+ // Persist template customization preferences
+ useEffect(() => {
+ localStorage.setItem('templateColor', selectedColor);
+ localStorage.setItem('templateFont', selectedFont);
+ }, [selectedColor, selectedFont]);
 
   // Warn user if they try to leave with unsaved changes
   useEffect(() => {
@@ -74,10 +86,32 @@ export default function BuilderWizard({ initialDraft }: BuilderWizardProps) {
   }, [resumeData]);
 
  const setData = (partial: Partial<ResumeData>) => {
- setResumeData(prev => ({ ...prev, ...partial }));
+   setResumeData(prev => {
+     // push current state to history
+     setHistory(h => [...h, prev]);
+     // clear future on new action
+     setFuture([]);
+     return { ...prev, ...partial };
+   });
  };
 
- const saveStep = async (partial: Partial<ResumeData>) => {
+ const undo = () => {
+    if (history.length === 0) return;
+    const previous = history[history.length - 1];
+    setHistory(h => h.slice(0, -1));
+    setFuture(f => [resumeData, ...f]);
+    setResumeData(previous);
+  };
+
+  const redo = () => {
+    if (future.length === 0) return;
+    const next = future[0];
+    setFuture(f => f.slice(1));
+    setHistory(h => [...h, resumeData]);
+    setResumeData(next);
+  };
+
+  const saveStep = async (partial: Partial<ResumeData>) => {
  setData(partial);
  if (!draftId) return;
  try {
@@ -124,7 +158,13 @@ export default function BuilderWizard({ initialDraft }: BuilderWizardProps) {
  return (
  <ResumeContext.Provider value={{ draftId, data: resumeData, setData, saveStep }}>
  <div className="page-container max-w-6xl mx-auto bg-[--bg-surface]/50 backdrop-blur-sm p-6 rounded-2xl shadow-lg border border-[--border]">
- <Stepper steps={steps.map(s => s.label)} activeStep={currentStep} />
+ <div className="flex items-center justify-between">
+  <Stepper steps={steps.map(s => s.label)} activeStep={currentStep} />
+  <div className="space-x-2">
+    <button onClick={undo} disabled={history.length===0} className="btn-secondary btn-sm">Undo</button>
+    <button onClick={redo} disabled={future.length===0} className="btn-secondary btn-sm">Redo</button>
+  </div>
+</div>
  <div className="mt-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
  <div className="flex-1">
  <label className="block text-sm font-medium text-[--text-secondary] mb-2">

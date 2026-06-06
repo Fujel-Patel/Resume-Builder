@@ -1,4 +1,5 @@
 import BuilderWizard from '@/components/resume/BuilderWizard';
+import MetaSetter from '@/components/dashboard/MetaSetter';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';
 
@@ -28,8 +29,11 @@ export default async function BuilderPage({ searchParams }: { searchParams?: { [
   }
 
   return (
-    <div className="page-container p-6">
+    <>
+      <MetaSetter title="Resume Builder" breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Resume' }, { label: 'Builder' }]} />
+      <div className="page-container p-6">
       <BuilderWizard initialDraft={initialDraft} />
     </div>
+    </>
   );
 }

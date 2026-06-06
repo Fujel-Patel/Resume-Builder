@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
+import { motion } from 'framer-motion';
 
 interface Resume {
   id: string;
@@ -11,7 +12,12 @@ interface Resume {
 
 export default function ResumeCard({ resume }: { resume: Resume }) {
   return (
-    <div className="relative bg-[--bg-surface] border border-[--border] rounded-2xl p-5 flex flex-col h-72 hover:scale-[1.02] hover:shadow-md transition-all duration-200">
+    <motion.div
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      className="relative bg-[--bg-surface] border border-[--border] rounded-2xl p-5 flex flex-col h-72 hover:scale-[1.02] hover:shadow-md transition-all duration-200"
+    >
       {/* Template color preview strip */}
       <div className="absolute left-0 top-0 bottom-0 w-4 bg-gradient-to-r from-indigo-500 to-violet-600 rounded-l-2xl"></div>
 
@@ -40,6 +46,6 @@ export default function ResumeCard({ resume }: { resume: Resume }) {
           </Button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

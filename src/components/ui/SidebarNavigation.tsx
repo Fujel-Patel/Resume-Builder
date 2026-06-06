@@ -63,7 +63,7 @@ export default function SidebarNavigation() {
       {!isCollapsed && (
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="fixed left-4 top-4 z-50 p-2 rounded-full hover:bg-[--bg-hover] transition-colors duration-200 lg:hidden"
+          className="fixed left-4 top-4 z-50 p-2 rounded-full hover:bg-[--bg-hover] transition-colors duration-200 lg:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
           aria-label="Toggle sidebar"
         >
           <span className="sr-only">Open sidebar</span>
@@ -93,7 +93,7 @@ export default function SidebarNavigation() {
                           key={item.href}
                           href={item.href}
                           className={clsx(
-                            'flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                            'flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2',
                             isActive
                               ? 'bg-[--bg-hover] text-[--text-primary]'
                               : 'text-[--sidebar-text]/60 hover:text-[--text-primary] hover:bg-[--bg-hover]/50'
@@ -132,7 +132,7 @@ export default function SidebarNavigation() {
               </h3>
               <button
                 onClick={() => setIsCollapsed(false)}
-                className="p-2 rounded-full hover:bg-[--bg-hover] transition-colors duration-200"
+                className="p-2 rounded-full hover:bg-[--bg-hover] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
                 aria-label="Close sidebar"
               >
                 <span className="sr-only">Close sidebar</span>
@@ -172,7 +172,7 @@ export default function SidebarNavigation() {
                             key={item.href}
                             href={item.href}
                             className={clsx(
-                              'flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                              'flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2',
                               isActive
                                 ? 'bg-[--bg-hover] text-[--text-primary]'
                                 : 'text-[--sidebar-text]/60 hover:text-[--text-primary] hover:bg-[--bg-hover]/50'

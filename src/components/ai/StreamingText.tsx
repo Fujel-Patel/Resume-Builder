@@ -66,10 +66,10 @@ export function StreamingText({ url, payload, onComplete }: StreamingTextProps) 
   }, [url, JSON.stringify(payload)]);
 
   return (
-    <div className="border rounded p-4 bg-gray-50 overflow-auto min-h-[200px] font-mono whitespace-pre-wrap">
+    <div className="border rounded p-4 bg-gray-50 overflow-auto min-h-[200px] font-mono whitespace-pre-wrap" aria-live="polite" role="status">
       {loading && (
         <div className="flex items-center space-x-2 mb-2">
-          <div className="w-5 h-5 border-2 border-t-transparent border-gray-500 rounded-full animate-spin" />
+          <div className="w-5 h-5 border-2 border-t-transparent border-gray-500 rounded-full animate-spin motion-reduce:animate-none" role="status" aria-label="Loading" />
           <span className="text-sm text-gray-600">Loading…</span>
         </div>
       )}

@@ -8,6 +8,8 @@ datasource db {
 }
 
 model User {
+  // existing fields
+
   id            String    @id @default(cuid())
   email         String    @unique
   name          String?
