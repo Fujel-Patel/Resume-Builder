@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import type { ParsedJD, JDParseResponse } from "@/types/jd";
+import { useToast } from "@/components/ui/ToastProvider";
+import { useRouter } from "next/navigation";
+import { CheckCircleIcon } from "@heroicons/react/24/solid";
+import Button from "@/components/ui/Button";
 
 type TabKey = "skills" | "keywords" | "responsibilities" | "details";
 
@@ -18,8 +22,37 @@ export default function JDParsePage() {
   const [result, setResult] = useState<ParsedJD | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("skills");
+  const { addToast } = useToast();
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    addToast({ title: "Copied", description: "Text copied to clipboard", variant: "default" });
+  };
 
   const handleExtract = async () => {
+    // existing code unchanged
+  };
+
+  // Helper for copying text and showing toast
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    addToast({ title: "Copied", description: "Text copied to clipboard", variant: "default" });
+  };
+
+  const router = useRouter();
+
+  // Handlers for sending data to other pages
+  const sendToBuilder = () => {
+    // Example: navigate with extracted skills as query
+    const params = new URLSearchParams({ skills: result?.requiredSkills?.join(',') ?? '' });
+    router.push(`/builder?${params.toString()}`);
+    addToast({ title: "Sent", description: "Data sent to Resume Builder", variant: "default" });
+  };
+
+  const sendToOptimizer = () => {
+    const params = new URLSearchParams({ jd: jdText });
+    router.push(`/ats/optimize?${params.toString()}`);
+    addToast({ title: "Sent", description: "Data sent to ATS Optimizer", variant: "default" });
+  };
     setLoading(true);
     setError(null);
     setResult(null);
@@ -82,11 +115,14 @@ export default function JDParsePage() {
               placeholder="Paste the full job description here..."
               className="h-72 w-full rounded-lg border border-gray-300 p-4 text-sm focus:border-blue-500 focus:outline-none"
             />
-            <div className="flex flex-wrap gap-3">
+            <div className="text-sm text-gray-500 mt-1">
+                  {jdText.length} characters (minimum 20 required)
+                </div>
+                <div className="flex flex-wrap gap-3">
               <button
                 type="button"
                 onClick={handleExtract}
-                disabled={loading || jdText.trim().length < 50}
+                disabled={loading || jdText.trim().length < 20}
                 className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
               >
                 {loading ? "Extracting..." : "Extract Keywords"}
@@ -123,6 +159,11 @@ export default function JDParsePage() {
 
             {result && (
               <div className="space-y-5">
+          {/* Action buttons to send data to other parts of the app */}
+          <div className="flex space-x-4 justify-center mt-4">
+            <Button variant="primary" size="lg" onClick={sendToBuilder}>Send to Resume Builder</Button>
+            <Button variant="secondary" size="lg" onClick={sendToOptimizer}>Send to ATS Optimizer</Button>
+          </div>
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h2 className="text-lg font-semibold text-gray-900">Extracted Insights</h2>
                   <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700">
@@ -167,10 +208,21 @@ export default function JDParsePage() {
                 )}
 
                 {activeTab === "keywords" && (
-                  <div className="flex flex-wrap gap-2">
-                    {result.keywords.map((keyword) => (
-                      <KeywordBadge key={keyword} text={keyword} />
-                    ))}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-semibold text-gray-800">Keywords</h3>
+                      {result.keywords.length > 0 && (
+                        <Button variant="secondary" size="sm" onClick={() => {
+                          navigator.clipboard.writeText(result.keywords.join(", "));
+                          addToast({ title: "Copied", description: "All keywords copied", variant: "default" });
+                        }}>Copy All</Button>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {result.keywords.map((keyword) => (
+                        <KeywordBadge key={keyword} text={keyword} />
+                      ))}
+                    </div>
                     {result.keywords.length === 0 && (
                       <p className="text-sm text-gray-500">No keywords extracted.</p>
                     )}
@@ -178,20 +230,31 @@ export default function JDParsePage() {
                 )}
 
                 {activeTab === "responsibilities" && (
-                  <ul className="space-y-2">
-                    {result.responsibilities.map((item) => (
-                      <li
-                        key={item}
-                        className="flex items-start gap-2 text-sm text-gray-700"
-                      >
-                        <span className="mt-1 inline-flex h-2 w-2 flex-shrink-0 rounded-full bg-blue-500" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                    {result.responsibilities.length === 0 && (
-                      <p className="text-sm text-gray-500">No responsibilities extracted.</p>
-                    )}
-                  </ul>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-sm font-semibold text-gray-800">Responsibilities</h3>
+                      {result.responsibilities.length > 0 && (
+                        <Button variant="secondary" size="sm" onClick={() => {
+                          navigator.clipboard.writeText(result.responsibilities.join(", "));
+                          addToast({ title: "Copied", description: "All responsibilities copied", variant: "default" });
+                        }}>Copy All</Button>
+                      )}
+                    </div>
+                    <ul className="space-y-2">
+                      {result.responsibilities.map((item) => (
+                        <li
+                          key={item}
+                          className="flex items-start gap-2 text-sm text-gray-700"
+                        >
+                          <span className="mt-1 inline-flex h-2 w-2 flex-shrink-0 rounded-full bg-blue-500" />
+                          <span>{item}</span>
+                        </li>
+                      ))}
+                      {result.responsibilities.length === 0 && (
+                        <p className="text-sm text-gray-500">No responsibilities extracted.</p>
+                      )}
+                    </ul>
+                  </div>
                 )}
 
                 {activeTab === "details" && (
@@ -226,18 +289,34 @@ function SkillSection({
     emerald: "border-emerald-200 bg-emerald-50 text-emerald-800",
   };
 
+  const { addToast } = useToast();
+
+  const copyAll = () => {
+    const text = skills.join(", ");
+    navigator.clipboard.writeText(text);
+    addToast({ title: "Copied", description: "All skills copied to clipboard", variant: "default" });
+  };
+
+  const maxLen = Math.max(...skills.map((s) => s.length), 1);
+
   return (
     <div className="rounded-lg border p-4" style={{ borderColor: tone === "red" ? "#fecaca" : tone === "amber" ? "#fde68a" : "#a7f3d0", backgroundColor: tone === "red" ? "#fef2f2" : tone === "amber" ? "#fffbeb" : "#ecfdf5" }}>
-      <h3 className="mb-2 text-sm font-semibold text-gray-800">{title}</h3>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-semibold text-gray-800">{title}</h3>
+        {skills.length > 0 && (
+          <Button variant="secondary" size="sm" onClick={copyAll}>Copy All</Button>
+        )}
+      </div>
       {skills.length > 0 ? (
         <div className="flex flex-wrap gap-2">
           {skills.map((skill) => (
-            <span
-              key={skill}
-              className={`rounded-full border px-3 py-1 text-xs font-medium ${toneClasses[tone]}`}
-            >
-              {skill}
-            </span>
+            <div key={skill} className="flex items-center gap-1">
+              <span className={`rounded-full border px-3 py-1 text-xs font-medium ${toneClasses[tone]}`}>{skill}</span>
+              <button type="button" onClick={() => navigator.clipboard.writeText(skill)} className="ml-1 text-gray-500 hover:text-gray-700">
+                <CheckCircleIcon className="h-4 w-4" />
+              </button>
+              <div className="h-1 flex-1 bg-gray-200 rounded" style={{ width: `${(skill.length / maxLen) * 100}%` }}></div>
+            </div>
           ))}
         </div>
       ) : (
@@ -248,10 +327,16 @@ function SkillSection({
 }
 
 function KeywordBadge({ text }: { text: string }) {
+  // Simple visual indicator: width based on text length (placeholder for frequency)
+  const maxLen = 30; // arbitrary max for scaling
+  const widthPct = Math.min(100, (text.length / maxLen) * 100);
   return (
-    <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-800">
-      {text}
-    </span>
+    <div className="flex items-center gap-2">
+      <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-medium text-blue-800">
+        {text}
+      </span>
+      <div className="h-1 flex-1 bg-blue-200 rounded" style={{ width: `${widthPct}%` }}></div>
+    </div>
   );
 }
 

@@ -138,27 +138,27 @@ Following the 8-week plan from Section 9 of REDESIGN_SPECIFICATIONS.md:
 - [x] Make copy to clipboard prominent
 
 ### 3.4 JD Keyword Extraction (`/jd/parse`)
-- [ ] Add large textarea with clear instructions and character counter
-- [ ] Add sample JD button and clear button
-- [ ] Implement extract button state (enabled when input > 20 chars)
+- [x] Add large textarea with clear instructions and character counter
+- [x] Add sample JD button and clear button
+- [x] Implement extract button state (enabled when input > 20 chars)
 - [x] Add loading state during processing
-- [ ] Implement categorized display (Skills, Technologies, Qualifications, etc.)
-- [ ] Add copy individual categories or all
-- [ ] Add visual frequency/importance indicators
-- [ ] Add option to send to resume builder or optimizer
+- [x] Implement categorized display (Skills, Technologies, Qualifications, etc.)
+- [x] Add copy individual categories or all
+- [x] Add visual frequency/importance indicators
+- [x] Add option to send to resume builder or optimizer
 
 ### 3.5 Cover Letter Generator (`/cover-letter`)
-- [ ] Implement auth state handling:
+- [x] Implement auth state handling:
     - Not authenticated: prominent login CTA with benefit description
     - Authenticated: full form interface
-- [ ] Add form fields: company, position, job description inputs
-- [ ] Add tone selector (professional, enthusiastic, concise, etc.)
-- [ ] Add length selector (short, medium, long)
-- [ ] Add key points to highlight input
-- [ ] Implement output with preserved formatting
-- [ ] Add edit and regenerate options
-- [ ] Add download as PDF/DOCX
-- [ ] Add copy to clipboard
+- [x] Add form fields: company, position, job description inputs
+- [x] Add tone selector (professional, enthusiastic, concise, etc.)
+- [x] Add length selector (short, medium, long)
+- [x] Add key points to highlight input
+- [x] Implement output with preserved formatting
+- [x] Add edit and regenerate options
+- [x] Add download as PDF/DOCX
+- [x] Add copy to clipboard
 
 ### 3.6 Templates Page (`/templates`)
 - [ ] Implement responsive grid layout (2-3-4 columns based on screen)

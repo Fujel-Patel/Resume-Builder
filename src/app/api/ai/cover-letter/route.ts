@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     const rateLimitResponse = await enforceAIRateLimit(request);
     if (rateLimitResponse) return rateLimitResponse;
 
-    const { resumeText, jobDescription } = await request.json();
+    const { resumeText, jobDescription, company, position, tone, length, keyPoints } = await request.json();
 
     if (!resumeText || !jobDescription) {
       return NextResponse.json({ error: 'Resume text and job description are required' }, { status: 400 });
@@ -18,10 +18,17 @@ export async function POST(request: Request) {
 
     const model = getModel(getDefaultProvider());
 
-    const prompt = `You are an expert cover letter writer. Write a professional, tailored cover letter based on the resume and job description provided. The cover letter should be compelling, highlight relevant experience, and match the tone of the job description. Return ONLY the cover letter text, no additional commentary.
+    const prompt = `You are an expert cover letter writer. Write a professional, tailored cover letter based on the provided information. The cover letter should be compelling, highlight relevant experience, and match the specified tone and length. Return ONLY the cover letter text, no additional commentary.
 
 Resume:
 ${resumeText}
+
+Company: ${company}
+Position: ${position}
+Tone: ${tone}
+Length: ${length}
+Key Points:
+${keyPoints}
 
 Job Description:
 ${jobDescription}`;

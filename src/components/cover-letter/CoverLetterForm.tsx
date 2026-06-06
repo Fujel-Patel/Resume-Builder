@@ -3,6 +3,9 @@
 import React, { useState } from "react";
 import { createClient as createSupabaseClient } from "@/utils/supabase/client";
 import Button from "@/components/ui/Button";
+import { useToast } from "@/components/ui/ToastProvider";
+import { useRouter } from "next/navigation";
+import { CheckCircleIcon } from "@heroicons/react/24/solid";
 
 /**
  * Simple multi‑step form (single step for now) to generate a cover letter.
@@ -11,6 +14,11 @@ import Button from "@/components/ui/Button";
  */
 export default function CoverLetterForm() {
   const [resumeText, setResumeText] = useState("");
+  const [company, setCompany] = useState("");
+  const [position, setPosition] = useState("");
+  const [tone, setTone] = useState("Professional");
+  const [length, setLength] = useState("Medium");
+  const [keyPoints, setKeyPoints] = useState("");
   const [jobDescription, setJobDescription] = useState("");
   const [coverLetter, setCoverLetter] = useState("");
   const [loading, setLoading] = useState(false);
@@ -38,7 +46,7 @@ export default function CoverLetterForm() {
       const res = await fetch("/api/ai/cover-letter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resumeText, jobDescription }),
+        body: JSON.stringify({ resumeText, jobDescription, company, position, tone, length, keyPoints }),
       });
 
       if (!res.ok) {
@@ -65,8 +73,50 @@ export default function CoverLetterForm() {
     }
   };
 
+  // Helper actions
+  const handleEdit = () => setCoverLetter("");
+
+  const handleRegenerate = async () => {
+    const fakeEvent = { preventDefault: () => {} } as unknown as React.FormEvent;
+    await handleSubmit(fakeEvent);
+  };
+
+  const handleCopy = async () => {
+    if (!coverLetter) return;
+    try {
+      await navigator.clipboard.writeText(coverLetter);
+    } catch (e) {
+      console.error('Copy failed', e);
+    }
+  };
+
+  const handleDownloadPDF = () => {
+    const blob = new Blob([coverLetter], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cover-letter.pdf';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadDOCX = () => {
+    const blob = new Blob([coverLetter], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cover-letter.docx';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (!user) {
-    return <p className="text-red-600">Please log in to use the cover‑letter generator.</p>;
+    return (
+      <div className="text-center py-12">
+        <p className="text-gray-700 mb-4">Generate a professional cover letter instantly after logging in. Your credentials are stored securely and your AI‑generated letters are private.</p>
+        <a href="/login" className="inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Log In / Sign Up</a>
+      </div>
+    );
   }
 
   return (
@@ -93,6 +143,64 @@ export default function CoverLetterForm() {
             className="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
           />
         </div>
+        {/* New fields */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Company</label>
+          <input
+            type="text"
+            value={company}
+            onChange={e => setCompany(e.target.value)}
+            className="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            placeholder="Acme Corp"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Position</label>
+          <input
+            type="text"
+            value={position}
+            onChange={e => setPosition(e.target.value)}
+            className="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            placeholder="Senior Engineer"
+          />
+        </div>
+        <div className="flex space-x-4">
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tone</label>
+            <select
+              value={tone}
+              onChange={e => setTone(e.target.value)}
+              className="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            >
+              <option>Professional</option>
+              <option>Enthusiastic</option>
+              <option>Concise</option>
+              <option>Friendly</option>
+            </select>
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Length</label>
+            <select
+              value={length}
+              onChange={e => setLength(e.target.value)}
+              className="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            >
+              <option>Short</option>
+              <option>Medium</option>
+              <option>Long</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Key Points / Highlights</label>
+          <textarea
+            value={keyPoints}
+            onChange={e => setKeyPoints(e.target.value)}
+            rows={3}
+            className="mt-1 block w-full rounded border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+            placeholder="e.g., led a team of 5, increased sales by 20%"
+          />
+        </div>
         {error && <p className="text-red-600">{error}</p>}
         <Button
           type="submit"
@@ -107,6 +215,13 @@ export default function CoverLetterForm() {
         <div className="mt-8">
           <h3 className="text-xl font-semibold mb-2">Generated Cover Letter</h3>
           <pre className="whitespace-pre-wrap bg-gray-50 p-4 rounded border">{coverLetter}</pre>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Button variant="secondary" size="sm" onClick={handleEdit}>Edit</Button>
+              <Button variant="secondary" size="sm" onClick={handleRegenerate}>Regenerate</Button>
+              <Button variant="secondary" size="sm" onClick={handleCopy}>Copy</Button>
+              <Button variant="secondary" size="sm" onClick={handleDownloadPDF}>Download PDF</Button>
+              <Button variant="secondary" size="sm" onClick={handleDownloadDOCX}>Download DOCX</Button>
+            </div>
         </div>
       )}
     </div>
