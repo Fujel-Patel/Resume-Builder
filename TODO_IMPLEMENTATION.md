@@ -161,30 +161,30 @@ Following the 8-week plan from Section 9 of REDESIGN_SPECIFICATIONS.md:
 - [x] Add copy to clipboard
 
 ### 3.6 Templates Page (`/templates`)
-- [ ] Implement responsive grid layout (2-3-4 columns based on screen)
-- [ ] Create template cards with:
+- [x] Implement responsive grid layout (2-3-4 columns based on screen)
+- [x] Create template cards with:
     - Visual thumbnail
     - Template name and brief description
     - Tags (Modern, Creative, Executive, etc.)
     - Select/Preview button
-- [ ] Add filters by industry, experience level, style
-- [ ] Add sorting by popularity, date, name
-- [ ] Implement preview modal with:
+- [x] Add filters by industry, experience level, style
+- [x] Add sorting by popularity, date, name
+- [x] Implement preview modal with:
     - Full template preview with sample data
     - Customize colors/fonts (if supported)
     - Select for use in builder
 
 ### 3.7 AI Demo (`/ai-demo`)
-- [ ] Add prompt examples with one-click load
-- [ ] Add adjustable parameters (temperature, length, etc.)
-- [ ] Add clear indication of AI model being used
-- [ ] Enhance streaming visualization with speed indicator
-- [ ] Add copy, regenerate, and share options
-- [ ] Implement error handling with retry mechanism
+- [x] Add prompt examples with one-click load
+- [x] Add adjustable parameters (temperature, length, etc.)
+- [x] Add clear indication of AI model being used
+- [x] Enhance streaming visualization with speed indicator
+- [x] Add copy, regenerate, and share options
+- [x] Implement error handling with retry mechanism
 
 ### 3.8 Settings Page (New)
-- [ ] Create `/dashboard/utilities/settings` route
-- [ ] Implement sections:
+- [x] Create `/dashboard/utilities/settings` route
+- [x] Implement sections:
     - Account: profile information, email notifications
     - Appearance: theme selection, density, font size
     - Privacy: data export, account deletion
