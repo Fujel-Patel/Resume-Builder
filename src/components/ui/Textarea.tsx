@@ -52,7 +52,7 @@ export default function Textarea({
           "w-full rounded-xl bg-[--bg-elevated] border border-[--border] text-[--text-primary]",
           sizeClasses,
           "focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 focus:border-transparent focus:shadow-[0_0_8px_var(--color-primary)] resize-none transition-all duration-200 hover:bg-[--bg-elevated]/90",
-          disabled && "bg-[--bg-disabled]/50 text-[--text-disabled]",
+          props.disabled && "bg-[--bg-disabled]/50 text-[--text-disabled]",
           className
         )}
       />

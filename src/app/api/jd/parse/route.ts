@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { generateText } from "ai";
 import { getModel, getDefaultProvider } from "@/lib/ai";
 import { buildJDExtractionPrompt } from "@/lib/prompts/jd-extraction";
 import { ParsedJDSchema, type ParsedJDOutput } from "@/lib/prompts/jd-extraction";
@@ -37,7 +38,8 @@ export async function POST(request: Request) {
 
     let rawText: string;
     try {
-      const result = await model.generateText({
+      const result = await generateText({
+        model,
         prompt,
         temperature: 0.2,
         maxOutputTokens: 2048,

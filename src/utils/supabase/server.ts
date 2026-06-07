@@ -29,7 +29,6 @@ export const createClient = async (cookieStore: CookieStore | Promise<CookieStor
       setAll(cookiesToSet) {
         // In Server Components we can set cookies via the Next.js cookies API.
         cookiesToSet.forEach(({ name, value, options }) => {
-          // @ts-ignore – Next.js cookies API typings may be incomplete
           resolvedCookieStore.set(name, value, options);
         });
       },

@@ -1,6 +1,7 @@
 // src/components/resume/LazyResumePreview.tsx
 import React, { Suspense } from 'react';
 import dynamic from 'next/dynamic';
+import type { ComponentType } from 'react';
 import type { ResumeData } from '@/types/resume';
 
 /**
@@ -12,53 +13,45 @@ interface Props {
   selectedTemplateId?: string;
 }
 
-function loadTemplateComponent(id: string) {
-  switch (id) {
-    case 'modern-professional':
-      return dynamic(() => import('@/components/templates/ModernProfessionalTemplate'));
-    case 'classic-conservative':
-      return dynamic(() => import('@/components/templates/ClassicConservativeTemplate'));
-    case 'minimal-clean':
-      return dynamic(() => import('@/components/templates/MinimalCleanTemplate'));
-    case 'creative-bold':
-      return dynamic(() => import('@/components/templates/CreativeBoldTemplate'));
-    case 'executive-senior':
-      return dynamic(() => import('@/components/templates/ExecutiveSeniorTemplate'));
-    case 'technical-developer':
-      return dynamic(() => import('@/components/templates/TechnicalDeveloperTemplate'));
-    case 'academic-scholar':
-      return dynamic(() => import('@/components/templates/AcademicScholarTemplate'));
-    case 'fresh-graduate':
-      return dynamic(() => import('@/components/templates/FreshGraduateTemplate'));
-    default:
-      return null;
-  }
-}
+type TemplateComponent = ComponentType<{ data: ResumeData }>;
+
+// Dynamic components are created once at module scope (never during render).
+const DefaultPreview = dynamic(() => import('./ResumePreviewDefault'));
+
+const TEMPLATE_COMPONENTS: Record<string, TemplateComponent> = {
+  'modern-professional': dynamic(() =>
+    import('@/components/templates/ModernProfessionalTemplate').then((m) => m.ModernProfessionalTemplate)
+  ),
+  'classic-conservative': dynamic(() =>
+    import('@/components/templates/ClassicConservativeTemplate').then((m) => m.ClassicConservativeTemplate)
+  ),
+  'minimal-clean': dynamic(() =>
+    import('@/components/templates/MinimalCleanTemplate').then((m) => m.MinimalCleanTemplate)
+  ),
+  'creative-bold': dynamic(() =>
+    import('@/components/templates/CreativeBoldTemplate').then((m) => m.CreativeBoldTemplate)
+  ),
+  'executive-senior': dynamic(() =>
+    import('@/components/templates/ExecutiveSeniorTemplate').then((m) => m.ExecutiveSeniorTemplate)
+  ),
+  'technical-developer': dynamic(() =>
+    import('@/components/templates/TechnicalDeveloperTemplate').then((m) => m.TechnicalDeveloperTemplate)
+  ),
+  'academic-scholar': dynamic(() =>
+    import('@/components/templates/AcademicScholarTemplate').then((m) => m.AcademicScholarTemplate)
+  ),
+  'fresh-graduate': dynamic(() =>
+    import('@/components/templates/FreshGraduateTemplate').then((m) => m.FreshGraduateTemplate)
+  ),
+};
 
 export default function LazyResumePreview({ data, selectedTemplateId }: Props) {
-  if (!selectedTemplateId) {
-    // No template selected – use default static preview (loads immediately)
-    const Default = dynamic(() => import('./ResumePreviewDefault'));
-    return (
-      <Suspense fallback={<div>Loading preview...</div>}>
-        <Default data={data} />
-      </Suspense>
-    );
-  }
-
-  const Component = loadTemplateComponent(selectedTemplateId);
-  if (!Component) {
-    const Default = dynamic(() => import('./ResumePreviewDefault'));
-    return (
-      <Suspense fallback={<div>Loading preview...</div>}>
-        <Default data={data} />
-      </Suspense>
-    );
-  }
+  const Component = selectedTemplateId ? TEMPLATE_COMPONENTS[selectedTemplateId] : undefined;
+  const Resolved: TemplateComponent = Component ?? DefaultPreview;
 
   return (
     <Suspense fallback={<div>Loading preview...</div>}>
-      <Component data={data} />
+      <Resolved data={data} />
     </Suspense>
   );
 }

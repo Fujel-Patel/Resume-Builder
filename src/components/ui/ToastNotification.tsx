@@ -1,6 +1,8 @@
+"use client";
+
 import React, { useEffect, useRef, useState } from 'react';
 
-export type ToastVariant = 'success' | 'error' | 'warning' | 'info';
+export type ToastVariant = 'success' | 'error' | 'warning' | 'info' | 'default';
 
 export interface ToastAction {
   /** Text shown on the button */
@@ -12,8 +14,12 @@ export interface ToastAction {
 export interface ToastProps {
   /** Unique identifier (optional, used by providers) */
   id?: string | number;
-  /** Message to display */
-  message: string;
+  /** Optional bold title displayed above the message */
+  title?: string;
+  /** Message to display (alias: description) */
+  message?: string;
+  /** Alias for message */
+  description?: string;
   /** Visual variant */
   variant?: ToastVariant;
   /** Auto‑dismiss after this many milliseconds; defaults to 4000ms. Ignored for "error" variant unless explicitly set. */
@@ -37,12 +43,15 @@ export interface ToastProps {
  *  - ARIA live region support for screen‑readers.
  */
 export const ToastNotification: React.FC<ToastProps> = ({
+  title,
   message,
+  description,
   variant = 'info',
   duration = 4000,
   action,
   onClose,
 }) => {
+  const body = message ?? description ?? '';
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const [hovered, setHovered] = useState(false);
 
@@ -78,6 +87,7 @@ export const ToastNotification: React.FC<ToastProps> = ({
     error: 'bg-red-600 text-white',
     warning: 'bg-yellow-400 text-black',
     info: 'bg-blue-600 text-white',
+    default: 'bg-gray-800 text-white',
   };
 
   const ariaLive = variant === 'error' ? 'assertive' : 'polite';
@@ -91,7 +101,10 @@ export const ToastNotification: React.FC<ToastProps> = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <span className="flex-1">{message}</span>
+      <div className="flex-1">
+        {title && <div className="font-semibold">{title}</div>}
+        {body && <div>{body}</div>}
+      </div>
       {action && (
         <button
           type="button"

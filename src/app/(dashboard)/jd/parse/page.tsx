@@ -23,26 +23,14 @@ export default function JDParsePage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabKey>("skills");
   const { addToast } = useToast();
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    addToast({ title: "Copied", description: "Text copied to clipboard", variant: "default" });
-  };
-
-  const handleExtract = async () => {
-    // existing code unchanged
-  };
-
-  // Helper for copying text and showing toast
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    addToast({ title: "Copied", description: "Text copied to clipboard", variant: "default" });
-  };
-
   const router = useRouter();
 
-  // Handlers for sending data to other pages
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    addToast({ title: "Copied", description: "Text copied to clipboard", variant: "default" });
+  };
+
   const sendToBuilder = () => {
-    // Example: navigate with extracted skills as query
     const params = new URLSearchParams({ skills: result?.requiredSkills?.join(',') ?? '' });
     router.push(`/builder?${params.toString()}`);
     addToast({ title: "Sent", description: "Data sent to Resume Builder", variant: "default" });
@@ -53,6 +41,8 @@ export default function JDParsePage() {
     router.push(`/ats/optimize?${params.toString()}`);
     addToast({ title: "Sent", description: "Data sent to ATS Optimizer", variant: "default" });
   };
+
+  const handleExtract = async () => {
     setLoading(true);
     setError(null);
     setResult(null);

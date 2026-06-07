@@ -1,15 +1,15 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { getAllTemplates } from "@/components/templates";
+import { getAllTemplates, type TemplateRegistryItem } from "@/components/templates";
 import LazyTemplatePreview from "@/components/templates/LazyTemplatePreview";
 import TemplateCard from "@/components/templates/TemplateCard";
 import Button from "@/components/ui/Button";
 import { useToast } from "@/components/ui/ToastProvider";
 
 // Helper to collect all unique tags from the registry
-function collectTags(templates) {
-  const tagSet = new Set();
+function collectTags(templates: TemplateRegistryItem[]): string[] {
+  const tagSet = new Set<string>();
   templates.forEach(t => t.tags.forEach(tag => tagSet.add(tag)));
   return Array.from(tagSet);
 }
@@ -20,7 +20,7 @@ export default function TemplatesPage() {
 
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortKey, setSortKey] = useState<string>("name");
-  const [previewTemplate, setPreviewTemplate] = useState<any>(null);
+  const [previewTemplate, setPreviewTemplate] = useState<TemplateRegistryItem | null>(null);
   const { addToast } = useToast();
 
   const filteredTemplates = useMemo(() => {
@@ -41,12 +41,12 @@ export default function TemplatesPage() {
     );
   };
 
-  const handleSelect = (template) => {
+  const handleSelect = (template: TemplateRegistryItem) => {
     addToast({ title: "Template Selected", description: `${template.name} chosen for builder`, variant: "default" });
     // In a full implementation, this would store the selection in user context.
   };
 
-  const handlePreview = (template) => {
+  const handlePreview = (template: TemplateRegistryItem) => {
     setPreviewTemplate(template);
   };
 

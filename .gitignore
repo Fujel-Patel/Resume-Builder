@@ -94,3 +94,7 @@ Thumbs.db
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# Local debugging artifacts (screenshots, captured network responses)
+screenshot-*.png
+*.network-response

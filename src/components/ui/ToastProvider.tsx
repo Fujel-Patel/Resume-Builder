@@ -1,3 +1,5 @@
+"use client";
+
 import React, { createContext, useContext, useCallback, useState } from 'react';
 import { ToastNotification, ToastProps } from './ToastNotification';
 import { ToastContainer } from './ToastNotification';

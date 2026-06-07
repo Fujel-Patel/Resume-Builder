@@ -41,7 +41,7 @@ function validateResumeDataForAI(data: Partial<ResumeData>): { valid: boolean; e
     }
 
     for (let i = 0; i < data.skills.length; i++) {
-      const skill = data.skills[i];
+      const skill: unknown = data.skills[i];
       if (skill && typeof skill === 'object' && 'name' in skill && typeof skill.name === 'string' && skill.name.length > VALIDATION_LIMITS.MAX_STRING_LENGTH) {
         return { valid: false, error: `Skill ${i}.name exceeds maximum length` };
       }
@@ -217,7 +217,7 @@ export async function POST(request: Request) {
         error: 'Failed to generate resume',
         details: error instanceof Error ? error.message : String(error),
         // Include stack trace in development only
-        ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
+        ...(error instanceof Error && { stack: error.stack })
       }, { status: 500 });
     }
 
@@ -242,7 +242,7 @@ function buildPrompt(data: any): string {
     ? `Experience:\n${experience.map((exp: any) => `- ${exp.role ?? exp.title} at ${exp.company} (${exp.startDate ?? exp.duration ?? 'N/A'} - ${exp.endDate ?? 'Present'})\n${exp.description ?? exp.bullets?.join('\n') ?? ''}`).join('\n')}`
     : '';
   const educationSection = education?.length
-    ? `Education:\n${education.map((edu: any) => `- ${edu.degree} at ${edu.institution} (${edu.year ?? ''}${edu.gpa ? `, GPA ${edu.gpa}` : '')`).join('\n')}`
+    ? `Education:\n${education.map((edu: any) => `- ${edu.degree} at ${edu.institution} (${edu.year ?? ''}${edu.gpa ? `, GPA ${edu.gpa}` : ''})`).join('\n')}`
     : '';
 
   return `You are an expert resume writer. Produce a polished, ATS-friendly resume based on the following information. Return ONLY the final resume text, no extra commentary.

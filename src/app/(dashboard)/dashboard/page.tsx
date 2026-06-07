@@ -4,7 +4,7 @@ import { prisma } from '@/lib/prisma';
 import VirtualizedResumeList from '@/components/dashboard/VirtualizedResumeList';
 import dynamic from 'next/dynamic';
 const StatsBar = dynamic(() => import('@/components/dashboard/StatsBar'));
-import { SparklesIcon, DocumentTextIcon, Squares2X2Icon, MagnifyingGlassIcon, ChatBubbleLeftRightIcon } from '@heroicons/react/24/outline';
+import { SparklesIcon } from '@heroicons/react/24/outline';
 import ResumeCard from '@/components/dashboard/ResumeCard';
 import MetaSetter from '@/components/dashboard/MetaSetter';
 
@@ -78,10 +78,10 @@ export default async function DashboardPage() {
       {/* Stats Bar */}
       <StatsBar
         stats={[
-          { label: 'Resumes', count: resumes.length, icon: DocumentTextIcon, trend: null },
-          { label: 'Templates', count: templatesCount, icon: Squares2X2Icon, trend: null },
-          { label: 'ATS Reports', count: atsReportsCount, icon: MagnifyingGlassIcon, trend: null },
-          { label: 'Cover Letters', count: coverLettersCount, icon: ChatBubbleLeftRightIcon, trend: null }
+          { label: 'Resumes', count: resumes.length, icon: 'resumes', trend: null },
+          { label: 'Templates', count: templatesCount, icon: 'templates', trend: null },
+          { label: 'ATS Reports', count: atsReportsCount, icon: 'ats', trend: null },
+          { label: 'Cover Letters', count: coverLettersCount, icon: 'coverLetters', trend: null }
         ]}
       />
 

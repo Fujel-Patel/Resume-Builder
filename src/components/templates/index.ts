@@ -1,3 +1,5 @@
+import type { ComponentType } from 'react';
+import type { ResumeData } from '@/types/resume';
 import { ModernProfessionalTemplate } from './ModernProfessionalTemplate';
 import { ClassicConservativeTemplate } from './ClassicConservativeTemplate';
 import { MinimalCleanTemplate } from './MinimalCleanTemplate';
@@ -16,7 +18,15 @@ export { TechnicalDeveloperTemplate } from './TechnicalDeveloperTemplate';
 export { AcademicScholarTemplate } from './AcademicScholarTemplate';
 export { FreshGraduateTemplate } from './FreshGraduateTemplate';
 
-export const TEMPLATE_REGISTRY = [
+export interface TemplateRegistryItem {
+  id: string;
+  name: string;
+  description: string;
+  tags: string[];
+  Component: ComponentType<{ data: ResumeData }>;
+}
+
+export const TEMPLATE_REGISTRY: TemplateRegistryItem[] = [
  { id: 'modern-professional', name: 'Modern Professional', description: 'Clean blue header bar with structured layout', tags: ['professional', 'modern', 'clean'], Component: ModernProfessionalTemplate },
  { id: 'classic-conservative', name: 'Classic Conservative', description: 'Centered header, serif typography, traditional format', tags: ['conservative', 'formal', 'traditional'], Component: ClassicConservativeTemplate },
  { id: 'minimal-clean', name: 'Minimal Clean', description: 'Extra white space, muted accents, distraction-free', tags: ['minimal', 'light', 'modern'], Component: MinimalCleanTemplate },

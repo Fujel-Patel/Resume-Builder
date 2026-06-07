@@ -13,7 +13,6 @@ export const authOptions = {
   callbacks: {
     async session({ session, token }: { session: any; token: any }) {
       if (session.user) {
-        // @ts-ignore – augment session type with id
         session.user.id = token.sub;
       }
       return session;

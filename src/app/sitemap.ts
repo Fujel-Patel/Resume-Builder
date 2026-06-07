@@ -1,6 +1,7 @@
 import { MetadataRoute } from 'next';
+import { env } from '@/lib/env';
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://resume-ai.example.com';
+const BASE_URL = env.NEXT_PUBLIC_SITE_URL ?? 'https://resume-ai.example.com';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const routes = [

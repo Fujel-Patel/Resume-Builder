@@ -11,12 +11,21 @@
 
 import { google } from "@ai-sdk/google";
 import { groq } from "@ai-sdk/groq";
-import { openai } from "@ai-sdk/openai";
+import { openai, createOpenAI } from "@ai-sdk/openai";
 import { anthropic } from "@ai-sdk/anthropic";
 import type { LanguageModel } from "ai";
 
 // Provider names for env-based selection
 export type AIProvider = "google" | "groq" | "openai" | "anthropic";
+
+const PROVIDERS: readonly AIProvider[] = ["google", "groq", "openai", "anthropic"];
+
+/** Narrow an arbitrary string to a known AIProvider, falling back to "google". */
+export function coerceProvider(raw: string | undefined | null): AIProvider {
+  return raw && (PROVIDERS as readonly string[]).includes(raw)
+    ? (raw as AIProvider)
+    : "google";
+}
 
 // Register model IDs per provider so TypeScript validates them
 declare global {
@@ -31,31 +40,31 @@ declare global {
 /**
  * Read default provider from env, fallback to "google".
  */
-function getDefaultProvider(): AIProvider {
-  const raw = process.env.NEXT_PUBLIC_DEFAULT_AI_PROVIDER ??
-              process.env.DEFAULT_AI_PROVIDER ??
-              "google";
-  return ["google", "groq", "openai", "anthropic"].includes(raw)
-    ? (raw as AIProvider)
-    : "google";
+export function getDefaultProvider(): AIProvider {
+  return coerceProvider(
+    process.env.NEXT_PUBLIC_DEFAULT_AI_PROVIDER ??
+      process.env.DEFAULT_AI_PROVIDER ??
+      "google"
+  );
 }
 
 /**
  * Return a LanguageModel for a given provider and optional model ID.
  * The returned model is directly usable with streamText({ model, ... }).
+ * Accepts an arbitrary string and coerces it to a known provider.
  */
 export function getModel(
-  provider: AIProvider = getDefaultProvider(),
+  provider: AIProvider | string = getDefaultProvider(),
   modelId?: string
 ): LanguageModel {
-  switch (provider) {
+  switch (coerceProvider(provider)) {
     case "google":
       return google(modelId ?? "gemini-2.0-flash");
     case "groq":
       return groq(modelId ?? "mixtral-8x7b-32768");
     case "openai": {
       // NVIDIA Nim uses an OpenAI-compatible endpoint
-      const client = openai({
+      const client = createOpenAI({
         apiKey: process.env.NVIDIA_NIM_API_KEY ?? process.env.OPENAI_API_KEY,
         baseURL:
           process.env.NVIDIA_NIM_BASE_URL ??

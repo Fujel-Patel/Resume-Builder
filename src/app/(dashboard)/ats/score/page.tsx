@@ -138,7 +138,6 @@ export default function AtsScorePage() {
                   strokeWidth="2.83"
                   strokeDasharray={`${(result.score / 100) * 100} 100`}
                   strokeDashoffset="0"
-                  transition="stroke-dashoffset 0.5s ease-in-out"
                   style={{ transition: 'stroke-dashoffset 0.5s ease-in-out' }}
                 />
                 {/* Animated stroke dash offset on load - we'll use a simple CSS animation */}

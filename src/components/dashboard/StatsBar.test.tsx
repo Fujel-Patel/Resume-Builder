@@ -4,17 +4,24 @@ import '@testing-library/jest-dom';
 import StatsBar from './StatsBar';
 
 describe('StatsBar', () => {
-  it('renders given counts', () => {
-    render(<StatsBar resumesCount={3} templatesCount={8} />);
-    const resumes = screen.getByTestId('resumes-count');
-    const templates = screen.getByTestId('templates-count');
-    expect(resumes).toHaveTextContent('3');
-    expect(templates).toHaveTextContent('8');
+  it('renders provided stats with their labels and counts', () => {
+    render(
+      <StatsBar
+        stats={[
+          { label: 'Resumes', count: 3, icon: 'resumes', trend: null },
+          { label: 'Templates', count: 8, icon: 'templates', trend: null },
+        ]}
+      />
+    );
+    expect(screen.getByText('Resumes')).toBeInTheDocument();
+    expect(screen.getByText('Templates')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('8')).toBeInTheDocument();
   });
 
-  it('defaults to zero when no props are provided', () => {
+  it('renders default stats when no props are provided', () => {
     render(<StatsBar />);
-    expect(screen.getByTestId('resumes-count')).toHaveTextContent('0');
-    expect(screen.getByTestId('templates-count')).toHaveTextContent('0');
+    expect(screen.getByText('Resumes')).toBeInTheDocument();
+    expect(screen.getByText('ATS Reports')).toBeInTheDocument();
   });
 });

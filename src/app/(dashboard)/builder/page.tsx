@@ -1,5 +1,4 @@
-import dynamic from 'next/dynamic';
-const BuilderWizard = dynamic(() => import('@/components/resume/BuilderWizard'), { ssr: false });
+import BuilderWizard from '@/components/resume/BuilderWizardClient';
 import MetaSetter from '@/components/dashboard/MetaSetter';
 import { createClient } from '@/utils/supabase/server';
 import { cookies } from 'next/headers';

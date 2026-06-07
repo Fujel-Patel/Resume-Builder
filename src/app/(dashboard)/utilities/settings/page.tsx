@@ -79,7 +79,7 @@ export default function SettingsPage() {
           <Button variant="secondary" onClick={() => addToast({ title: "Data export requested", variant: "info" })}>
             Export Data
           </Button>
-          <Button variant="danger" onClick={() => addToast({ title: "Account deletion", description: "Feature not implemented", variant: "warning" })}>
+          <Button variant="destructive" onClick={() => addToast({ title: "Account deletion", description: "Feature not implemented", variant: "warning" })}>
             Delete Account
           </Button>
         </div>

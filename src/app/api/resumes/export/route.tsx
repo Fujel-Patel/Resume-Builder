@@ -47,23 +47,23 @@ function validateResumeData(data: Partial<ResumeData>): { valid: boolean; error?
   }
 
   // Validate array lengths
-  if (data.experience?.length > VALIDATION_LIMITS.MAX_EXPERIENCE_ITEMS) {
+  if ((data.experience?.length ?? 0) > VALIDATION_LIMITS.MAX_EXPERIENCE_ITEMS) {
     return { valid: false, error: `Too many experience items (max ${VALIDATION_LIMITS.MAX_EXPERIENCE_ITEMS})` };
   }
 
-  if (data.education?.length > VALIDATION_LIMITS.MAX_EDUCATION_ITEMS) {
+  if ((data.education?.length ?? 0) > VALIDATION_LIMITS.MAX_EDUCATION_ITEMS) {
     return { valid: false, error: `Too many education items (max ${VALIDATION_LIMITS.MAX_EDUCATION_ITEMS})` };
   }
 
-  if (data.skills?.length > VALIDATION_LIMITS.MAX_SKILLS) {
+  if ((data.skills?.length ?? 0) > VALIDATION_LIMITS.MAX_SKILLS) {
     return { valid: false, error: `Too many skills (max ${VALIDATION_LIMITS.MAX_SKILLS})` };
   }
 
-  if (data.certifications?.length > VALIDATION_LIMITS.MAX_CERTIFICATIONS) {
+  if ((data.certifications?.length ?? 0) > VALIDATION_LIMITS.MAX_CERTIFICATIONS) {
     return { valid: false, error: `Too many certifications (max ${VALIDATION_LIMITS.MAX_CERTIFICATIONS})` };
   }
 
-  if (data.projects?.length > VALIDATION_LIMITS.MAX_PROJECTS) {
+  if ((data.projects?.length ?? 0) > VALIDATION_LIMITS.MAX_PROJECTS) {
     return { valid: false, error: `Too many projects (max ${VALIDATION_LIMITS.MAX_PROJECTS})` };
   }
 
@@ -104,10 +104,6 @@ function validateResumeData(data: Partial<ResumeData>): { valid: boolean; error?
   }
 
   return { valid: true };
-}
-
-function buildDocx(data: ResumeData) {
-  // existing implementation unchanged
 }
 
 // Helper to build plain‑text (TXT) export
@@ -164,8 +160,7 @@ function buildTxt(data: ResumeData): string {
   return lines.join('\n');
 }
 
-// Export format validation now includes 'txt'
-
+async function buildDocx(data: ResumeData): Promise<Buffer> {
   const children: Paragraph[] = [];
 
   if (data.contact.name) {
@@ -289,12 +284,12 @@ export async function POST(request: Request) {
     }
 
     if (exportFormat === 'docx') {
-      const buffer = buildDocx(resumeData);
+      const buffer = await buildDocx(resumeData);
 
       // Generate ETag based on content hash for caching
       const etag = Buffer.from(buffer).toString('base64').substring(0, 16);
 
-      return new Response(buffer, {
+      return new Response(new Uint8Array(buffer), {
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
           'Content-Disposition': `attachment; filename="resume.docx"`,

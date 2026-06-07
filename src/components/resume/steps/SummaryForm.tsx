@@ -27,7 +27,7 @@ export default function SummaryForm({ onNext, onBack }: Props) {
     watch,
   } = useForm<{ summary: string }>({
     resolver: zodResolver(summaryFormSchema),
-    defaultValue: { summary: (data as any).summary || '' },
+    defaultValues: { summary: data.summary || '' },
   });
 
   const summary = watch('summary');

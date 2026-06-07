@@ -1,7 +1,7 @@
 import React from "react";
 import clsx from "clsx";
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "size"> {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   size?: "sm" | "md" | "lg";
@@ -38,7 +38,7 @@ export default function Input({
           "w-full rounded-xl bg-[--bg-elevated] border border-[--border] text-[--text-primary]",
           sizeClasses,
           "focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2 focus:border-transparent focus:shadow-[0_0_8px_var(--color-primary)] transition-all duration-200 hover:bg-[--bg-elevated]/90",
-          disabled && "bg-[--bg-disabled]/50 text-[--text-disabled]",
+          props.disabled && "bg-[--bg-disabled]/50 text-[--text-disabled]",
           className
         )}
         {...props}

@@ -17,7 +17,7 @@ export const createClient = (request: NextRequest) => {
       },
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value, options }) =>
-          // @ts-ignore – request.cookies is mutable in middleware
+          // @ts-expect-error – request.cookies is mutable in middleware
           request.cookies.set(name, value, options),
         );
         supabaseResponse = NextResponse.next({ request });

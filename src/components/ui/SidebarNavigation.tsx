@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ClipboardListIcon, BarChartIcon, SparklesIcon, CogIcon, QuestionMarkIcon, MessageCircleIcon, FolderIcon, DocumentTextIcon } from '@heroicons/react/24/solid';
+import { ClipboardDocumentListIcon, ChartBarIcon, SparklesIcon, CogIcon, QuestionMarkCircleIcon, ChatBubbleLeftRightIcon, FolderIcon, DocumentTextIcon } from '@heroicons/react/24/solid';
 import clsx from 'clsx';
 import { useEffect, useState } from 'react';
 
@@ -29,15 +29,15 @@ export default function SidebarNavigation() {
       items: [
         { href: '/builder', label: 'Builder', icon: DocumentTextIcon },
         { href: '/dashboard/builder', label: 'My Resumes', icon: FolderIcon },
-        { href: '/templates', label: 'Templates', icon: ClipboardListIcon },
+        { href: '/templates', label: 'Templates', icon: ClipboardDocumentListIcon },
       ]
     },
     {
       title: 'ATS Tools',
       items: [
-        { href: '/ats/score', label: 'Score Checker', icon: BarChartIcon },
+        { href: '/ats/score', label: 'Score Checker', icon: ChartBarIcon },
         { href: '/ats/optimize', label: 'Optimizer', icon: SparklesIcon },
-        { href: '/jd/parse', label: 'JD Parser', icon: ClipboardListIcon },
+        { href: '/jd/parse', label: 'JD Parser', icon: ClipboardDocumentListIcon },
       ]
     },
     {
@@ -51,8 +51,8 @@ export default function SidebarNavigation() {
       title: 'Utilities',
       items: [
         { href: '/dashboard/utilities/settings', label: 'Settings', icon: CogIcon },
-        { href: '/help', label: 'Help', icon: QuestionMarkIcon },
-        { href: '/feedback', label: 'Feedback', icon: MessageCircleIcon },
+        { href: '/help', label: 'Help', icon: QuestionMarkCircleIcon },
+        { href: '/feedback', label: 'Feedback', icon: ChatBubbleLeftRightIcon },
       ]
     }
   ];

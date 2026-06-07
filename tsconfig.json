@@ -26,9 +26,10 @@
     "incremental": true,
     "types": [
       "node",
-      "next"
+      "next",
+      "vitest/globals",
+      "@testing-library/jest-dom"
     ],
-    "ignoreDeprecations": "6.0",
     "plugins": [
       {
         "name": "next"

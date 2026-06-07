@@ -1,7 +1,6 @@
 // src/components/ui/FullPageLoader.tsx
 import React, { ReactNode } from "react";
 import clsx from "clsx";
-import { Spinner } from "./Button"; // Re‑use spinner styling from Button if exported; otherwise fallback to a simple div
 
 /**
  * Full‑page overlay that shows a loading spinner while the app's initial data is being fetched.
