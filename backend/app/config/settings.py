@@ -1,9 +1,28 @@
+"""Application configuration settings.
+
+This module defines a :class:`Settings` class based on ``pydantic``'s
+``BaseSettings``. All values are read from environment variables or a ``.env``
+file at the project root. The class provides sensible defaults for development
+and requires explicit values for production‑critical secrets.
+
+A singleton instance ``settings`` is created at import time so other modules
+can simply ``from app.config.settings import settings``.
+"""
+
 from pydantic_settings import BaseSettings
+
 from typing import List, Union
 import secrets
 
 
 class Settings(BaseSettings):
+    """Configuration model for the FastAPI application.
+
+    Environment variables are automatically read and validated. Required
+    fields (those without a default) must be present in the ``.env`` file or
+    the process environment, otherwise instantiation will raise a validation
+    error.
+    """
     APP_ENV: str = "development"
     PORT: int = 8000
     SECRET_KEY: str = secrets.token_hex(64)
