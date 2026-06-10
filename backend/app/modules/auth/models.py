@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Integer, Boolean
+from sqlalchemy import Column, String, DateTime, Integer, Boolean, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 import uuid
@@ -14,12 +14,11 @@ class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     token_hash = Column(String(255), nullable=False, unique=True, index=True)
     expires_at = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # Index for efficient lookup
     __table_args__ = (
         {"postgresql_concurrently": False},
     )
@@ -29,13 +28,12 @@ class EmailToken(Base):
     __tablename__ = "email_tokens"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
     token_hash = Column(String(255), nullable=False, unique=True, index=True)
     type = Column(String(50), nullable=False)  # verify_email | reset_password
     expires_at = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    # Index for efficient lookup
     __table_args__ = (
         {"postgresql_concurrently": False},
     )

@@ -7,9 +7,7 @@ import uuid
 from app.config.database import get_db
 from app.modules.auth import schemas, service
 from app.config.settings import settings
-from app.utils.jwt import verify_access_token, verify_refresh_token
-from app.utils.ownership import assert_ownership
-from app.modules.users import models as user_models
+from app.utils.jwt import verify_refresh_token
 
 router = APIRouter()
 
@@ -209,17 +207,12 @@ async def reset_password(
 ):
     """Reset password using token"""
     # Verify reset token
-    from app.utils.email import verify_email_token
-    is_valid, user = await service.verify_email_token(db, request.token)
+    is_valid, user = await service.verify_email_token(db, request.token, "reset_password")
     if not is_valid or not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired token"
         )
-
-    # Verify token type is reset_password
-    # This would be done in verify_email_token in a real implementation
-    # For now, we'll assume it's correct
 
     # Update password
     from app.utils.password import get_password_hash
@@ -241,7 +234,7 @@ async def verify_email(
     db: AsyncSession = Depends(get_db)
 ):
     """Verify email address"""
-    is_valid, user = await service.verify_email_token(db, token)
+    is_valid, user = await service.verify_email_token(db, token, "verify_email")
     if not is_valid or not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -1,8 +1,6 @@
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional, Tuple
-from jose import JWTError, jwt
-from passlib.context import CryptContext
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,16 +9,8 @@ from app.modules.auth import models, schemas
 from app.utils.password import get_password_hash, verify_password
 from app.utils.jwt import (
     create_access_token,
-    create_refresh_token,
-    verify_token,
     hash_refresh_token,
-    verify_refresh_token,
 )
-from app.utils.ownership import assert_ownership
-
-
-# Password hashing context
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 async def get_user_by_email(db: AsyncSession, email: str) -> Optional[models.User]:
@@ -169,16 +159,16 @@ async def delete_all_refresh_tokens_for_user(db: AsyncSession, user_id: uuid.UUI
 
 
 async def verify_email_token(
-    db: AsyncSession, token: str
+    db: AsyncSession, token: str, token_type: str
 ) -> Tuple[bool, Optional[models.User]]:
-    """Verify email verification token"""
+    """Verify email token (verification or reset)"""
     from app.utils.email import hash_email_token
 
     token_hash = hash_email_token(token)
 
     query = select(models.EmailToken).where(
         models.EmailToken.token_hash == token_hash,
-        models.EmailToken.type == "verify_email",
+        models.EmailToken.type == token_type,
         models.EmailToken.expires_at > datetime.utcnow()
     )
     result = await db.execute(query)
@@ -192,9 +182,10 @@ async def verify_email_token(
     if not user:
         return False, None
 
-    # Mark user as verified
-    user.is_verified = True
-    db.add(user)
+    # If token_type is "verify_email", mark user as verified
+    if token_type == "verify_email":
+        user.is_verified = True
+        db.add(user)
 
     # Delete used token
     await db.delete(email_token)

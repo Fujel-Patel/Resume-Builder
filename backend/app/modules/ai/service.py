@@ -3,8 +3,7 @@ AI Service Module
 Following instruction.md best practices for AI integration layer
 """
 from typing import Optional, Dict, Any
-import json
-from app.config.database import get_db
+import uuid
 from app.modules.ai_providers import models as ai_provider_models
 from app.modules.ai_providers import service as ai_provider_service
 from app.utils.encryption import decrypt_data
@@ -25,8 +24,6 @@ async def get_default_provider(user_id: str, db) -> ai_provider_models.AIProvide
     Get user's default AI provider
     Following PRD: Provider selected from user's saved AI settings
     """
-    from app.modules.ai_providers import service as ai_provider_service
-
     provider = await ai_provider_service.get_default_provider(db, uuid.UUID(user_id))
     if not provider:
         raise ValueError("No default AI provider configured")
