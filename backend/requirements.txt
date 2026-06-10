@@ -1,0 +1,25 @@
+# Core runtime dependencies -------------------------------------------------
+fastapi[all]>=0.112.0               # FastAPI + uvicorn + starlette extras
+uvicorn[standard]>=0.30.0
+sqlalchemy[asyncio]>=2.0.30
+asyncpg>=0.29.0                     # PostgreSQL async driver (or replace with your DB driver)
+alembic>=1.13.2
+pydantic>=2.8.0
+python-jose[cryptography]>=3.3.0
+bcrypt>=4.1.2
+cryptography>=43.0.1
+PyMuPDF>=1.24.5
+weasyprint>=62.3
+python-dotenv>=1.0.1
+aiosmtplib>=2.0.2
+supabase>=2.7.5
+httpx>=0.27.2
+python-multipart>=0.0.9
+
+# Development / testing dependencies ---------------------------------------
+pytest>=8.3.2
+pytest-asyncio>=0.23.8
+asgi-lifespan>=2.1.0
+ruff>=0.6.2
+mypy>=1.11.2
+pre-commit>=3.8.0

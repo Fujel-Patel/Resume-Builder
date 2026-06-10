@@ -1,0 +1,57 @@
+# ------------------------------------------------------------
+# Project metadata and build configuration for the FastAPI
+# backend of the GenerativeCV product.  Uses Python 3.12+.
+# ------------------------------------------------------------
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "generative-cv-backend"
+version = "0.1.0"
+description = "FastAPI backend for the GenerativeCV application (resume generation, PDF handling, etc.)"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+authors = [
+    {name = "Fujel", email = "your.email@example.com"}
+]
+
+# -----------------------------------------------------------------
+# Core runtime dependencies – all are async‑compatible where possible
+# -----------------------------------------------------------------
+dependencies = [
+    "fastapi[all]>=0.112.0",                # FastAPI core + optional extras (uvicorn, pydantic, starlette)
+    "uvicorn[standard]>=0.30.0",           # ASGI server
+    "sqlalchemy[asyncio]>=2.0.30",          # Async ORM
+    "asyncpg>=0.29.0",                      # PostgreSQL async driver (adjust if using another DB)
+    "alembic>=1.13.2",                      # DB migrations
+    "pydantic>=2.8.0",                      # Data validation (v2)
+    "python-jose[cryptography]>=3.3.0",   # JWT handling
+    "bcrypt>=4.1.2",                        # Password hashing
+    "cryptography>=43.0.1",                 # AES encryption utilities
+    "PyMuPDF>=1.24.5",                      # PDF parsing/manipulation
+    "weasyprint>=62.3",                     # HTML → PDF rendering
+    "python-dotenv>=1.0.1",                 # .env file support
+    "aiosmtplib>=2.0.2",                    # Async SMTP client
+    "supabase>=2.7.5",                      # Supabase client (storage, auth)
+    "httpx>=0.27.2",                        # Async HTTP client (used by tests & external calls)
+    "python-multipart>=0.0.9",            # Form data / file uploads
+]
+
+# ---------------------------------------------------------------
+# Optional / development dependencies (testing, linting, etc.)
+# ---------------------------------------------------------------
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.2",
+    "pytest-asyncio>=0.23.8",
+    "asgi-lifespan>=2.1.0",   # Useful for testing app lifespan events
+    "ruff>=0.6.2",            # Linter / formatter
+    "mypy>=1.11.2",           # Static typing checks
+    "pre-commit>=3.8.0",
+]
+
+[tool.setuptools]
+packages = ["backend"]   # Adjust if you have a different package layout
