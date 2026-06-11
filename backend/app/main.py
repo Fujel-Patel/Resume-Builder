@@ -1,12 +1,17 @@
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
+from sqlalchemy import text
 
+from app.config.database import engine
 from app.config.settings import settings
 from app.middleware.auth import AuthMiddleware
 from app.middleware.error_handler import ErrorHandlerMiddleware
 from app.modules.ai.router import router as ai_router
 from app.modules.ai_providers.router import router as ai_providers_router
-from backend.app.modules.auth.ats.router import router as ats_router
+from app.modules.ats.router import router as ats_router
 from app.modules.auth.router import router as auth_router
 from app.modules.resumes.router import router as resumes_router
 from app.modules.users.router import router as users_router
@@ -19,6 +24,12 @@ app = FastAPI(
     docs_url="/api/v1/docs",
     redoc_url="/api/v1/redoc",
 )
+
+# Rate limiting – default 100 requests per minute for the API
+limiter = Limiter(key_func=get_remote_address, default_limits=["100/min"])
+app.state.limiter = limiter
+# Register SlowAPI middleware (must be after limiter creation)
+app.add_middleware(SlowAPIMiddleware)
 
 # CORS middleware - following instruction.md best practices
 # Explicit origin list, never using wildcard with credentials
@@ -50,12 +61,22 @@ async def health_check():
 @app.get("/ready", tags=["health"])
 async def readiness_check():
     """Readiness probe - returns 200 if dependencies are usable"""
-    # In a real implementation, we'd check database connectivity here
-    return {"status": "ready"}
+    # Check database connectivity
+    try:
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        return {"status": "ready"}
+    except Exception:
+        return {"status": "unavailable"}
 
 
 # Include API routers with version prefix
-app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
+app.include_router(
+    auth_router,
+    prefix="/api/v1/auth",
+    tags=["auth"],
+    dependencies=[Depends(limiter.limit("10/min"))],
+)
 app.include_router(users_router, prefix="/api/v1/users", tags=["users"])
 app.include_router(resumes_router, prefix="/api/v1/resumes", tags=["resumes"])
 app.include_router(ai_router, prefix="/api/v1/ai", tags=["ai"])

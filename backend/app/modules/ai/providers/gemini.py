@@ -1,56 +1,67 @@
 """
-Google Gemini AI Provider Integration
+Google Gemini provider implementation.
+
+Uses the Gemini `generateContent` endpoint. Accepts an API key via query parameter.
 """
-import httpx
+
 import json
 from typing import Optional
 
+import httpx
+
+# Default endpoint (public API) – model can be part of the URL
+DEFAULT_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+
 
 async def complete(
+    *,
     prompt: str,
     api_key: str,
     base_url: Optional[str] = None,
-    max_tokens: int = 1000,
-    temperature: float = 0.7,
+    max_tokens: int = 1024,
+    model: str = "gemini-1.5-flash",
+    **kwargs,
 ) -> str:
-    """
-    Complete a prompt using Google Gemini's API
-    """
-    url = base_url or f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
+    """Call Gemini's generateContent API.
 
-    headers = {
-        "Content-Type": "application/json",
+    Parameters
+    ----------
+    prompt: str
+        The prompt text.
+    api_key: str
+        Google API key.
+    base_url: Optional[str]
+        If provided, replaces the default endpoint. Expected to include the model name.
+    max_tokens: int
+        Maximum output tokens.
+    model: str
+        Model identifier (default flash). Ignored if `base_url` already contains a model.
+    **kwargs: Any
+        Ignored – kept for unified signature.
+    """
+    # Resolve endpoint
+    if base_url:
+        url = base_url
+    else:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+
+    # Gemini expects the API key as a query parameter `key`
+    params = {"key": api_key}
+
+    payload = {
+        "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+        "generationConfig": {"maxOutputTokens": max_tokens},
     }
 
-    data = {
-        "contents": [
-            {
-                "parts": [
-                    {
-                        "text": prompt
-                    }
-                ]
-            }
-        ],
-        "generationConfig": {
-            "maxOutputTokens": max_tokens,
-            "temperature": temperature,
-            "topP": 0.8,
-            "topK": 10
-        }
-    }
-
-    async with httpx.AsyncClient() as client:
-        response = await client.post(url, headers=headers, json=data, timeout=30.0)
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post(url, params=params, json=payload)
         response.raise_for_status()
-        result = response.json()
-
-        # Extract text from response
-        if "candidates" in result and len(result["candidates"]) > 0:
-            candidate = result["candidates"][0]
-            if "content" in candidate and "parts" in candidate["content"]:
-                parts = candidate["content"]["parts"]
-                if len(parts) > 0 and "text" in parts[0]:
-                    return parts[0]["text"]
-
-        raise ValueError("Unexpected response format from Gemini API")
+        data = response.json()
+        # Extract the text from candidates[0].content.parts[0].text
+        candidates = data.get("candidates", [])
+        if candidates:
+            content = candidates[0].get("content", {})
+            parts = content.get("parts", [])
+            if parts:
+                return parts[0].get("text", "")
+        return ""

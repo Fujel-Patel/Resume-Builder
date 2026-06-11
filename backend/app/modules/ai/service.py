@@ -1,128 +1,105 @@
 """
-AI Service Module
-Following instruction.md best practices for AI integration layer
+AI service layer – provider routing, API key verification, and helper utilities.
 """
-from typing import Optional, Dict, Any
-import uuid
-from app.modules.ai_providers import models as ai_provider_models
-from app.modules.ai_providers import service as ai_provider_service
-from app.utils.encryption import decrypt_data
+
+from typing import List, Optional
+
+import httpx
+from fastapi import HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.modules.ai.models import AIProvider
+
+# Import provider implementations
 from app.modules.ai.providers import anthropic, gemini, nvidia_nim
+from app.utils.encryption import decrypt
 
-
-# Provider mapping following PRD specification
+# Mapping of provider identifiers to callable functions
 PROVIDER_MAP = {
     "anthropic": anthropic.complete,
     "gemini": gemini.complete,
     "nvidia-nim": nvidia_nim.complete,
-    "custom": anthropic.complete,  # OpenAI-compatible as per PRD
+    "custom": anthropic.complete,  # treat custom as OpenAI‑compatible (use anthropic placeholder)
 }
 
 
-async def get_default_provider(user_id: str, db) -> ai_provider_models.AIProvider:
+async def get_default_provider(user_id: str, db: AsyncSession) -> AIProvider:
+    """Return the default AIProvider for the user.
+
+    If none is marked as default, return the first provider for the user.
+    Raises HTTPException(404) if the user has no providers configured.
     """
-    Get user's default AI provider
-    Following PRD: Provider selected from user's saved AI settings
-    """
-    provider = await ai_provider_service.get_default_provider(db, uuid.UUID(user_id))
+    # Try default first
+    stmt = select(AIProvider).where(
+        AIProvider.user_id == user_id, AIProvider.is_default.is_(True)
+    )
+    result = await db.execute(stmt)
+    provider = result.scalars().first()
+    if provider:
+        return provider
+    # Fallback to any provider
+    stmt = select(AIProvider).where(AIProvider.user_id == user_id)
+    result = await db.execute(stmt)
+    provider = result.scalars().first()
     if not provider:
-        raise ValueError("No default AI provider configured")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No AI provider configured for user",
+        )
     return provider
 
 
-async def ai_complete(
-    user_id: str,
-    prompt: str,
-    db,
-    max_tokens: Optional[int] = None,
-    temperature: float = 0.7,
-) -> str:
-    """
-    Complete AI request using user's default provider
-    Following PRD: Provider routing logic
-    """
-    # Get user's default provider
-    provider = await get_default_provider(user_id, db)
-
-    # Decrypt API key
-    api_key = decrypt_data(provider.api_key_encrypted)
-    base_url = provider.base_url  # for custom/nvidia providers
-
-    # Get provider function
-    fn = PROVIDER_MAP[provider.provider_name]
-
-    # Call provider
-    return await fn(
-        prompt=prompt,
-        api_key=api_key,
-        base_url=base_url,
-        max_tokens=max_tokens,
-        temperature=temperature
+async def get_provider_by_name(
+    user_id: str, provider_name: str, db: AsyncSession
+) -> Optional[AIProvider]:
+    """Fetch a specific provider by name for the given user."""
+    stmt = select(AIProvider).where(
+        AIProvider.user_id == user_id, AIProvider.provider_name == provider_name
     )
+    result = await db.execute(stmt)
+    return result.scalars().first()
+
+
+async def ai_complete(user_id: str, prompt: str, db: AsyncSession) -> str:
+    """Route a prompt to the user's default AI provider.
+
+    Decrypts the stored API key, selects the appropriate provider function, and returns the generated text.
+    """
+    provider = await get_default_provider(user_id, db)
+    api_key = decrypt(provider.api_key_encrypted)
+    base_url = provider.base_url  # May be None for providers that don't need it
+    fn = PROVIDER_MAP.get(provider.provider_name)
+    if not fn:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported AI provider"
+        )
+    return await fn(prompt=prompt, api_key=api_key, base_url=base_url)
 
 
 async def verify_api_key(
-    provider_name: str,
-    api_key: str,
-    base_url: Optional[str] = None
+    provider_name: str, api_key: str, base_url: Optional[str] = None
 ) -> bool:
+    """Validate an API key for a given provider by performing a cheap test call.
+
+    Returns ``True`` if the provider responds successfully, ``False`` otherwise.
     """
-    Verify API key with provider
-    Following PRD: Click "Verify" → backend pings provider with minimal test call
-    """
+    fn = PROVIDER_MAP.get(provider_name)
+    if not fn:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported provider for verification",
+        )
     try:
-        fn = PROVIDER_MAP[provider_name]
+        # Small prompt to verify connectivity; limit tokens to keep it cheap.
         result = await fn(
             prompt="Reply with just: OK",
             api_key=api_key,
             base_url=base_url,
-            max_tokens=5
+            max_tokens=5,
         )
+        # Some providers may return the literal "OK" or a JSON; we just check truthiness.
         return bool(result)
-    except Exception:
+    except Exception as exc:
+        # Log the exception for debugging (omitted here to avoid import cycles)
         return False
-
-
-# Structured prompts following PRD specification
-SUMMARY_PROMPT = """
-You are a professional resume writer. Given the user's job title, skills,
-experience, and target job description, write a compelling 3-4 sentence
-professional summary. Be specific, use active voice, and include relevant keywords.
-Return ONLY the summary text, no extra commentary.
-"""
-
-SKILLS_PROMPT = """
-Given this job description and the user's current skills, suggest
-8-12 relevant technical and soft skills the user should highlight.
-Return ONLY a JSON array of strings: ["skill1", "skill2", ...]
-"""
-
-EXPERIENCE_PROMPT = """
-Improve these experience bullet points for the given job role.
-Use strong action verbs, add quantifiable impact where logical,
-and align with the job description keywords.
-Return ONLY a JSON array of improved bullet strings.
-"""
-
-PROJECTS_PROMPT = """
-Improve these project descriptions for the given job role.
-Focus on relevance, impact, and technical details that align with
-the job description requirements.
-Return ONLY a JSON array of improved description strings.
-"""
-
-ATS_SCORE_PROMPT = """
-You are an ATS (Applicant Tracking System) expert. Analyze this resume against
-the job description. Return ONLY valid JSON with this exact structure:
-{
-  "overall_score": <0-100>,
-  "section_scores": {
-    "format": <0-100>,
-    "keywords": <0-100>,
-    "readability": <0-100>,
-    "completeness": <0-100>
-  },
-  "missing_keywords": ["keyword1", "keyword2"],
-  "suggestions": ["suggestion1", " suggestion2"]
-}
-"""

@@ -1,47 +1,64 @@
 """
-NVIDIA NIM AI Provider Integration
+NVIDIA NIM provider implementation (OpenAI‑compatible).
+
+The NIM server expects the same request shape as the OpenAI Chat Completion API.
 """
-import httpx
+
 import json
 from typing import Optional
 
+import httpx
+
+# No default endpoint – must be provided via `base_url`
+
 
 async def complete(
+    *,
     prompt: str,
     api_key: str,
     base_url: Optional[str] = None,
-    max_tokens: int = 1000,
-    temperature: float = 0.7,
+    max_tokens: int = 1024,
+    model: str = "gpt-4o-mini",
+    **kwargs,
 ) -> str:
-    """
-    Complete a prompt using NVIDIA NIM's API
-    """
-    url = base_url or "https://integrate.api.nvidia.com/v1/chat/completions"
+    """Call an NVIDIA NIM (OpenAI‑compatible) endpoint.
 
+    Parameters
+    ----------
+    prompt: str
+        The user prompt.
+    api_key: str
+        API key for the NIM service.
+    base_url: Optional[str]
+        Base URL of the NIM server (e.g., ``https://your-nim.example.com/v1``).
+        This is required – an empty string will raise ``ValueError``.
+    max_tokens: int
+        Maximum tokens to generate.
+    model: str
+        Model name to request (default ``gpt-4o-mini`` – can be overridden).
+    **kwargs: Any
+        Ignored – kept for a uniform signature.
+    """
+    if not base_url:
+        raise ValueError("NVIDIA NIM provider requires a base_url")
+
+    url = f"{base_url.rstrip('/')}/chat/completions"
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json",
     }
-
-    data = {
-        "model": "nemotron-3-super-120b-a12b",  # Using the model specified in the environment
+    payload = {
+        "model": model,
+        "messages": [{"role": "user", "content": prompt}],
         "max_tokens": max_tokens,
-        "temperature": temperature,
-        "messages": [
-            {
-                "role": "user",
-                "content": prompt
-            }
-        ]
     }
-
-    async with httpx.AsyncClient() as client:
-        response = await client.post(url, headers=headers, json=data, timeout=30.0)
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post(url, headers=headers, json=payload)
         response.raise_for_status()
-        result = response.json()
-
-        # Extract text from response
-        if "choices" in result and len(result["choices"]) > 0:
-            return result["choices"][0]["message"]["content"]
-        else:
-            raise ValueError("Unexpected response format from NVIDIA NIM API")
+        data = response.json()
+        # OpenAI returns choices[0].message.content
+        choices = data.get("choices", [])
+        if choices:
+            message = choices[0].get("message", {})
+            return message.get("content", "")
+        return ""
