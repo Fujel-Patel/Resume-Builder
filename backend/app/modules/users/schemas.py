@@ -1,6 +1,7 @@
-from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, EmailStr, Field
 
 
 class UserBase(BaseModel):
@@ -21,6 +22,7 @@ class UserInDBBase(UserBase):
     id: str
     is_verified: bool
     is_active: bool
+    avatar_url: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
