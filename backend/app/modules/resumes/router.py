@@ -1,21 +1,31 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
-from sqlalchemy.ext.asyncio import AsyncSession
 import uuid
-from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.database import get_db
-from app.modules.resumes import schemas, service
-from app.utils.jwt import verify_access_token
+from app.modules.resumes import models, schemas
+from app.modules.resumes import service as resume_service
 from app.modules.users import models as user_models
-from app.modules.ai_providers import service as ai_provider_service
-from app.utils.ownership import assert_ownership
+from app.modules.users import service as user_service
+from app.utils.jwt import verify_access_token
+
+router = APIRouter(
+    prefix="/resumes",
+    tags=["resumes"],
+    responses={404: {"description": "Not found"}},
+)
+
+# Reuse the same OAuth2 scheme as the auth module
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
 
 async def get_current_user(
-    token: str = Depends(oauth2_scheme),
-    db: AsyncSession = Depends(get_db)
+    token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
 ) -> user_models.User:
-    """Get current authenticated user"""
+    """Dependency that returns the currently authenticated user."""
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -25,172 +35,146 @@ async def get_current_user(
         payload = verify_access_token(token)
         if payload is None:
             raise credentials_exception
-        user_id: str = payload.get("sub")
-        if user_id is None:
+        user_id_str: str = payload.get("sub")
+        if user_id_str is None:
             raise credentials_exception
+        user_id = uuid.UUID(user_id_str)
     except JWTError:
         raise credentials_exception
 
-    user = await service.get_user_by_id(db, uuid.UUID(user_id))
+    # Fetch user from DB using the user service
+    user = await user_service.get_user_by_id(db, user_id)
     if user is None:
         raise credentials_exception
     return user
 
 
-# OAuth2 scheme for token extraction
-from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError
-
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
-
-router = APIRouter()
-
-
-@router.post("/", response_model=schemas.ResumeWithDataResponse, status_code=status.HTTP_201_CREATED)
-async def create_resume_endpoint(
-    resume_create: schemas.ResumeCreate,
-    current_user: user_models.User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
-):
-    """Create a new resume"""
-    resume = await service.create_resume(db, current_user.id, resume_create)
-    resume_data = await service.get_resume_data(db, resume.id)
-
-    return schemas.ResumeWithDataResponse(
-        resume=resume,
-        data=resume_data
-    )
-
-
-@router.get("/", response_model=List[schemas.ResumeResponse])
+# ----------------------------------------------------------------------
+# Endpoints
+# ----------------------------------------------------------------------
+@router.get("", response_model=list[schemas.ResumePublic])
 async def list_resumes(
-    skip: int = 0,
-    limit: int = 100,
     current_user: user_models.User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
-    """List user's resumes"""
-    resumes = await service.get_resumes_by_user(db, current_user.id, skip=skip, limit=limit)
-    return resumes
+    """Get all resumes belonging to the authenticated user."""
+    resume_svc = resume_service.ResumeService(db)
+    return await resume_svc.get_resumes_by_user(current_user.id)
 
 
-@router.get("/{resume_id}", response_model=schemas.ResumeWithDataResponse)
+@router.post(
+    "", response_model=schemas.ResumePublic, status_code=status.HTTP_201_CREATED
+)
+async def create_resume(
+    resume_in: schemas.ResumeCreate,
+    current_user: user_models.User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Create a new resume for the authenticated user."""
+    resume_svc = resume_service.ResumeService(db)
+    return await resume_svc.create_resume(user_id=current_user.id, resume_in=resume_in)
+
+
+@router.get("/{resume_id}", response_model=schemas.ResumePublic)
 async def get_resume(
     resume_id: uuid.UUID,
     current_user: user_models.User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
-    """Get resume by ID"""
-    resume = await service.get_resume_by_id_and_user(db, resume_id, current_user.id)
-    if not resume:
+    """Get a specific resume by ID (ensures ownership)."""
+    resume_svc = resume_service.ResumeService(db)
+    resume = await resume_svc.get_resume_by_id(resume_id)
+    if resume.user_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Resume not found"
+            status_code=403, detail="Not authorized to access this resume"
         )
-
-    resume_data = await service.get_resume_data(db, resume.id)
-    if not resume_data:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Resume data not found"
-        )
-
-    return schemas.ResumeWithDataResponse(
-        resume=resume,
-        data=resume_data
-    )
+    return resume
 
 
-@router.patch("/{resume_id}", response_model=schemas.ResumeWithDataResponse)
-async def update_resume_endpoint(
+@router.patch("/{resume_id}", response_model=schemas.ResumePublic)
+async def update_resume(
     resume_id: uuid.UUID,
-    resume_update: schemas.ResumeUpdate,
+    resume_in: schemas.ResumeUpdate,
     current_user: user_models.User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
-    """Update resume"""
-    resume = await service.update_resume(db, resume_id, current_user.id, resume_update)
-    if not resume:
+    """Update a resume (partial update)."""
+    resume_svc = resume_service.ResumeService(db)
+    resume = await resume_svc.get_resume_by_id(resume_id)
+    if resume.user_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Resume not found"
+            status_code=403, detail="Not authorized to update this resume"
         )
-
-    resume_data = await service.get_resume_data(db, resume.id)
-
-    return schemas.ResumeWithDataResponse(
-        resume=resume,
-        data=resume_data
-    )
+    return await resume_svc.update_resume(resume_id, resume_in)
 
 
 @router.delete("/{resume_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_resume_endpoint(
+async def delete_resume(
     resume_id: uuid.UUID,
     current_user: user_models.User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
-    """Delete resume"""
-    success = await service.delete_resume(db, resume_id, current_user.id)
-    if not success:
+    """Deactivate a resume (soft delete)."""
+    resume_svc = resume_service.ResumeService(db)
+    resume = await resume_svc.get_resume_by_id(resume_id)
+    if resume.user_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Resume not found"
+            status_code=403, detail="Not authorized to delete this resume"
         )
+    await resume_svc.deactivate_resume(resume_id)
     return None
 
 
-@router.post("/{resume_id}/export")
-async def export_resume(
+# ----------------------------------------------------------------------
+# AI‑generation endpoint (example)
+# ----------------------------------------------------------------------
+@router.post("/generate", response_model=schemas.ResumePublic)
+async def generate_resume_ai(
+    # In a real implementation, replace `dict` with a proper Pydantic model
+    # that includes `prompt`, `template_html`, and optional `css_strings`.
+    request: dict,
+    current_user: user_models.User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    1. Use the AI module to turn a prompt into structured resume data.
+    2. Render that data into HTML (using a template provided by the client or a default one).
+    3. Export to PDF and store the file URL.
+    4. Persist the resume record.
+    """
+    resume_svc = resume_service.ResumeService(db)
+    # Pseudo‑code – replace with actual AI service call
+    # structured_data = await ai_service.generate_resume_data(prompt=request["prompt"])
+    # html = render_template(request["template_html"], structured_data)
+    # pdf_url = await resume_svc.export_resume_to_pdf(...)
+    # resume_in = schemas.ResumeCreate(title="AI Generated", data=structured_data, file_url=pdf_url)
+    # return await resume_svc.create_resume(current_user.id, resume_in)
+    raise NotImplementedError("AI generation endpoint – delegate to AI module")
+
+
+# ----------------------------------------------------------------------
+# ATS scoring endpoint (example)
+# ----------------------------------------------------------------------
+@router.post("/{resume_id}/score", response_model=dict)
+async def score_resume_ats(
     resume_id: uuid.UUID,
     current_user: user_models.User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
-    """Export resume as PDF"""
-    pdf_bytes = await service.export_resume_as_pdf(db, resume_id, current_user.id)
-
-    # In a real implementation, we would return a StreamingResponse
-    # For now, we'll return the bytes directly
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=resume_{resume_id}.pdf"}
-    )
-
-
-@router.post("/upload-scan", response_model=schemas.ResumeWithDataResponse)
-async def upload_and_scan_resume(
-    file: UploadFile = File(...),
-    current_user: user_models.User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
-):
-    """Upload and parse existing resume"""
-    # Validate file type
-    if not file.filename.lower().endswith(('.pdf', '.docx')):
+    """
+    1. Fetch the resume.
+    2. Extract text (if stored as PDF) or use the structured data.
+    3. Call the ATS module to compute scores.
+    4. Return the scores.
+    """
+    resume_svc = resume_service.ResumeService(db)
+    resume = await resume_svc.get_resume_by_id(resume_id)
+    if resume.user_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Only PDF and DOCX files are supported"
+            status_code=403, detail="Not authorized to score this resume"
         )
-
-    # Read file content
-    file_content = await file.read()
-
-    # Validate file size (5MB limit)
-    if len(file_content) > 5 * 1024 * 1024:  # 5MB
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="File size exceeds 5MB limit"
-        )
-
-    # Process file
-    resume, resume_data = await service.upload_and_parse_resume(
-        db=db,
-        user_id=current_user.id,
-        file_content=file_content,
-        filename=file.filename
-    )
-
-    return schemas.ResumeWithDataResponse(
-        resume=resume,
-        data=resume_data
-    )
+    # Pseudo‑code – replace with actual ATS service call
+    # text = await resume_svc.extract_resume_text(resume.file_url) if resume.file_url else json.dumps(resume.data)
+    # scores = await ats_service.score_resume(text)
+    # return scores
+    raise NotImplementedError("ATS scoring endpoint – delegate to ATS module")

@@ -1,393 +1,132 @@
+import uuid
+from typing import List, Optional
+
+from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-import uuid
-import re
-from datetime import datetime
-from typing import Optional, List, Tuple
+
 from app.modules.resumes import models, schemas
-from app.modules.ai_providers import service as ai_provider_service
-from app.utils.encryption import encrypt_data, decrypt_data
-from app.utils.ownership import assert_ownership
-from app.utils.ai import extract_resume_text  # We'll create this utility
+from app.modules.users import models as user_models
+from app.utils.pdf_exporter import export_resume_from_template, html_to_pdf
+from app.utils.pdf_parser import extract_metadata, extract_text
 
 
-async def get_resume_by_id(
-    db: AsyncSession, resume_id: uuid.UUID
-) -> Optional[models.Resume]:
-    """Get resume by ID"""
-    query = select(models.Resume).where(models.Resume.id == resume_id)
-    result = await db.execute(query)
-    return result.scalars().first()
+class ResumeService:
+    def __init__(self, db: AsyncSession):
+        self.db = db
 
+    # ------------------------------------------------------------------
+    # Basic CRUD
+    # ------------------------------------------------------------------
+    async def get_resume_by_id(self, resume_id: uuid.UUID) -> models.Resume:
+        """Get a resume by ID, raising 404 if not found."""
+        result = await self.db.execute(
+            select(models.Resume).where(models.Resume.id == resume_id)
+        )
+        resume = result.scalars().first()
+        if not resume:
+            raise HTTPException(status_code=404, detail="Resume not found")
+        return resume
 
-async def get_resume_by_id_and_user(
-    db: AsyncSession, resume_id: uuid.UUID, user_id: uuid.UUID
-) -> Optional[models.Resume]:
-    """Get resume by ID and user ID with ownership check"""
-    query = select(models.Resume).where(
-        models.Resume.id == resume_id,
-        models.Resume.user_id == user_id,
-        models.Resume.is_deleted == False
-    )
-    result = await db.execute(query)
-    return result.scalars().first()
+    async def get_resumes_by_user(self, user_id: uuid.UUID) -> List[models.Resume]:
+        """Get all active resumes for a given user."""
+        result = await self.db.execute(
+            select(models.Resume)
+            .where(models.Resume.user_id == user_id, models.Resume.is_active == True)
+            .order_by(models.Resume.created_at.desc())
+        )
+        return result.scalars().all()
 
+    async def create_resume(
+        self, user_id: uuid.UUID, resume_in: schemas.ResumeCreate
+    ) -> models.Resume:
+        """Create a new resume for the user."""
+        resume = models.Resume(
+            user_id=user_id,
+            title=resume_in.title,
+            data=resume_in.data,
+            file_url=str(resume_in.file_url) if resume_in.file_url else None,
+        )
+        self.db.add(resume)
+        await self.db.commit()
+        await self.db.refresh(resume)
+        return resume
 
-async def get_resumes_by_user(
-    db: AsyncSession, user_id: uuid.UUID, skip: int = 0, limit: int = 100
-) -> List[models.Resume]:
-    """Get resumes for a user"""
-    query = (
-        select(models.Resume)
-        .where(models.Resume.user_id == user_id, models.Resume.is_deleted == False)
-        .offset(skip)
-        .limit(limit)
-        .order_by(models.Resume.created_at.desc())
-    )
-    result = await db.execute(query)
-    return result.scalars().all()
+    async def update_resume(
+        self, resume_id: uuid.UUID, resume_in: schemas.ResumeUpdate
+    ) -> models.Resume:
+        """Update an existing resume (partial update)."""
+        resume = await self.get_resume_by_id(resume_id)
+        update_data = resume_in.model_dump(exclude_unset=True)
+        for field, value in update_data.items():
+            if field == "file_url" and value is not None:
+                value = str(value)
+            setattr(resume, field, value)
+        await self.db.commit()
+        await self.db.refresh(resume)
+        return resume
 
+    async def deactivate_resume(self, resume_id: uuid.UUID) -> None:
+        """Soft‑delete a resume by setting is_active to False."""
+        resume = await self.get_resume_by_id(resume_id)
+        resume.is_active = False
+        await self.db.commit()
 
-async def create_resume(
-    db: AsyncSession,
-    user_id: uuid.UUID,
-    resume_create: schemas.ResumeCreate
-) -> models.Resume:
-    """Create a new resume"""
-    db_resume = models.Resume(
-        user_id=user_id,
-        title=resume_create.title,
-        template_id=resume_create.template_id,
-    )
+    # ------------------------------------------------------------------
+    # AI‑assisted generation (placeholder – calls AI module)
+    # ------------------------------------------------------------------
+    async def generate_resume_with_ai(
+        self,
+        user_id: uuid.UUID,
+        ai_prompt: str,
+        template_html: str,
+        css_strings: Optional[list[str]] = None,
+    ) -> models.Resume:
+        """
+        Placeholder for AI‑driven resume generation.
+        In a full implementation, this would:
+          1. Call the AI module (e.g., app.modules.ai.service) to generate structured resume data.
+          2. Render the data into HTML using the provided template.
+          3. Convert HTML to PDF via WeasyPrint.
+          4. Store the PDF URL (e.g., in object storage) and the structured data.
+        For now, we raise NotImplementedError to indicate the delegation.
+        """
+        raise NotImplementedError("AI generation delegated to AI module")
 
-    db.add(db_resume)
-    await db.commit()
-    await db.refresh(db_resume)
+    # ------------------------------------------------------------------
+    # PDF export helpers (uses utils)
+    # ------------------------------------------------------------------
+    async def export_resume_to_pdf(
+        self,
+        resume_id: uuid.UUID,
+        html_content: str,
+        output_dir: str | Path,
+        base_url: Optional[str] = None,
+        css_strings: Optional[list[str]] = None,
+    ) -> str:
+        """
+        Generates a PDF from HTML and returns a file system path.
+        The actual uploading to Supabase/S3 would be handled elsewhere.
+        """
+        from pathlib import Path
 
-    # Create initial resume data
-    initial_data = schemas.ResumeDataCreate(
-        personal=schemas.PersonalInfo(),
-        summary="",
-        skills=[],
-        experience=[],
-        projects=[],
-        education=[],
-        certifications=[],
-        custom_sections=[]
-    )
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        pdf_path = output_dir / f"resume_{resume_id}.pdf"
 
-    await create_resume_data(db, db_resume.id, initial_data)
+        html_to_pdf(
+            html_content=html_content,
+            output_path=pdf_path,
+            base_url=base_url,
+            css_strings=css_strings,
+        )
+        # Return a relative path or signed URL – implementation depends on storage layer
+        return str(pdf_path)
 
-    return db_resume
+    async def extract_resume_text(self, pdf_path: str | Path) -> str:
+        """Convenience wrapper – delegates to pdf_parser."""
+        return extract_text(pdf_path)
 
-
-async def update_resume(
-    db: AsyncSession,
-    resume_id: uuid.UUID,
-    user_id: uuid.UUID,
-    resume_update: schemas.ResumeUpdate
-) -> Optional[models.Resume]:
-    """Update resume"""
-    resume = await get_resume_by_id_and_user(db, resume_id, user_id)
-    if not resume:
-        return None
-
-    update_data = resume_update.model_dump(exclude_unset=True)
-    for field, value in update_data.items():
-        setattr(resume, field, value)
-
-    db.add(resume)
-    await db.commit()
-    await db.refresh(resume)
-    return resume
-
-
-async def delete_resume(
-    db: AsyncSession,
-    resume_id: uuid.UUID,
-    user_id: uuid.UUID
-) -> bool:
-    """Soft delete resume"""
-    resume = await get_resume_by_id_and_user(db, resume_id, user_id)
-    if not resume:
-        return False
-
-    resume.is_deleted = True
-    resume.deleted_at = datetime.utcnow()
-    db.add(resume)
-    await db.commit()
-    return True
-
-
-async def get_resume_data(
-    db: AsyncSession, resume_id: uuid.UUID
-) -> Optional[models.ResumeData]:
-    """Get resume data by resume ID"""
-    query = select(models.ResumeData).where(models.ResumeData.resume_id == resume_id)
-    result = await db.execute(query)
-    return result.scalars().first()
-
-
-async def create_resume_data(
-    db: AsyncSession,
-    resume_id: uuid.UUID,
-    resume_data_create: schemas.ResumeDataCreate
-) -> models.ResumeData:
-    """Create resume data"""
-    db_resume_data = models.ResumeData(
-        resume_id=resume_id,
-        personal=resume_data_create.personal.model_dump(),
-        summary=resume_data_create.summary,
-        skills=resume_data_create.skills,
-        experience=resume_data_create.experience,
-        projects=resume_data_create.projects,
-        education=resume_data_create.education,
-        certifications=resume_data_create.certifications,
-        custom_sections=resume_data_create.custom_sections
-    )
-
-    db.add(db_resume_data)
-    await db.commit()
-    await db.refresh(db_resume_data)
-    return db_resume_data
-
-
-async def update_resume_data(
-    db: AsyncSession,
-    resume_id: uuid.UUID,
-    resume_data_update: schemas.ResumeDataUpdate
-) -> Optional[models.ResumeData]:
-    """Update resume data"""
-    resume_data = await get_resume_data(db, resume_id)
-    if not resume_data:
-        return None
-
-    update_data = resume_data_update.model_dump(exclude_unset=True)
-
-    # Handle personal info update specially since it's a nested object
-    if "personal" in update_data and update_data["personal"] is not None:
-        # Merge with existing personal data
-        current_personal = resume_data.personal or {}
-        update_personal = update_data["personal"].model_dump(exclude_unset=True)
-        current_personal.update(update_personal)
-        resume_data.personal = current_personal
-        del update_data["personal"]
-
-    # Update other fields
-    for field, value in update_data.items():
-        setattr(resume_data, field, value)
-
-    db.add(resume_data)
-    await db.commit()
-    await db.refresh(resume_data)
-    return resume_data
-
-
-async def upload_and_parse_resume(
-    db: AsyncSession,
-    user_id: uuid.UUID,
-    file_content: bytes,
-    filename: str
-) -> Tuple[models.Resume, models.ResumeData]:
-    """
-    Upload and parse resume file (PDF/DOCX) -> extract text -> populate form
-    Following PRD: Existing resume upload → auto-scan → populate form
-    """
-    # Validate file type
-    if not filename.lower().endswith(('.pdf', '.docx')):
-        raise ValueError("Only PDF and DOCX files are supported")
-
-    # Validate file size (5MB limit as per instruction.md)
-    if len(file_content) > 5 * 1024 * 1024:  # 5MB
-        raise ValueError("File size exceeds 5MB limit")
-
-    # Extract text from file
-    resume_text = extract_resume_text(file_content, filename)
-    if not resume_text.strip():
-        raise ValueError("Could not extract text from resume file")
-
-    # Parse resume text to structured data (would use AI in production)
-    # For now, we'll create a basic structure
-    parsed_data = _parse_resume_text(resume_text)
-
-    # Create resume
-    resume_create = schemas.ResumeCreate(
-        title=f"Uploaded Resume - {filename}",
-        template_id="classic"  # Default template
-    )
-
-    resume = await create_resume(db, user_id, resume_create)
-
-    # Create resume data with parsed information
-    resume_data_create = schemas.ResumeDataCreate(**parsed_data)
-    resume_data = await create_resume_data(db, resume.id, resume_data_create)
-
-    return resume, resume_data
-
-
-def _parse_resume_text(resume_text: str) -> dict:
-    """
-    Parse resume text into structured data
-    In production, this would use AI to extract structured information
-    For MVP, we'll return empty/default values
-    """
-    # This is a simplified parser - in production would use NLP/AI
-    lines = resume_text.split('\n')
-
-    # Basic extraction logic (would be much more sophisticated in production)
-    personal_info = {}
-    summary = ""
-    skills = []
-    experience = []
-    projects = []
-    education = []
-    certifications = []
-    custom_sections = []
-
-    # Very basic parsing - would be replaced with AI-powered extraction
-    current_section = None
-    section_content = []
-
-    for line in lines:
-        line = line.strip()
-        if not line:
-            continue
-
-        # Detect section headers (very basic)
-        lower_line = line.lower()
-        if any(keyword in lower_line for keyword in ['summary', 'profile', 'objective']):
-            if section_content and current_section:
-                personal_info, summary, skills, experience, projects, education, certifications, custom_sections = \
-                    _add_section_content(current_section, section_content, personal_info, summary, skills, experience, projects, education, certifications, custom_sections)
-            section_content = []
-            current_section = "summary"
-        elif any(keyword in lower_line for keyword in ['skill', 'technical', 'technology']):
-            if section_content and current_section:
-                personal_info, summary, skills, experience, projects, education, certifications, custom_sections = \
-                    _add_section_content(current_section, section_content, personal_info, summary, skills, experience, projects, education, certifications, custom_sections)
-            section_content = []
-            current_section = "skills"
-        elif any(keyword in lower_line for keyword in ['experience', 'employment', 'work']):
-            if section_content and current_section:
-                personal_info, summary, skills, experience, projects, education, certifications, custom_sections = \
-                    _add_section_content(current_section, section_content, personal_info, summary, skills, experience, projects, education, certifications, custom_sections)
-            section_content = []
-            current_section = "experience"
-        elif any(keyword in lower_line for keyword in ['project', 'portfolio']):
-            if section_content and current_section:
-                personal_info, summary, skills, experience, projects, education, certifications, custom_sections = \
-                    _add_section_content(current_section, section_content, personal_info, summary, skills, experience, projects, education, certifications, custom_sections)
-            section_content = []
-            current_section = "projects"
-        elif any(keyword in lower_line for keyword in ['education', 'academic', 'university', 'college']):
-            if section_content and current_section:
-                personal_info, summary, skills, experience, projects, education, certifications, custom_sections = \
-                    _add_section_content(current_section, section_content, personal_info, summary, skills, experience, projects, education, certifications, custom_sections)
-            section_content = []
-            current_section = "education"
-        elif any(keyword in lower_line for keyword in ['certification', 'certificate', 'license']):
-            if section_content and current_section:
-                personal_info, summary, skills, experience, projects, education, certifications, custom_sections = \
-                    _add_section_content(current_section, section_content, personal_info, summary, skills, experience, projects, education, certifications, custom_sections)
-            section_content = []
-            current_section = "certifications"
-        else:
-            section_content.append(line)
-
-    # Add last section
-    if section_content and current_section:
-        personal_info, summary, skills, experience, projects, education, certifications, custom_sections = \
-            _add_section_content(current_section, section_content, personal_info, summary, skills, experience, projects, education, certifications, custom_sections)
-
-    return {
-        "personal": personal_info,
-        "summary": summary,
-        "skills": skills,
-        "experience": experience,
-        "projects": projects,
-        "education": education,
-        "certifications": certifications,
-        "custom_sections": custom_sections
-    }
-
-
-def _add_section_content(section_type, content_lines, personal_info, summary, skills, experience, projects, education, certifications, custom_sections):
-    """Helper to add content to appropriate section"""
-    content = ' '.join(content_lines).strip()
-    if not content:
-        return personal_info, summary, skills, experience, projects, education, certifications, custom_sections
-
-    if section_type == "summary":
-        summary = content
-    elif section_type == "skills":
-        # Split by common delimiters
-        skill_list = [s.strip() for s in re.split(r'[,;|\n]', content) if s.strip()]
-        skills.extend(skill_list)
-    elif section_type == "experience":
-        # Very basic experience parsing
-        experience.append({
-            "company": "",
-            "role": "",
-            "duration": "",
-            "bullets": [content]
-        })
-    elif section_type == "projects":
-        # Very basic project parsing
-        projects.append({
-            "name": "",
-            "description": content,
-            "link": "",
-            "tech_stack": []
-        })
-    elif section_type == "education":
-        # Very basic education parsing
-        education.append({
-            "institution": content,
-            "degree": "",
-            "year": "",
-            "grade": ""
-        })
-    elif section_type == "certifications":
-        # Very basic certification parsing
-        certifications.append({
-            "name": content,
-            "issuer": "",
-            "year": "",
-            "link": ""
-        })
-    else:
-        # Personal info or custom section
-        # Try to parse as key-value for personal info
-        if ':' in content:
-            key, value = content.split(':', 1)
-            key = key.strip().lower().replace(' ', '_')
-            personal_info[key] = value.strip()
-        else:
-            # Treat as custom section
-            custom_sections.append({
-                "label": "Information",
-                "content": content
-            })
-
-    return personal_info, summary, skills, experience, projects, education, certifications, custom_sections
-
-
-# This function would be called from the router
-async def export_resume_as_pdf(
-    db: AsyncSession,
-    resume_id: uuid.UUID,
-    user_id: uuid.UUID
-) -> bytes:
-    """Export resume as PDF"""
-    # Get resume and data with ownership check
-    resume = await get_resume_by_id_and_user(db, resume_id, user_id)
-    if not resume:
-        raise ValueError("Resume not found or access denied")
-
-    resume_data = await get_resume_data(db, resume_id)
-    if not resume_data:
-        raise ValueError("Resume data not found")
-
-    # In production, this would use WeasyReportLab or similar to generate PDF
-    # For now, return a placeholder
-    return b"PDF generation would be implemented here"
+    async def extract_resume_metadata(self, pdf_path: str | Path) -> dict:
+        """Convenience wrapper – delegates to pdf_parser."""
+        return extract_metadata(pdf_path)

@@ -1,10 +1,11 @@
+from backend.app.modules.auth.ats import schemas
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 import uuid
 from typing import List, Optional
 
 from app.config.database import get_db
-from app.modules.ats import schemas, service
+from backend.app.modules.auth.ats import service
 from app.utils.jwt import verify_access_token
 from app.modules.users import models as user_models
 from app.modules.resumes import service as resume_service

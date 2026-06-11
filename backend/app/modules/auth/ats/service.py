@@ -1,9 +1,10 @@
+from backend.app.modules.auth.ats import models
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 import uuid
 import json
 from typing import Optional, List
-from app.modules.ats import models, schemas
+from backend.app.modules.auth.ats import schemas
 from app.modules.ai import service as ai_service
 from app.modules.resumes import service as resume_service
 

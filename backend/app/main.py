@@ -6,7 +6,7 @@ from app.middleware.auth import AuthMiddleware
 from app.middleware.error_handler import ErrorHandlerMiddleware
 from app.modules.ai.router import router as ai_router
 from app.modules.ai_providers.router import router as ai_providers_router
-from app.modules.ats.router import router as ats_router
+from backend.app.modules.auth.ats.router import router as ats_router
 from app.modules.auth.router import router as auth_router
 from app.modules.resumes.router import router as resumes_router
 from app.modules.users.router import router as users_router

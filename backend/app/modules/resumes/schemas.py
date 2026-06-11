@@ -1,102 +1,44 @@
-from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Any
 from datetime import datetime
+from typing import Any, Optional
+from uuid import UUID
 
-
-# Personal information schema
-class PersonalInfo(BaseModel):
-    first_name: Optional[str] = None
-    last_name: Optional[str] = None
-    job_title: Optional[str] = None
-    email: Optional[str] = None
-    mobile: Optional[str] = None
-    address: Optional[str] = None
-    pincode: Optional[str] = None
-    links: Optional[Dict[str, str]] = None  # github, linkedin, portfolio
+from pydantic import BaseModel, Field, HttpUrl
 
 
 class ResumeBase(BaseModel):
-    title: str = Field(..., min_length=1, max_length=255)
-    template_id: str = Field(..., pattern="^(classic|modern|minimal|creative)$")
+    title: Optional[str] = Field(None, max_length=255)
+    data: Any = Field(
+        ..., description="Structured resume data matching ResumeData interface"
+    )
+    file_url: Optional[HttpUrl] = None
 
 
 class ResumeCreate(ResumeBase):
-    pass  # Inherits title and template_id
+    pass  # user_id is set by the service/router from the authenticated user
 
 
 class ResumeUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=1, max_length=255)
-    template_id: Optional[str] = Field(None, pattern="^(classic|modern|minimal|creative)$")
+    title: Optional[str] = Field(None, max_length=255)
+    data: Optional[Any] = None
+    file_url: Optional[HttpUrl] = None
 
 
 class ResumeInDBBase(ResumeBase):
-    id: str
-    user_id: str
-    is_deleted: bool
-    deleted_at: Optional[datetime] = None
+    id: UUID
+    user_id: UUID
+    is_active: bool
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
 
     class Config:
-        from_attributes = True
+        from_attributes = True  # Pydantic v2
 
 
 class ResumeInDB(ResumeInDBBase):
     pass
 
 
-class ResumeResponse(ResumeInDBBase):
+class ResumePublic(ResumeInDBBase):
+    """Schema returned to the client – same as InDB for now."""
+
     pass
-
-
-# Resume data schema
-class ResumeDataBase(BaseModel):
-    personal: PersonalInfo
-    summary: Optional[str] = None
-    skills: List[str] = Field(default_factory=list)
-    experience: List[Dict[str, Any]] = Field(default_factory=list)
-    projects: List[Dict[str, Any]] = Field(default_factory=list)
-    education: List[Dict[str, Any]] = Field(default_factory=list)
-    certifications: List[Dict[str, Any]] = Field(default_factory=list)
-    custom_sections: List[Dict[str, Any]] = Field(default_factory=list)
-
-
-class ResumeDataCreate(ResumeDataBase):
-    pass
-
-
-class ResumeDataUpdate(BaseModel):
-    personal: Optional[PersonalInfo] = None
-    summary: Optional[str] = None
-    skills: Optional[List[str]] = None
-    experience: Optional[List[Dict[str, Any]]] = None
-    projects: Optional[List[Dict[str, Any]]] = None
-    education: Optional[List[Dict[str, Any]]] = None
-    certifications: Optional[List[Dict[str, Any]]] = None
-    custom_sections: Optional[List[Dict[str, Any]]] = None
-
-
-class ResumeDataInDBBase(ResumeDataBase):
-    id: str
-    resume_id: str
-    updated_at: datetime
-
-    class Config:
-        from_attributes = True
-
-
-class ResumeDataInDB(ResumeInDBBase):
-    pass
-
-
-class ResumeDataResponse(ResumeInDBBase):
-    pass
-
-
-# Combined resume response for API
-class ResumeWithDataResponse(BaseModel):
-    resume: ResumeResponse
-    data: ResumeDataResponse
-
-    class Config:
-        from_attributes = True
