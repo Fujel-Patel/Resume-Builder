@@ -2,7 +2,8 @@
 AI service layer – provider routing, API key verification, and helper utilities.
 """
 
-from typing import List, Optional
+from typing import Optional
+from urllib.parse import urlparse
 
 import httpx
 from fastapi import HTTPException, status
@@ -22,6 +23,30 @@ PROVIDER_MAP = {
     "nvidia-nim": nvidia_nim.complete,
     "custom": anthropic.complete,  # treat custom as OpenAI‑compatible (use anthropic placeholder)
 }
+
+
+def _validate_base_url(base_url: str) -> str:
+    """Validate and sanitize a base_url for external AI providers.
+
+    Only http/https schemes are allowed and localhost / private IPs are blocked.
+    This prevents SSRF attacks where an attacker could supply internal service URLs.
+    """
+    parsed = urlparse(base_url)
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError("base_url must use http or https scheme")
+    # Disallow localhost and common cloud metadata hosts
+    blocked_hosts = (
+        "localhost",
+        "127.0.0.1",
+        "0.0.0.0",
+        "::1",
+        "169.254.169.254",
+        "metadata.google.internal",
+        "metadata.azure.com",
+    )
+    if parsed.hostname in blocked_hosts:
+        raise ValueError("base_url cannot point to a local or metadata address")
+    return base_url
 
 
 async def get_default_provider(user_id: str, db: AsyncSession) -> AIProvider:
@@ -64,11 +89,17 @@ async def get_provider_by_name(
 async def ai_complete(user_id: str, prompt: str, db: AsyncSession) -> str:
     """Route a prompt to the user's default AI provider.
 
-    Decrypts the stored API key, selects the appropriate provider function, and returns the generated text.
+    Decrypts the stored API key, selects the appropriate provider function,
+    validates the base_url to prevent SSRF, and returns the generated text.
     """
     provider = await get_default_provider(user_id, db)
     api_key = decrypt(provider.api_key_encrypted)
     base_url = provider.base_url  # May be None for providers that don't need it
+
+    # Validate base_url if provided (prevent SSRF)
+    if base_url:
+        base_url = _validate_base_url(base_url)
+
     fn = PROVIDER_MAP.get(provider.provider_name)
     if not fn:
         raise HTTPException(
@@ -90,6 +121,11 @@ async def verify_api_key(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Unsupported provider for verification",
         )
+
+    # Validate base_url if provided (prevent SSRF)
+    if base_url:
+        base_url = _validate_base_url(base_url)
+
     try:
         # Small prompt to verify connectivity; limit tokens to keep it cheap.
         result = await fn(

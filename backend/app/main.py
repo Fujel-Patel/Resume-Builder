@@ -79,11 +79,24 @@ app.include_router(
 )
 app.include_router(users_router, prefix="/api/v1/users", tags=["users"])
 app.include_router(resumes_router, prefix="/api/v1/resumes", tags=["resumes"])
-app.include_router(ai_router, prefix="/api/v1/ai", tags=["ai"])
 app.include_router(
-    ai_providers_router, prefix="/api/v1/settings/ai", tags=["ai-settings"]
+    ai_router,
+    prefix="/api/v1/ai",
+    tags=["ai"],
+    dependencies=[Depends(limiter.limit("20/min"))],
 )
-app.include_router(ats_router, prefix="/api/v1/ats", tags=["ats"])
+app.include_router(
+    ai_providers_router,
+    prefix="/api/v1/settings/ai",
+    tags=["ai-settings"],
+    dependencies=[Depends(limiter.limit("10/min"))],
+)
+app.include_router(
+    ats_router,
+    prefix="/api/v1/ats",
+    tags=["ats"],
+    dependencies=[Depends(limiter.limit("30/min"))],
+)
 
 if __name__ == "__main__":
     import uvicorn

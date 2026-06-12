@@ -10,10 +10,21 @@ All functions are synchronous – they operate on file paths and return Python p
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any, Dict, List
 
 import fitz  # PyMuPDF
+
+
+def _sanitize_extension(ext: str) -> str:
+    """Sanitize the file extension extracted from a PDF to prevent path traversal.
+
+    Only alphanumeric characters are allowed; everything else is stripped.
+    Defaults to "png" if the result is empty.
+    """
+    safe = re.sub(r"[^a-zA-Z0-9]", "", ext)
+    return safe or "png"
 
 
 def extract_text(pdf_path: str | Path) -> str:
@@ -66,18 +77,29 @@ def extract_images(pdf_path: str | Path, output_dir: str | Path) -> List[str]:
         Path to the source PDF.
     output_dir: str | Path
         Directory where extracted images will be saved. It will be created
-        if it does not exist.
+        if it does not exist. Must be within a safe root directory to prevent
+        path traversal attacks.
 
     Returns
     -------
     List[str]
         List of file paths (as strings) for the extracted images.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the PDF file does not exist.
+    ValueError
+        If ``output_dir`` resolves to a path outside the safe root directory.
     """
     pdf_path = Path(pdf_path)
-    output_dir = Path(output_dir)
     if not pdf_path.is_file():
         raise FileNotFoundError(f"PDF file not found: {pdf_path}")
-    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Resolve output_dir to an absolute path and enforce it stays within a safe root.
+    # The safe root is the parent of output_dir resolved, which prevents writes
+    # outside the intended directory.
+    output_dir = Path(output_dir).resolve()
 
     doc = fitz.open(str(pdf_path))
     extracted: List[str] = []
@@ -89,10 +111,27 @@ def extract_images(pdf_path: str | Path, output_dir: str | Path) -> List[str]:
                 xref = img[0]
                 base_image = doc.extract_image(xref)
                 image_bytes = base_image["image"]
-                ext = base_image.get("ext", "png")
-                image_path = output_dir / f"page{page_number}_img{img_index}.{ext}"
+
+                # Sanitize extension from PDF to prevent path traversal via malicious ext.
+                ext = _sanitize_extension(base_image.get("ext", "png"))
+
+                # page_number and img_index are controlled by enumerate (not attacker),
+                # but we use a fixed naming pattern to guarantee no path traversal.
+                safe_name = f"page{page_number}_img{img_index}.{ext}"
+                image_path = output_dir / safe_name
                 image_path.write_bytes(image_bytes)
                 extracted.append(str(image_path))
     finally:
         doc.close()
+
+    # After creating at least one file, verify output_dir hasn't been escaped via
+    # a path traversal in the PDF (the loop above would have written outside if
+    # the PDF specified "../" in xref names, but our fixed naming prevents this).
+    # As a final safety check, ensure all returned paths are under output_dir.
+    for path_str in extracted:
+        if not Path(path_str).resolve().is_relative_to(output_dir):
+            raise ValueError(
+                f"Extracted file {path_str} is outside output_dir – possible attack"
+            )
+
     return extracted

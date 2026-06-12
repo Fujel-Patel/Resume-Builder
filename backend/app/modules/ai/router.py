@@ -4,10 +4,8 @@ Endpoints follow the PRD specification (section 7 – AI Endpoints).
 """
 
 import json
-import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.database import get_db
@@ -15,44 +13,13 @@ from app.modules.ai import prompts
 from app.modules.ai import schemas as ai_schemas
 from app.modules.ai import service as ai_service
 from app.modules.users import models as user_models
-from app.utils.jwt import verify_access_token
+from app.utils.auth import get_current_user
 
 router = APIRouter(
     prefix="/ai",
     tags=["ai"],
     responses={404: {"description": "Not found"}},
 )
-
-# Reuse the OAuth2 scheme defined in other routers (login endpoint)
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
-
-
-async def get_current_user(
-    token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
-) -> user_models.User:
-    """Dependency that returns the currently authenticated user."""
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = verify_access_token(token)
-        if payload is None:
-            raise credentials_exception
-        user_id_str: str = payload.get("sub")
-        if user_id_str is None:
-            raise credentials_exception
-        user_id = uuid.UUID(user_id_str)
-    except Exception:
-        raise credentials_exception
-    # Fetch user from DB (reuse user service pattern)
-    from app.modules.users import service as user_service
-
-    user = await user_service.get_user_by_id(db, user_id)
-    if user is None:
-        raise credentials_exception
-    return user
 
 
 # ----------------------------------------------------------------------

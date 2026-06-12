@@ -1,16 +1,18 @@
+import secrets
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional, Tuple
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.settings import settings
 from app.modules.auth import models, schemas
-from app.utils.password import get_password_hash, verify_password
 from app.utils.jwt import (
     create_access_token,
     hash_refresh_token,
 )
+from app.utils.password import get_password_hash, verify_password
 
 
 async def get_user_by_email(db: AsyncSession, email: str) -> Optional[models.User]:
@@ -27,7 +29,9 @@ async def get_user_by_id(db: AsyncSession, user_id: uuid.UUID) -> Optional[model
     return result.scalars().first()
 
 
-async def authenticate_user(db: AsyncSession, email: str, password: str) -> Optional[models.User]:
+async def authenticate_user(
+    db: AsyncSession, email: str, password: str
+) -> Optional[models.User]:
     """Authenticate user with email and password"""
     user = await get_user_by_email(db, email)
     if not user:
@@ -93,7 +97,7 @@ async def create_refresh_token_for_user(
     db: AsyncSession, user: models.User
 ) -> Tuple[str, models.RefreshToken]:
     """Create refresh token for user and store hash in database"""
-    refresh_token = uuid.uuid4().hex
+    refresh_token = secrets.token_urlsafe(32)
     token_hash = hash_refresh_token(refresh_token)
 
     expires_at = datetime.utcnow() + timedelta(days=settings.JWT_REFRESH_EXPIRE_DAYS)
@@ -119,7 +123,7 @@ async def verify_refresh_token_db(
 
     query = select(models.RefreshToken).where(
         models.RefreshToken.token_hash == token_hash,
-        models.RefreshToken.expires_at > datetime.utcnow()
+        models.RefreshToken.expires_at > datetime.utcnow(),
     )
     result = await db.execute(query)
     db_token = result.scalars().first()
@@ -138,7 +142,9 @@ async def verify_refresh_token_db(
 
 async def delete_refresh_token(db: AsyncSession, token_hash: str):
     """Delete refresh token from database"""
-    query = select(models.RefreshToken).where(models.RefreshToken.token_hash == token_hash)
+    query = select(models.RefreshToken).where(
+        models.RefreshToken.token_hash == token_hash
+    )
     result = await db.execute(query)
     db_token = result.scalars().first()
 
@@ -169,7 +175,7 @@ async def verify_email_token(
     query = select(models.EmailToken).where(
         models.EmailToken.token_hash == token_hash,
         models.EmailToken.type == token_type,
-        models.EmailToken.expires_at > datetime.utcnow()
+        models.EmailToken.expires_at > datetime.utcnow(),
     )
     result = await db.execute(query)
     email_token = result.scalars().first()
@@ -194,9 +200,7 @@ async def verify_email_token(
     return True, user
 
 
-async def create_email_verification_token(
-    db: AsyncSession, user: models.User
-) -> str:
+async def create_email_verification_token(db: AsyncSession, user: models.User) -> str:
     """Create email verification token for user"""
     from app.utils.email import generate_email_token, hash_email_token
 
@@ -218,9 +222,7 @@ async def create_email_verification_token(
     return token
 
 
-async def create_password_reset_token(
-    db: AsyncSession, user: models.User
-) -> str:
+async def create_password_reset_token(db: AsyncSession, user: models.User) -> str:
     """Create password reset token for user"""
     from app.utils.email import generate_email_token, hash_email_token
 

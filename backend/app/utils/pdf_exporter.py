@@ -10,10 +10,20 @@ WeasyPrint handles CSS, images, and external resources via the ``base_url`` argu
 
 from __future__ import annotations
 
+import html
 from pathlib import Path
 from typing import List, Optional
 
 from weasyprint import CSS, HTML
+
+
+def _sanitize_for_pdf(text: str) -> str:
+    """Escape HTML special characters to prevent XSS when rendering user data.
+
+    This strips all HTML tags and attribute, converting the value to plain text.
+    Use this before substituting user data into template placeholders.
+    """
+    return html.escape(text)
 
 
 def html_to_pdf(
@@ -32,13 +42,17 @@ def html_to_pdf(
         Destination for the generated PDF.
     base_url: Optional[str]
         Base URL used by WeasyPrint to resolve relative URLs (e.g., images, CSS files).
+        When None, defaults to "about:blank" to prevent SSRF via external resource fetching.
     css_strings: Optional[List[str]]
         List of CSS strings to apply. If omitted, WeasyPrint will use any <style> tags
         present in ``html_content``.
     """
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    html = HTML(string=html_content, base_url=base_url)
+    # Default to about:blank when no base_url is supplied to prevent WeasyPrint
+    # from fetching external resources (SSRF prevention).
+    safe_base = base_url if base_url is not None else "about:blank"
+    html = HTML(string=html_content, base_url=safe_base)
     stylesheets = [CSS(string=css) for css in css_strings] if css_strings else None
     html.write_pdf(str(output_path), stylesheets=stylesheets)
 
@@ -54,9 +68,11 @@ def export_resume_from_template(
 
     This function does a very light templating step: it replaces ``{{key}}``
     placeholders in ``template_html`` with the corresponding values from ``context``.
+    User values are HTML‑escaped before substitution to prevent XSS.
     For more complex rendering, integrate Jinja2.
     """
     rendered = template_html
     for key, value in context.items():
-        rendered = rendered.replace(f"{{{{{key}}}}}", str(value))
+        safe_value = _sanitize_for_pdf(str(value))
+        rendered = rendered.replace(f"{{{{{key}}}}}", safe_value)
     html_to_pdf(rendered, output_path, base_url=base_url, css_strings=css_strings)
