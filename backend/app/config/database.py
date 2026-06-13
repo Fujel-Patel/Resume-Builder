@@ -6,22 +6,22 @@ session factory and a FastAPI dependency ``get_db`` that yields an
 ``AsyncSession`` for request handling.
 """
 
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-
-from sqlalchemy.orm import sessionmaker, declarative_base
-from app.config.settings import settings
 from typing import AsyncGenerator
+
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import declarative_base
+
+from app.config.settings import settings
 
 # Create async engine
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.APP_ENV == "development",
-    future=True,
     pool_pre_ping=True,
 )
 
-# Create async session factory
-AsyncSessionLocal = sessionmaker(
+# Create async session factory (SQLAlchemy 2.0 async best practice)
+AsyncSessionLocal = async_sessionmaker(
     engine, class_=AsyncSession, expire_on_commit=False
 )
 

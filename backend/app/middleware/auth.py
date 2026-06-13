@@ -5,9 +5,7 @@ from fastapi import Request, Response
 from jwt.exceptions import InvalidTokenError
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.config import get_settings
-
-settings = get_settings()
+from app.config.settings import settings
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
