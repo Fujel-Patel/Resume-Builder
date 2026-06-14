@@ -1,73 +1,33 @@
-"""Shared Pydantic base models used across the project.
+"""Shared response models — PRD response shape enforced here."""
 
-The module defines common configuration for all Pydantic models, standard response
-models, and error models used consistently throughout the API.
-"""
-
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
 
-class BaseModelConfig(ConfigDict):
-    """Configuration applied to all Pydantic models in the code base.
-
-    * ``from_attributes=True`` enables compatibility with ORMs such as SQLAlchemy.
-    * ``extra='forbid'`` prevents unexpected fields from being accepted, which
-      helps catch bugs early.
-    * ``str_strip_whitespace=True`` automatically strips whitespace from strings.
-    """
-
-    from_attributes: bool = True  # Replaces orm_mode in Pydantic v2
-    extra: str = "forbid"
-    # String validation - strip whitespace
-    str_strip_whitespace: bool = True
-
-
 class ErrorDetail(BaseModel):
-    """Detailed error information for API error responses."""
-
-    code: str = Field(..., description="Machine-readable error code")
-    message: str = Field(..., description="Human-readable error message")
-    fields: Optional[Dict[str, List[str]]] = Field(
-        None,
-        description="Field-specific errors for validation issues"
-    )
+    code: str
+    message: str
+    fields: Optional[Dict[str, List[str]]] = None
 
 
-class ResponseModel(BaseModel):
-    """Base response model shared by API endpoints.
-
-    Attributes
-    ----------
-    success: ``bool``
-        Indicates whether the request was processed successfully.
-    data: ``Any`` | ``None``
-        The payload returned on success; its type is intentionally generic.
-    error: ``ErrorDetail`` | ``None``
-        Optional error information when ``success`` is ``False``.
-    """
-
+class APIResponse(BaseModel):
+    """Standard API response envelope per PRD."""
     success: bool
     data: Optional[Any] = None
     error: Optional[ErrorDetail] = None
 
-    model_config = BaseModelConfig()
+    model_config = ConfigDict(from_attributes=True)
 
 
-class BaseSchema(BaseModel):
-    """Base schema for all request/response models.
-
-    Provides common configuration and can be extended by specific schemas.
-    """
-
-    model_config = BaseModelConfig()
+def success(data: Any) -> dict:
+    """Return PRD-compliant success response dict."""
+    return {"success": True, "data": data, "error": None}
 
 
-class TimestampMixin(BaseModel):
-    """Mixin for models that include timestamp fields."""
-
-    created_at: Optional[str] = Field(None, description="Creation timestamp")
-    updated_at: Optional[str] = Field(None, description="Last update timestamp")
-
-    model_config = BaseModelConfig()
+def error(code: str, message: str, fields: dict = None, status_code: int = 400):
+    """Build error detail dict for HTTPException detail field."""
+    detail = {"code": code, "message": message}
+    if fields:
+        detail["fields"] = fields
+    return detail

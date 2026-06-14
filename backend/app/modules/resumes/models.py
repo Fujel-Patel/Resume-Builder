@@ -1,30 +1,66 @@
+"""Resume ORM models — matches PRD DB schema exactly (2 tables)."""
+
 import uuid
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, ForeignKey, String, Text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.config.database import Base
-from app.modules.users import (
-    models as user_models,  # for relationship typing (optional)
-)
 
 
 class Resume(Base):
+    """Metadata table — title, template, soft-delete state."""
     __tablename__ = "resumes"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(
-        UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True
+        UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
     )
-    title = Column(String(255), nullable=True)  # e.g., "Software Engineer Resume"
-    data = Column(JSON, nullable=False)  # stores the structured resume (see ResumeData)
-    file_url = Column(
-        String(1024), nullable=True
-    )  # URL to stored PDF (generated or uploaded)
-    is_active = Column(Boolean, default=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    title = Column(String(255), nullable=False)
+    template_id = Column(String(100), nullable=False)  # classic | modern | minimal | creative
+    is_deleted = Column(Boolean, default=False, nullable=False)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
 
-    # Optional relationship (helps with ORM queries)
-    # user = relationship("User", back_populates="resumes")
+    data = relationship("ResumeData", uselist=False, back_populates="resume", cascade="all, delete-orphan")
+
+
+class ResumeData(Base):
+    """Content table — all sections stored as JSONB for flexible structure."""
+    __tablename__ = "resume_data"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    resume_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("resumes.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,  # one-to-one
+        index=True,
+    )
+    personal = Column(JSONB, nullable=True)       # {name, email, mobile, address, links, job_title}
+    summary = Column(Text, nullable=True)
+    skills = Column(JSONB, nullable=True)          # string[]
+    experience = Column(JSONB, nullable=True)      # [{company, role, duration, bullets}]
+    projects = Column(JSONB, nullable=True)        # [{name, description, link, tech_stack}]
+    education = Column(JSONB, nullable=True)       # [{institution, degree, year, grade}]
+    certifications = Column(JSONB, nullable=True)  # [{name, issuer, year, link}]
+    custom_sections = Column(JSONB, nullable=True) # [{label, content}]
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False,
+    )
+
+    resume = relationship("Resume", back_populates="data")

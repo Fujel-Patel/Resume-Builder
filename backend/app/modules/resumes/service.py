@@ -1,132 +1,146 @@
+"""Resume service — CRUD for resumes + resume_data."""
+
 import uuid
+from datetime import datetime
 from typing import List, Optional
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.modules.resumes import models, schemas
-from app.modules.users import models as user_models
-from app.utils.pdf_exporter import export_resume_from_template, html_to_pdf
-from app.utils.pdf_parser import extract_metadata, extract_text
 
 
-class ResumeService:
-    def __init__(self, db: AsyncSession):
-        self.db = db
-
-    # ------------------------------------------------------------------
-    # Basic CRUD
-    # ------------------------------------------------------------------
-    async def get_resume_by_id(self, resume_id: uuid.UUID) -> models.Resume:
-        """Get a resume by ID, raising 404 if not found."""
-        result = await self.db.execute(
-            select(models.Resume).where(models.Resume.id == resume_id)
+async def _get_resume_or_404(db: AsyncSession, resume_id: uuid.UUID) -> models.Resume:
+    result = await db.execute(
+        select(models.Resume)
+        .options(selectinload(models.Resume.data))
+        .where(models.Resume.id == resume_id, models.Resume.is_deleted.is_(False))
+    )
+    resume = result.scalars().first()
+    if not resume:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "NOT_FOUND", "message": "Resume not found"},
         )
-        resume = result.scalars().first()
-        if not resume:
-            raise HTTPException(status_code=404, detail="Resume not found")
-        return resume
+    return resume
 
-    async def get_resumes_by_user(self, user_id: uuid.UUID) -> List[models.Resume]:
-        """Get all active resumes for a given user."""
-        result = await self.db.execute(
-            select(models.Resume)
-            .where(models.Resume.user_id == user_id, models.Resume.is_active == True)
-            .order_by(models.Resume.created_at.desc())
+
+async def get_resume(
+    db: AsyncSession,
+    resume_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> models.Resume:
+    """Get resume + ownership check — always 404 (never 403) per PRD."""
+    result = await db.execute(
+        select(models.Resume)
+        .options(selectinload(models.Resume.data))
+        .where(
+            models.Resume.id == resume_id,
+            models.Resume.user_id == user_id,  # ownership baked in
+            models.Resume.is_deleted.is_(False),
         )
-        return result.scalars().all()
-
-    async def create_resume(
-        self, user_id: uuid.UUID, resume_in: schemas.ResumeCreate
-    ) -> models.Resume:
-        """Create a new resume for the user."""
-        resume = models.Resume(
-            user_id=user_id,
-            title=resume_in.title,
-            data=resume_in.data,
-            file_url=str(resume_in.file_url) if resume_in.file_url else None,
+    )
+    resume = result.scalars().first()
+    if not resume:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "NOT_FOUND", "message": "Resume not found"},
         )
-        self.db.add(resume)
-        await self.db.commit()
-        await self.db.refresh(resume)
-        return resume
+    return resume
 
-    async def update_resume(
-        self, resume_id: uuid.UUID, resume_in: schemas.ResumeUpdate
-    ) -> models.Resume:
-        """Update an existing resume (partial update)."""
-        resume = await self.get_resume_by_id(resume_id)
-        update_data = resume_in.model_dump(exclude_unset=True)
-        for field, value in update_data.items():
-            if field == "file_url" and value is not None:
-                value = str(value)
-            setattr(resume, field, value)
-        await self.db.commit()
-        await self.db.refresh(resume)
-        return resume
 
-    async def deactivate_resume(self, resume_id: uuid.UUID) -> None:
-        """Soft‑delete a resume by setting is_active to False."""
-        resume = await self.get_resume_by_id(resume_id)
-        resume.is_active = False
-        await self.db.commit()
+async def list_resumes(db: AsyncSession, user_id: uuid.UUID) -> List[models.Resume]:
+    result = await db.execute(
+        select(models.Resume)
+        .options(selectinload(models.Resume.data))
+        .where(models.Resume.user_id == user_id, models.Resume.is_deleted.is_(False))
+        .order_by(models.Resume.created_at.desc())
+    )
+    return result.scalars().all()
 
-    # ------------------------------------------------------------------
-    # AI‑assisted generation (placeholder – calls AI module)
-    # ------------------------------------------------------------------
-    async def generate_resume_with_ai(
-        self,
-        user_id: uuid.UUID,
-        ai_prompt: str,
-        template_html: str,
-        css_strings: Optional[list[str]] = None,
-    ) -> models.Resume:
-        """
-        Placeholder for AI‑driven resume generation.
-        In a full implementation, this would:
-          1. Call the AI module (e.g., app.modules.ai.service) to generate structured resume data.
-          2. Render the data into HTML using the provided template.
-          3. Convert HTML to PDF via WeasyPrint.
-          4. Store the PDF URL (e.g., in object storage) and the structured data.
-        For now, we raise NotImplementedError to indicate the delegation.
-        """
-        raise NotImplementedError("AI generation delegated to AI module")
 
-    # ------------------------------------------------------------------
-    # PDF export helpers (uses utils)
-    # ------------------------------------------------------------------
-    async def export_resume_to_pdf(
-        self,
-        resume_id: uuid.UUID,
-        html_content: str,
-        output_dir: str | Path,
-        base_url: Optional[str] = None,
-        css_strings: Optional[list[str]] = None,
-    ) -> str:
-        """
-        Generates a PDF from HTML and returns a file system path.
-        The actual uploading to Supabase/S3 would be handled elsewhere.
-        """
-        from pathlib import Path
+async def create_resume(
+    db: AsyncSession,
+    user_id: uuid.UUID,
+    resume_in: schemas.ResumeCreate,
+) -> models.Resume:
+    resume = models.Resume(
+        user_id=user_id,
+        title=resume_in.title,
+        template_id=resume_in.template_id,
+    )
+    db.add(resume)
+    await db.flush()  # get resume.id before creating ResumeData
 
-        output_dir = Path(output_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
-        pdf_path = output_dir / f"resume_{resume_id}.pdf"
+    content = resume_in.content
+    resume_data = models.ResumeData(
+        resume_id=resume.id,
+        personal=content.personal.model_dump() if content and content.personal else None,
+        summary=content.summary if content else None,
+        skills=content.skills if content else None,
+        experience=[e.model_dump() for e in content.experience] if content and content.experience else None,
+        projects=[p.model_dump() for p in content.projects] if content and content.projects else None,
+        education=[e.model_dump() for e in content.education] if content and content.education else None,
+        certifications=[c.model_dump() for c in content.certifications] if content and content.certifications else None,
+        custom_sections=[s.model_dump() for s in content.custom_sections] if content and content.custom_sections else None,
+    )
+    db.add(resume_data)
+    await db.commit()
+    await db.refresh(resume)
+    return resume
 
-        html_to_pdf(
-            html_content=html_content,
-            output_path=pdf_path,
-            base_url=base_url,
-            css_strings=css_strings,
-        )
-        # Return a relative path or signed URL – implementation depends on storage layer
-        return str(pdf_path)
 
-    async def extract_resume_text(self, pdf_path: str | Path) -> str:
-        """Convenience wrapper – delegates to pdf_parser."""
-        return extract_text(pdf_path)
+async def update_resume(
+    db: AsyncSession,
+    resume_id: uuid.UUID,
+    user_id: uuid.UUID,
+    resume_in: schemas.ResumeUpdate,
+) -> models.Resume:
+    resume = await get_resume(db, resume_id, user_id)
 
-    async def extract_resume_metadata(self, pdf_path: str | Path) -> dict:
-        """Convenience wrapper – delegates to pdf_parser."""
-        return extract_metadata(pdf_path)
+    if resume_in.title is not None:
+        resume.title = resume_in.title
+    if resume_in.template_id is not None:
+        resume.template_id = resume_in.template_id
+
+    if resume_in.content is not None:
+        content = resume_in.content
+        if not resume.data:
+            resume.data = models.ResumeData(resume_id=resume.id)
+        rd = resume.data
+        if content.personal is not None:
+            rd.personal = content.personal.model_dump()
+        if content.summary is not None:
+            rd.summary = content.summary
+        if content.skills is not None:
+            rd.skills = content.skills
+        if content.experience is not None:
+            rd.experience = [e.model_dump() for e in content.experience]
+        if content.projects is not None:
+            rd.projects = [p.model_dump() for p in content.projects]
+        if content.education is not None:
+            rd.education = [e.model_dump() for e in content.education]
+        if content.certifications is not None:
+            rd.certifications = [c.model_dump() for c in content.certifications]
+        if content.custom_sections is not None:
+            rd.custom_sections = [s.model_dump() for s in content.custom_sections]
+        db.add(rd)
+
+    db.add(resume)
+    await db.commit()
+    await db.refresh(resume)
+    return resume
+
+
+async def soft_delete_resume(
+    db: AsyncSession,
+    resume_id: uuid.UUID,
+    user_id: uuid.UUID,
+) -> None:
+    resume = await get_resume(db, resume_id, user_id)
+    resume.is_deleted = True
+    resume.deleted_at = datetime.utcnow()
+    db.add(resume)
+    await db.commit()

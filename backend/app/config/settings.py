@@ -1,69 +1,55 @@
-"""Application configuration settings.
+"""Application settings — Pydantic BaseSettings. Crashes on startup if required fields missing."""
 
-This module defines a :class:`Settings` class based on ``pydantic``'s
-``BaseSettings``. All values are read from environment variables or a ``.env``
-file at the project root. The class provides sensible defaults for development
-and requires explicit values for production‑critical secrets.
-
-A singleton instance ``settings`` is created at import time so other modules
-can simply ``from app.config.settings import settings``.
-"""
-
-from pydantic_settings import BaseSettings
-
+from pathlib import Path
 from typing import List, Union
-import secrets
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+BASE_DIR = Path(__file__).resolve().parents[2]  # backend/app/config → backend
 
 
 class Settings(BaseSettings):
-    """Configuration model for the FastAPI application.
+    model_config = SettingsConfigDict(
+        env_file=str(BASE_DIR / ".env"),
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore",
+    )
 
-    Environment variables are automatically read and validated. Required
-    fields (those without a default) must be present in the ``.env`` file or
-    the process environment, otherwise instantiation will raise a validation
-    error.
-    """
+    # App
     APP_ENV: str = "development"
     PORT: int = 8000
-    SECRET_KEY: str = secrets.token_hex(64)
+    # FIX: removed secrets.token_hex(64) default — that generates a NEW key every
+    # restart, invalidating ALL active sessions. Must be set explicitly in .env
+    SECRET_KEY: str
 
+    # Database
     DATABASE_URL: str
 
+    # JWT — two separate secrets per PRD security checklist
     JWT_ACCESS_SECRET: str
     JWT_REFRESH_SECRET: str
     JWT_ACCESS_EXPIRE_MINUTES: int = 15
     JWT_REFRESH_EXPIRE_DAYS: int = 7
 
+    # AES-256 encryption for stored AI API keys
     ENCRYPTION_KEY: str
 
+    # CORS
     CORS_ORIGINS: Union[str, List[str]] = "http://localhost:3000"
     CLIENT_URL: str = "http://localhost:3000"
 
-    # Email settings
+    # Email
     SMTP_HOST: str = "smtp.resend.com"
     SMTP_PORT: int = 465
     SMTP_USER: str = "resend"
-    SMTP_PASS: str
+    SMTP_PASS: str = ""
     EMAIL_FROM: str = "noreply@generative-cv.com"
 
-    # File storage
-    SUPABASE_URL: str
-    SUPABASE_SERVICE_KEY: str
+    # Supabase / Storage
+    SUPABASE_URL: str = ""
+    SUPABASE_SERVICE_KEY: str = ""
     STORAGE_BUCKET: str = "resume-uploads"
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
-        # Extra validation to ensure security critical fields are properly set
-        @classmethod
-        def customise_sources(
-            cls,
-            init_settings,
-            env_settings,
-            file_secret_settings,
-        ):
-            # Ensure we crash on bad config as per instruction.md
-            return init_settings, env_settings, file_secret_settings
 
-
-settings = Settings()  # Will crash on startup if required fields are missing
+settings = Settings()

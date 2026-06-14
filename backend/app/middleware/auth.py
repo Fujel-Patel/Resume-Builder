@@ -1,3 +1,9 @@
+"""Auth middleware — attaches decoded user_id to request.state for optional use.
+
+Routes that REQUIRE auth use get_current_user() dependency (raises 401).
+This middleware is non-blocking: invalid/missing token just leaves state.user_id = None.
+"""
+
 from typing import Callable
 
 import jwt
@@ -10,34 +16,26 @@ from app.config.settings import settings
 
 class AuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
-        # Initialize user as None
-        request.state.user = None
+        request.state.user_id = None
 
-        # Get the Authorization header
-        authorization: str = request.headers.get("Authorization")
-        if not authorization:
-            # No token, proceed without setting user
+        auth_header: str = request.headers.get("Authorization", "")
+        if not auth_header:
             return await call_next(request)
 
-        # Check if the header is in the format "Bearer <token>"
-        parts = authorization.split()
+        parts = auth_header.split()
         if len(parts) != 2 or parts[0].lower() != "bearer":
-            # Invalid format, proceed without setting user
             return await call_next(request)
 
         token = parts[1]
-
         try:
-            # Decode the JWT token
             payload = jwt.decode(
-                token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM]
+                token,
+                settings.JWT_ACCESS_SECRET,   # FIX: was JWT_SECRET_KEY (doesn't exist)
+                algorithms=["HS256"],
+                options={"verify_aud": False},
             )
-            # Assuming the payload has a 'sub' field with the user ID or user object
-            # We'll set the user from the payload. Adjust as per your token structure.
-            request.state.user = payload.get("sub")  # or however you store user info
+            request.state.user_id = payload.get("sub")
         except InvalidTokenError:
-            # Invalid token, proceed without setting user
-            pass
+            pass  # non-blocking — protected routes use dependency for enforcement
 
-        # Continue to the next middleware or endpoint
         return await call_next(request)

@@ -1,39 +1,39 @@
-"""
-FastAPI router for ATS (Applicant Tracking System) score checker.
-Implements the endpoints described in the PRD (section 5.4 / ATS Endpoints).
-"""
+"""ATS router — PRD response shape, proper error codes."""
 
 import uuid
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.database import get_db
 from app.modules.ats import schemas as ats_schemas
 from app.modules.ats import service as ats_service
 from app.modules.users import models as user_models
+from app.types.common import success
 from app.utils.auth import get_current_user
 
-router = APIRouter(
-    prefix="/ats",
-    tags=["ats"],
-    responses={404: {"description": "Not found"}},
-)
+router = APIRouter()
 
 
-# ----------------------------------------------------------------------
-# Endpoints
-# ----------------------------------------------------------------------
+def _scan_to_dict(scan) -> dict:
+    return {
+        "id": str(scan.id),
+        "user_id": str(scan.user_id),
+        "resume_id": str(scan.resume_id) if scan.resume_id else None,
+        "overall_score": scan.overall_score,
+        "score_report": scan.score_report,
+        "job_description": scan.job_description,
+        "created_at": scan.created_at.isoformat(),
+    }
 
 
-@router.post("/score", response_model=ats_schemas.ATSScanResponse)
+@router.post("/score")
 async def score_ats(
     request: ats_schemas.ATSScoreRequest,
     current_user: user_models.User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Score a resume (or raw resume text) using AI and store the result."""
     try:
         scan = await ats_service.score_resume(
             user_id=current_user.id,
@@ -41,36 +41,42 @@ async def score_ats(
             job_description=request.job_description,
             db=db,
         )
-        return scan
-    except Exception as exc:
+    except ValueError as e:
         raise HTTPException(
-            status_code=500,
-            detail=f"ATS scoring error: {str(exc)}",
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "AI_PROVIDER_ERROR", "message": str(e)},
         )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "INTERNAL_ERROR", "message": "ATS scoring failed"},
+        )
+    return success(_scan_to_dict(scan))
 
 
-@router.get("/history", response_model=List[ats_schemas.ATSScanResponse])
+@router.get("/history")
 async def get_ats_history(
     skip: int = 0,
-    limit: int = 100,
+    limit: int = 50,
     current_user: user_models.User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Return paginated ATS scan history for the authenticated user."""
-    scans = await ats_service.get_scans_by_user(
-        db=db, user_id=current_user.id, skip=skip, limit=limit
-    )
-    return scans
+    limit = min(limit, 100)  # hard cap
+    scans = await ats_service.get_scans_by_user(db=db, user_id=current_user.id, skip=skip, limit=limit)
+    return success([_scan_to_dict(s) for s in scans])
 
 
-@router.get("/history/{scan_id}", response_model=ats_schemas.ATSScanResponse)
+@router.get("/history/{scan_id}")
 async def get_ats_scan(
     scan_id: uuid.UUID,
     current_user: user_models.User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Fetch a single ATS scan record. Ensures the scan belongs to the user."""
     scan = await ats_service.get_scan_by_id(db=db, scan_id=scan_id)
+    # Ownership check — always 404 per PRD (never 403)
     if not scan or scan.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail="ATS scan not found")
-    return scan
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"code": "NOT_FOUND", "message": "ATS scan not found"},
+        )
+    return success(_scan_to_dict(scan))

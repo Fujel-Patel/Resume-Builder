@@ -53,5 +53,5 @@ dev = [
     "pre-commit>=3.8.0",
 ]
 
-[tool.setuptools]
-packages = ["backend"]   # Adjust if you have a different package layout
+[tool.setuptools.packages.find]
+where = ["."]   # Adjust if you have a different package layout

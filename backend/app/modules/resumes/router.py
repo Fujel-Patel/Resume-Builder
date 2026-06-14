@@ -1,145 +1,124 @@
-import uuid
+"""Resumes router — PRD endpoints, always 404 (never 403) for ownership."""
 
-from fastapi import APIRouter, Depends, HTTPException, status
+import uuid
+from typing import List
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.database import get_db
-from app.modules.resumes import models, schemas
-from app.modules.resumes import service as resume_service
+from app.modules.resumes import schemas, service
 from app.modules.users import models as user_models
+from app.types.common import success
 from app.utils.auth import get_current_user
 
-router = APIRouter(
-    prefix="/resumes",
-    tags=["resumes"],
-    responses={404: {"description": "Not found"}},
-)
+router = APIRouter()
 
 
-# ----------------------------------------------------------------------
-# Endpoints
-# ----------------------------------------------------------------------
-@router.get("", response_model=list[schemas.ResumePublic])
+def _resume_to_dict(resume) -> dict:
+    return schemas.ResumeResponse.model_validate(resume).model_dump()
+
+
+# GET /resumes
+@router.get("")
 async def list_resumes(
     current_user: user_models.User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get all resumes belonging to the authenticated user."""
-    resume_svc = resume_service.ResumeService(db)
-    return await resume_svc.get_resumes_by_user(current_user.id)
+    resumes = await service.list_resumes(db, current_user.id)
+    return success([_resume_to_dict(r) for r in resumes])
 
 
-@router.post(
-    "", response_model=schemas.ResumePublic, status_code=status.HTTP_201_CREATED
-)
+# POST /resumes
+@router.post("", status_code=status.HTTP_201_CREATED)
 async def create_resume(
-    resume_in: schemas.ResumeCreate,
+    body: schemas.ResumeCreate,
     current_user: user_models.User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Create a new resume for the authenticated user."""
-    resume_svc = resume_service.ResumeService(db)
-    return await resume_svc.create_resume(user_id=current_user.id, resume_in=resume_in)
+    resume = await service.create_resume(db, current_user.id, body)
+    return success(_resume_to_dict(resume))
 
 
-@router.get("/{resume_id}", response_model=schemas.ResumePublic)
+# GET /resumes/{id}
+@router.get("/{resume_id}")
 async def get_resume(
     resume_id: uuid.UUID,
     current_user: user_models.User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get a specific resume by ID (ensures ownership)."""
-    resume_svc = resume_service.ResumeService(db)
-    resume = await resume_svc.get_resume_by_id(resume_id)
-    if resume.user_id != current_user.id:
-        raise HTTPException(
-            status_code=403, detail="Not authorized to access this resume"
-        )
-    return resume
+    # PRD: ownership fail = 404, never 403 (prevents enumeration)
+    resume = await service.get_resume(db, resume_id, current_user.id)
+    return success(_resume_to_dict(resume))
 
 
-@router.patch("/{resume_id}", response_model=schemas.ResumePublic)
+# PATCH /resumes/{id}
+@router.patch("/{resume_id}")
 async def update_resume(
     resume_id: uuid.UUID,
-    resume_in: schemas.ResumeUpdate,
+    body: schemas.ResumeUpdate,
     current_user: user_models.User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Update a resume (partial update)."""
-    resume_svc = resume_service.ResumeService(db)
-    resume = await resume_svc.get_resume_by_id(resume_id)
-    if resume.user_id != current_user.id:
-        raise HTTPException(
-            status_code=403, detail="Not authorized to update this resume"
-        )
-    return await resume_svc.update_resume(resume_id, resume_in)
+    resume = await service.update_resume(db, resume_id, current_user.id, body)
+    return success(_resume_to_dict(resume))
 
 
-@router.delete("/{resume_id}", status_code=status.HTTP_204_NO_CONTENT)
+# DELETE /resumes/{id} — soft delete
+@router.delete("/{resume_id}", status_code=status.HTTP_200_OK)
 async def delete_resume(
     resume_id: uuid.UUID,
     current_user: user_models.User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Deactivate a resume (soft delete)."""
-    resume_svc = resume_service.ResumeService(db)
-    resume = await resume_svc.get_resume_by_id(resume_id)
-    if resume.user_id != current_user.id:
-        raise HTTPException(
-            status_code=403, detail="Not authorized to delete this resume"
-        )
-    await resume_svc.deactivate_resume(resume_id)
-    return None
+    await service.soft_delete_resume(db, resume_id, current_user.id)
+    return success({"message": "Resume deleted"})
 
 
-# ----------------------------------------------------------------------
-# AI‑generation endpoint (example)
-# ----------------------------------------------------------------------
-@router.post("/generate", response_model=schemas.ResumePublic)
-async def generate_resume_ai(
-    request: dict,
-    current_user: user_models.User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    1. Use the AI module to turn a prompt into structured resume data.
-    2. Render that data into HTML (using a template provided by the client or a default one).
-    3. Export to PDF and store the file URL.
-    4. Persist the resume record.
-    """
-    resume_svc = resume_service.ResumeService(db)
-    # Pseudo‑code – replace with actual AI service call
-    # structured_data = await ai_service.generate_resume_data(prompt=request["prompt"])
-    # html = render_template(request["template_html"], structured_data)
-    # pdf_url = await resume_svc.export_resume_to_pdf(...)
-    # resume_in = schemas.ResumeCreate(title="AI Generated", data=structured_data, file_url=pdf_url)
-    # return await resume_svc.create_resume(current_user.id, resume_in)
-    raise NotImplementedError("AI generation endpoint – delegate to AI module")
-
-
-# ----------------------------------------------------------------------
-# ATS scoring endpoint (example)
-# ----------------------------------------------------------------------
-@router.post("/{resume_id}/score", response_model=dict)
-async def score_resume_ats(
+# POST /resumes/{id}/export — PDF download
+@router.post("/{resume_id}/export")
+async def export_resume(
     resume_id: uuid.UUID,
     current_user: user_models.User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """
-    1. Fetch the resume.
-    2. Extract text (if stored as PDF) or use the structured data.
-    3. Call the ATS module to compute scores.
-    4. Return the scores.
-    """
-    resume_svc = resume_service.ResumeService(db)
-    resume = await resume_svc.get_resume_by_id(resume_id)
-    if resume.user_id != current_user.id:
+    resume = await service.get_resume(db, resume_id, current_user.id)
+    # TODO: render template + WeasyPrint → return FileResponse
+    # from app.utils.pdf_exporter import html_to_pdf
+    # html = render_resume_template(resume)
+    # pdf_bytes = html_to_pdf(html)
+    # return Response(pdf_bytes, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename=resume_{resume_id}.pdf"})
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail={"code": "NOT_IMPLEMENTED", "message": "PDF export coming soon"},
+    )
+
+
+# POST /resumes/upload-scan — upload PDF → extract → return structured JSON
+@router.post("/upload-scan")
+async def upload_scan(
+    file: UploadFile = File(...),
+    current_user: user_models.User = Depends(get_current_user),
+):
+    if file.content_type not in ("application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"):
         raise HTTPException(
-            status_code=403, detail="Not authorized to score this resume"
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "INVALID_REQUEST", "message": "Only PDF and DOCX files are accepted"},
         )
-    # Pseudo‑code – replace with actual ATS service call
-    # text = await resume_svc.extract_resume_text(resume.file_url) if resume.file_url else json.dumps(resume.data)
-    # scores = await ats_service.score_resume(text)
-    # return scores
-    raise NotImplementedError("ATS scoring endpoint – delegate to ATS module")
+
+    content = await file.read()
+    if len(content) > 5 * 1024 * 1024:  # 5MB limit per PRD
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "INVALID_REQUEST", "message": "File size exceeds 5MB limit"},
+        )
+
+    # TODO: save to temp file → pdf_parser.extract_text → AI extract structured data
+    # from app.utils.pdf_parser import extract_text
+    # text = extract_text(tmp_path)
+    # structured = await ai_service.extract_resume_structure(text, user_id, db)
+    # return success(structured)
+    raise HTTPException(
+        status_code=status.HTTP_501_NOT_IMPLEMENTED,
+        detail={"code": "NOT_IMPLEMENTED", "message": "Resume upload scan coming soon"},
+    )

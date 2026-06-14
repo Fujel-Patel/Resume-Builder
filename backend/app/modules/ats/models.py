@@ -24,4 +24,4 @@ class ATSScan(Base):
     overall_score = Column(Integer, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    __table_args__ = ({"postgresql_concurrently": False},)
+    __table_args__ = ()

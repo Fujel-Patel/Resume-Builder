@@ -1,53 +1,62 @@
+"""Users router — GET/PATCH/DELETE /me + password change."""
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.database import get_db
 from app.modules.users import models as user_models
 from app.modules.users import schemas, service
+from app.types.common import success
 from app.utils.auth import get_current_user
 
 router = APIRouter()
 
 
-@router.get("/me", response_model=schemas.UserResponse)
-async def read_current_user(
-    current_user: user_models.User = Depends(get_current_user),
-):
-    """Get current user profile"""
-    return current_user
+@router.get("/me")
+async def get_me(current_user: user_models.User = Depends(get_current_user)):
+    return success(schemas.UserResponse.model_validate(current_user).model_dump())
 
 
-@router.patch("/me", response_model=schemas.UserResponse)
-async def update_current_user(
-    user_update: schemas.UserUpdate,
+@router.patch("/me")
+async def update_me(
+    body: schemas.UserUpdate,
     current_user: user_models.User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Update current user profile"""
-    updated_user = await service.update_user(db, current_user.id, user_update)
-    if not updated_user:
+    updated = await service.update_user(db, current_user.id, body)
+    if not updated:
+        raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": "User not found"})
+    return success(schemas.UserResponse.model_validate(updated).model_dump())
+
+
+@router.patch("/me/password")
+async def change_password(
+    body: schemas.PasswordChangeRequest,
+    current_user: user_models.User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    ok = await service.change_password(
+        db, current_user, body.current_password, body.new_password
+    )
+    if not ok:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={"code": "INVALID_CREDENTIALS", "message": "Current password is incorrect"},
         )
-    return updated_user
+    # Invalidate all refresh tokens on password change
+    from app.modules.auth.service import delete_all_refresh_tokens_for_user
+    await delete_all_refresh_tokens_for_user(db, current_user.id)
+    return success({"message": "Password changed successfully"})
 
 
 @router.delete("/me", status_code=status.HTTP_200_OK)
-async def delete_current_user(
+async def delete_me(
+    body: schemas.DeleteAccountRequest,
     current_user: user_models.User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Delete current user account"""
-    # Following instruction.md: DELETE /users/me requires confirmation text
-    # For simplicity in MVP, we'll just delete
-    # In production, would require confirmation text in request body
-
-    success = await service.delete_user(db, current_user.id)
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
-
-    return {"message": "User successfully deleted"}
+    """Requires body: { "confirmation": "DELETE MY ACCOUNT" } per PRD."""
+    deleted = await service.delete_user(db, current_user.id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": "User not found"})
+    return success({"message": "Account deleted successfully"})
