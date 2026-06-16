@@ -24,6 +24,7 @@ class AIProvider(Base):
     base_url = Column(Text, nullable=True)  # for custom/nvidia providers
     is_default = Column(Boolean, default=False, nullable=False)
     is_verified = Column(Boolean, default=False, nullable=False)
+    model = Column(String(200), nullable=True)  # selected model name e.g. gemini-2.0-flash
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     __table_args__ = (

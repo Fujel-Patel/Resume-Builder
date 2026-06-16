@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4; margin: 2cm 2.2cm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 10.5pt;
+    line-height: 1.5;
+    color: #333;
+  }
+  .header {
+    background: #1a3a5c;
+    color: #fff;
+    padding: 28px 30px;
+    margin: -2cm -2.2cm 18px -2.2cm;
+    width: calc(100% + 4.4cm);
+  }
+  .header h1 { font-size: 24pt; font-weight: 300; letter-spacing: 2px; margin-bottom: 4px; }
+  .header .subtitle { font-size: 12pt; font-weight: 300; opacity: 0.85; margin-bottom: 6px; }
+  .header .contact { font-size: 9.5pt; opacity: 0.8; }
+  .header .contact span { margin: 0 8px; }
+  .header a { color: #fff; text-decoration: none; }
+  .section { margin-bottom: 14px; }
+  .section-title {
+    font-size: 11pt;
+    font-weight: 700;
+    color: #1a3a5c;
+    border-bottom: 1px solid #1a3a5c;
+    padding-bottom: 3px;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .summary-text { text-align: justify; line-height: 1.6; }
+  .skills-container { display: flex; flex-wrap: wrap; gap: 5px; }
+  .skill-tag {
+    background: #e8eef4;
+    color: #1a3a5c;
+    padding: 2px 10px;
+    border-radius: 3px;
+    font-size: 10pt;
+  }
+  .entry { margin-bottom: 10px; }
+  .entry-header { display: flex; justify-content: space-between; align-items: baseline; }
+  .entry-company { font-weight: 700; font-size: 11pt; color: #1a3a5c; }
+  .entry-role { font-style: italic; color: #555; }
+  .entry-duration { font-size: 9.5pt; color: #777; white-space: nowrap; }
+  .entry-desc { margin-left: 18px; margin-top: 2px; list-style: none; }
+  .entry-desc li { position: relative; padding-left: 12px; margin-bottom: 1px; }
+  .entry-desc li::before { content: "–"; position: absolute; left: 0; color: #1a3a5c; }
+  .edu-line { display: flex; justify-content: space-between; }
+  .cert-line { display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>{{ personal.first_name }} {{ personal.last_name }}</h1>
+  {% if personal.job_title %}<div class="subtitle">{{ personal.job_title }}</div>{% endif %}
+  <div class="contact">
+    {% if personal.email %}<span>{{ personal.email }}</span>{% endif %}
+    {% if personal.mobile %}<span>{{ personal.mobile }}</span>{% endif %}
+    {% if personal.address %}<span>{{ personal.address }}</span>{% endif %}
+    {% if personal.github %}<span>github.com/{{ personal.github }}</span>{% endif %}
+    {% if personal.linkedin %}<span>linkedin.com/in/{{ personal.linkedin }}</span>{% endif %}
+    {% if personal.portfolio %}<span>{{ personal.portfolio }}</span>{% endif %}
+  </div>
+</div>
+
+{% if summary %}
+<div class="section">
+  <div class="section-title">Professional Summary</div>
+  <p class="summary-text">{{ summary }}</p>
+</div>
+{% endif %}
+
+{% if skills %}
+<div class="section">
+  <div class="section-title">Skills</div>
+  <div class="skills-container">{% for skill in skills %}<span class="skill-tag">{{ skill }}</span>{% endfor %}</div>
+</div>
+{% endif %}
+
+{% if experience %}
+<div class="section">
+  <div class="section-title">Experience</div>
+  {% for exp in experience %}
+  <div class="entry">
+    <div class="entry-header">
+      <div>
+        <span class="entry-company">{{ exp.company }}</span>
+        {% if exp.role %}<span class="entry-role"> — {{ exp.role }}</span>{% endif %}
+      </div>
+      {% if exp.duration %}<span class="entry-duration">{{ exp.duration }}</span>{% endif %}
+    </div>
+    {% if exp.bullets %}
+    <ul class="entry-desc">{% for bullet in exp.bullets %}<li>{{ bullet }}</li>{% endfor %}</ul>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if projects %}
+<div class="section">
+  <div class="section-title">Projects</div>
+  {% for proj in projects %}
+  <div class="entry">
+    <div class="entry-header">
+      <span class="entry-company">{{ proj.name }}</span>
+      {% if proj.live_link %}<span class="entry-duration">{{ proj.live_link }}</span>{% endif %}
+    </div>
+    {% if proj.description %}<p>{{ proj.description }}</p>{% endif %}
+    {% if proj.tech_stack %}<p style="font-size:9.5pt;color:#666;margin-top:2px;"><strong>Tech:</strong> {{ proj.tech_stack | join(", ") }}</p>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if education %}
+<div class="section">
+  <div class="section-title">Education</div>
+  {% for edu in education %}
+  <div class="entry">
+    <div class="edu-line">
+      <span><strong>{{ edu.institution }}</strong>{% if edu.degree %}, {{ edu.degree }}{% endif %}</span>
+      {% if edu.year %}<span style="color:#777;">{{ edu.year }}</span>{% endif %}
+    </div>
+    {% if edu.grade %}<p style="margin-top:1px;">Grade: {{ edu.grade }}</p>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if certifications %}
+<div class="section">
+  <div class="section-title">Certifications</div>
+  {% for cert in certifications %}
+  <div class="entry">
+    <div class="cert-line">
+      <span><strong>{{ cert.name }}</strong>{% if cert.issuer %} — {{ cert.issuer }}{% endif %}</span>
+      {% if cert.year %}<span style="color:#777;">{{ cert.year }}</span>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if custom_sections %}
+{% for section in custom_sections %}
+<div class="section">
+  <div class="section-title">{{ section.label }}</div>
+  <p>{{ section.content }}</p>
+</div>
+{% endfor %}
+{% endif %}
+
+</body>
+</html>

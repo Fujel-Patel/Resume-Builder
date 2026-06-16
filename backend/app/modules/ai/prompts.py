@@ -26,6 +26,34 @@ and align with the job description keywords.
 Return ONLY a JSON array of improved bullet strings.
 """
 
+# Resume parse prompt — extract structured data from raw resume text
+RESUME_PARSE_PROMPT = """
+You are a resume parser. Extract structured information from the raw resume text below.
+Return ONLY valid JSON matching this exact schema:
+{
+  "personal": {
+    "first_name": "string",
+    "last_name": "string",
+    "job_title": "string",
+    "email": "string",
+    "mobile": "string",
+    "address": "string",
+    "pincode": "string",
+    "github": "string",
+    "linkedin": "string",
+    "portfolio": "string"
+  },
+  "summary": "string",
+  "skills": ["string"],
+  "experience": [{"company": "string", "role": "string", "duration": "string", "bullets": ["string"]}],
+  "projects": [{"name": "string", "description": "string", "live_link": "string", "tech_stack": ["string"]}],
+  "education": [{"institution": "string", "degree": "string", "year": "string", "grade": "string"}],
+  "certifications": [{"name": "string", "issuer": "string", "year": "string", "link": "string"}],
+  "custom_sections": [{"label": "string", "content": "string"}]
+}
+Use empty strings or null for missing fields. Return empty arrays for missing sections.
+"""
+
 # ATS scoring prompt
 ATS_SCORE_PROMPT = """
 You are an ATS (Applicant Tracking System) expert. Analyze this resume against

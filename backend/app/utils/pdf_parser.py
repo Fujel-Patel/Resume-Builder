@@ -17,6 +17,17 @@ from typing import Any, Dict, List
 import fitz  # PyMuPDF
 
 
+def extract_text_from_docx(docx_path: str | Path) -> str:
+    """Extract plain text from a DOCX file using python-docx."""
+    from docx import Document
+
+    docx_path = Path(docx_path)
+    if not docx_path.is_file():
+        raise FileNotFoundError(f"DOCX file not found: {docx_path}")
+    doc = Document(str(docx_path))
+    return "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+
+
 def _sanitize_extension(ext: str) -> str:
     """Sanitize the file extension extracted from a PDF to prevent path traversal.
 

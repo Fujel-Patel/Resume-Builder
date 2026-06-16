@@ -13,15 +13,28 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.modules.ai.models import AIProvider
 
 # Import provider implementations
-from app.modules.ai.providers import anthropic, gemini, nvidia_nim
+from app.modules.ai.providers import anthropic, gemini, openai_compatible
 from app.utils.encryption import decrypt
 
 # Mapping of provider identifiers to callable functions
 PROVIDER_MAP = {
     "anthropic": anthropic.complete,
     "gemini": gemini.complete,
-    "nvidia-nim": nvidia_nim.complete,
-    "custom": anthropic.complete,  # treat custom as OpenAI‑compatible (use anthropic placeholder)
+    "nvidia-nim": openai_compatible.complete,
+    "nvidia": openai_compatible.complete,
+    "openrouter": openai_compatible.complete,
+    "groq": openai_compatible.complete,
+    "custom": openai_compatible.complete,
+}
+
+# Mapping of provider identifiers to list_models functions
+LIST_MODELS_MAP = {
+    "gemini": gemini.list_models,
+    "nvidia-nim": openai_compatible.list_models,
+    "nvidia": openai_compatible.list_models,
+    "openrouter": openai_compatible.list_models,
+    "groq": openai_compatible.list_models,
+    "custom": openai_compatible.list_models,
 }
 
 
@@ -105,16 +118,46 @@ async def ai_complete(user_id: str, prompt: str, db: AsyncSession) -> str:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported AI provider"
         )
-    return await fn(prompt=prompt, api_key=api_key, base_url=base_url)
+    return await fn(
+        prompt=prompt,
+        api_key=api_key,
+        base_url=base_url,
+        model=provider.model or "gpt-4o-mini",
+    )
 
 
 async def verify_api_key(
     provider_name: str, api_key: str, base_url: Optional[str] = None
-) -> bool:
-    """Validate an API key for a given provider by performing a cheap test call.
+) -> tuple[bool, str, list[dict]]:
+    """Validate an API key and return available models.
 
-    Returns ``True`` if the provider responds successfully, ``False`` otherwise.
+    For providers with a ``list_models`` endpoint, uses that to verify
+    (no model name needed). Falls back to a chat completion test otherwise.
+
+    Returns ``(True, "", models)`` on success, ``(False, error_msg, [])`` on failure.
     """
+    if base_url:
+        base_url = _validate_base_url(base_url)
+
+    # Prefer models-list verification (works without a model name)
+    list_fn = LIST_MODELS_MAP.get(provider_name)
+    if list_fn:
+        try:
+            models = await list_fn(api_key=api_key, base_url=base_url)
+            return True, "", models
+        except httpx.HTTPStatusError as exc:
+            detail = ""
+            try:
+                detail = exc.response.json().get("error", {}).get("message", "")
+            except Exception:
+                detail = exc.response.text[:300]
+            return False, f"API returned {exc.response.status_code}: {detail}", []
+        except httpx.TimeoutException:
+            return False, "Request timed out — check network or base_url", []
+        except Exception as exc:
+            return False, str(exc), []
+
+    # Fallback to chat completion test (Anthropic)
     fn = PROVIDER_MAP.get(provider_name)
     if not fn:
         raise HTTPException(
@@ -122,20 +165,39 @@ async def verify_api_key(
             detail="Unsupported provider for verification",
         )
 
-    # Validate base_url if provided (prevent SSRF)
-    if base_url:
-        base_url = _validate_base_url(base_url)
-
     try:
-        # Small prompt to verify connectivity; limit tokens to keep it cheap.
         result = await fn(
             prompt="Reply with just: OK",
             api_key=api_key,
             base_url=base_url,
             max_tokens=5,
         )
-        # Some providers may return the literal "OK" or a JSON; we just check truthiness.
-        return bool(result)
+        return bool(result), "", []
+    except httpx.HTTPStatusError as exc:
+        detail = ""
+        try:
+            detail = exc.response.json().get("error", {}).get("message", "")
+        except Exception:
+            detail = exc.response.text[:300]
+        return False, f"API returned {exc.response.status_code}: {detail}", []
+    except httpx.TimeoutException:
+        return False, "Request timed out — check network or base_url", []
     except Exception as exc:
-        # Log the exception for debugging (omitted here to avoid import cycles)
-        return False
+        return False, str(exc), []
+
+
+async def list_provider_models(
+    provider_name: str, api_key: str, base_url: Optional[str] = None
+) -> list[dict]:
+    """List available models for a given provider.
+
+    Returns a list of ``{id, name}`` dicts, or ``[]`` on error.
+    """
+    fn = LIST_MODELS_MAP.get(provider_name)
+    if not fn:
+        return []
+
+    try:
+        return await fn(api_key=api_key, base_url=base_url)
+    except Exception:
+        return []

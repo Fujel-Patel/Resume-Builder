@@ -4,7 +4,6 @@ Anthropic provider implementation.
 Uses the Claude `messages` endpoint. Supports optional `model` and `max_tokens` parameters.
 """
 
-import json
 from typing import Optional
 
 import httpx

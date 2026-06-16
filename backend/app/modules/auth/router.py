@@ -1,7 +1,5 @@
 """Auth router — JSON endpoints, PRD response shape, no debug prints."""
 
-import uuid
-
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -16,8 +14,6 @@ from app.modules.auth.exceptions import (
     InvalidTokenException,
 )
 from app.types.common import success
-from app.utils.jwt import verify_refresh_token
-
 router = APIRouter()
 
 _REFRESH_COOKIE = "refresh_token"
@@ -106,13 +102,6 @@ async def refresh_token(
             detail={"code": "UNAUTHORIZED", "message": "Refresh token missing"},
         )
 
-    payload = verify_refresh_token(token)
-    if not payload:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"code": "TOKEN_INVALID", "message": "Invalid refresh token"},
-        )
-
     db_token = await service.verify_refresh_token_db(db, token)
     if not db_token:
         raise HTTPException(
@@ -120,7 +109,7 @@ async def refresh_token(
             detail={"code": "TOKEN_INVALID", "message": "Expired or revoked refresh token"},
         )
 
-    user = await service.get_user_by_id(db, uuid.UUID(payload["sub"]))
+    user = await service.get_user_by_id(db, db_token.user_id)
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -148,11 +137,9 @@ async def logout(
 ):
     token = request.cookies.get(_REFRESH_COOKIE)
     if token:
-        payload = verify_refresh_token(token)
-        if payload:
-            db_token = await service.verify_refresh_token_db(db, token)
-            if db_token:
-                await service.delete_refresh_token(db, db_token.token_hash)
+        db_token = await service.verify_refresh_token_db(db, token)
+        if db_token:
+            await service.delete_refresh_token(db, db_token.token_hash)
     response.delete_cookie(
         _REFRESH_COOKIE,
         path="/",

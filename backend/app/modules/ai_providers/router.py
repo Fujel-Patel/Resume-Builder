@@ -1,7 +1,7 @@
-"""AI provider settings — full CRUD (was placeholder with NotImplementedError)."""
+"""AI provider settings — full CRUD with verify + list-models flow."""
 
 import uuid
-from typing import List, Optional
+from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, ConfigDict, Field
@@ -10,15 +10,29 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.database import get_db
 from app.modules.ai.models import AIProvider
-from app.modules.ai.service import _validate_base_url, verify_api_key
+from app.modules.ai.providers.openai_compatible import PROVIDER_DEFAULTS
+from app.modules.ai.service import (
+    _validate_base_url,
+    verify_api_key,
+)
 from app.modules.users import models as user_models
 from app.types.common import success
 from app.utils.auth import get_current_user
-from app.utils.encryption import decrypt, encrypt
+from app.utils.encryption import encrypt
 
 router = APIRouter()
 
-VALID_PROVIDERS = {"anthropic", "gemini", "nvidia-nim", "custom"}
+VALID_PROVIDERS = {"gemini", "openrouter", "groq", "custom", "nvidia-nim", "nvidia"}
+
+# Providers where base_url is required (no default)
+BASE_URL_REQUIRED = {"custom", "nvidia-nim", "nvidia"}
+
+# Normalize user-facing names to internal names
+PROVIDER_ALIASES = {"nvidia": "nvidia-nim"}
+
+
+def _get_default_base_url(provider_name: str) -> Optional[str]:
+    return PROVIDER_DEFAULTS.get(provider_name)
 
 
 # ---------------------------------------------------------------------------
@@ -26,9 +40,12 @@ VALID_PROVIDERS = {"anthropic", "gemini", "nvidia-nim", "custom"}
 # ---------------------------------------------------------------------------
 
 class AIProviderCreate(BaseModel):
-    provider_name: str = Field(..., description="anthropic | gemini | nvidia-nim | custom")
+    provider_name: str = Field(
+        ..., description="gemini | openrouter | groq | custom | nvidia-nim"
+    )
     api_key: str = Field(..., min_length=1)
     base_url: Optional[str] = None
+    model: Optional[str] = None
     is_default: bool = False
 
     model_config = ConfigDict(str_strip_whitespace=True)
@@ -37,6 +54,7 @@ class AIProviderCreate(BaseModel):
 class AIProviderUpdate(BaseModel):
     api_key: Optional[str] = None
     base_url: Optional[str] = None
+    model: Optional[str] = None
     is_default: Optional[bool] = None
 
     model_config = ConfigDict(str_strip_whitespace=True)
@@ -53,17 +71,21 @@ class AIProviderVerifyRequest(BaseModel):
 class AIProviderResponse(BaseModel):
     id: uuid.UUID
     provider_name: str
-    base_url: Optional[str]
+    base_url: Optional[str] = None
+    model: Optional[str] = None
     is_default: bool
     is_verified: bool
 
     model_config = ConfigDict(from_attributes=True)
-    # NOTE: api_key_encrypted is NEVER returned to client
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def _normalize_provider(name: str) -> str:
+    return PROVIDER_ALIASES.get(name, name)
+
 
 def _not_found() -> HTTPException:
     return HTTPException(
@@ -78,7 +100,7 @@ async def _get_provider(
     result = await db.execute(
         select(AIProvider).where(
             AIProvider.id == provider_id,
-            AIProvider.user_id == user_id,  # ownership always 404
+            AIProvider.user_id == user_id,
         )
     )
     provider = result.scalars().first()
@@ -88,18 +110,36 @@ async def _get_provider(
 
 
 async def _clear_default(db: AsyncSession, user_id: uuid.UUID) -> None:
-    """Unset is_default on all providers for user — called before setting new default."""
     result = await db.execute(
-        select(AIProvider).where(AIProvider.user_id == user_id, AIProvider.is_default.is_(True))
+        select(AIProvider).where(
+            AIProvider.user_id == user_id, AIProvider.is_default.is_(True)
+        )
     )
     for p in result.scalars().all():
         p.is_default = False
         db.add(p)
 
 
+def _resolve_base_url(provider_name: str, base_url: Optional[str]) -> str:
+    """Return the effective base_url — use default if provider has one."""
+    if base_url:
+        return _validate_base_url(base_url)
+    default = _get_default_base_url(provider_name)
+    if default:
+        return default
+    raise HTTPException(
+        status_code=400,
+        detail={
+            "code": "VALIDATION_ERROR",
+            "message": f"base_url is required for provider '{provider_name}'",
+        },
+    )
+
+
 # ---------------------------------------------------------------------------
 # Endpoints
 # ---------------------------------------------------------------------------
+
 
 @router.get("")
 async def list_providers(
@@ -110,7 +150,9 @@ async def list_providers(
         select(AIProvider).where(AIProvider.user_id == current_user.id)
     )
     providers = result.scalars().all()
-    return success([AIProviderResponse.model_validate(p).model_dump() for p in providers])
+    return success(
+        [AIProviderResponse.model_validate(p).model_dump() for p in providers]
+    )
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -119,19 +161,34 @@ async def add_provider(
     current_user: user_models.User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    body.provider_name = _normalize_provider(body.provider_name)
+
     if body.provider_name not in VALID_PROVIDERS:
         raise HTTPException(
             status_code=400,
-            detail={"code": "VALIDATION_ERROR", "message": f"provider_name must be one of {VALID_PROVIDERS}"},
+            detail={
+                "code": "VALIDATION_ERROR",
+                "message": f"provider_name must be one of {VALID_PROVIDERS}",
+            },
         )
 
     if body.base_url:
         try:
             body.base_url = _validate_base_url(body.base_url)
         except ValueError as e:
-            raise HTTPException(status_code=400, detail={"code": "VALIDATION_ERROR", "message": str(e)})
+            raise HTTPException(
+                status_code=400,
+                detail={"code": "VALIDATION_ERROR", "message": str(e)},
+            )
+    elif body.provider_name in BASE_URL_REQUIRED:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "VALIDATION_ERROR",
+                "message": f"base_url is required for provider '{body.provider_name}'",
+            },
+        )
 
-    # Check for existing provider with same name
     existing = await db.execute(
         select(AIProvider).where(
             AIProvider.user_id == current_user.id,
@@ -141,7 +198,10 @@ async def add_provider(
     if existing.scalars().first():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail={"code": "CONFLICT", "message": f"Provider '{body.provider_name}' already configured. Use PATCH to update."},
+            detail={
+                "code": "CONFLICT",
+                "message": f"Provider '{body.provider_name}' already configured. Use PATCH to update.",
+            },
         )
 
     if body.is_default:
@@ -152,6 +212,7 @@ async def add_provider(
         provider_name=body.provider_name,
         api_key_encrypted=encrypt(body.api_key),
         base_url=body.base_url,
+        model=body.model,
         is_default=body.is_default,
         is_verified=False,
     )
@@ -172,13 +233,21 @@ async def update_provider(
 
     if body.base_url is not None:
         try:
-            provider.base_url = _validate_base_url(body.base_url) if body.base_url else None
+            provider.base_url = (
+                _validate_base_url(body.base_url) if body.base_url else None
+            )
         except ValueError as e:
-            raise HTTPException(status_code=400, detail={"code": "VALIDATION_ERROR", "message": str(e)})
+            raise HTTPException(
+                status_code=400,
+                detail={"code": "VALIDATION_ERROR", "message": str(e)},
+            )
 
     if body.api_key is not None:
         provider.api_key_encrypted = encrypt(body.api_key)
-        provider.is_verified = False  # new key must be re-verified
+        provider.is_verified = False
+
+    if body.model is not None:
+        provider.model = body.model
 
     if body.is_default is True:
         await _clear_default(db, current_user.id)
@@ -210,21 +279,30 @@ async def verify_provider(
     current_user: user_models.User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    body.provider_name = _normalize_provider(body.provider_name)
+
     if body.provider_name not in VALID_PROVIDERS:
         raise HTTPException(
             status_code=400,
-            detail={"code": "VALIDATION_ERROR", "message": f"Unknown provider '{body.provider_name}'"},
+            detail={
+                "code": "VALIDATION_ERROR",
+                "message": f"Unknown provider '{body.provider_name}'",
+            },
         )
 
     if body.base_url:
         try:
             body.base_url = _validate_base_url(body.base_url)
         except ValueError as e:
-            raise HTTPException(status_code=400, detail={"code": "VALIDATION_ERROR", "message": str(e)})
+            raise HTTPException(
+                status_code=400,
+                detail={"code": "VALIDATION_ERROR", "message": str(e)},
+            )
 
-    is_valid = await verify_api_key(body.provider_name, body.api_key, body.base_url)
+    is_valid, error_msg, models = await verify_api_key(
+        body.provider_name, body.api_key, body.base_url
+    )
 
-    # If valid and provider already exists in DB, mark it as verified
     if is_valid:
         result = await db.execute(
             select(AIProvider).where(
@@ -238,4 +316,12 @@ async def verify_provider(
             db.add(existing)
             await db.commit()
 
-    return success({"valid": is_valid})
+    data = {"valid": is_valid}
+
+    if is_valid:
+        data["models"] = models
+
+    if error_msg:
+        data["error"] = error_msg
+
+    return success(data)

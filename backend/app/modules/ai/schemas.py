@@ -5,7 +5,7 @@ These schemas validate the request bodies for the AI suggestion endpoints.
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
 # Common response schema – matches the API response shape in the PRD

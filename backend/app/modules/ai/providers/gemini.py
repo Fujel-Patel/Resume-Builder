@@ -4,13 +4,13 @@ Google Gemini provider implementation.
 Uses the Gemini `generateContent` endpoint. Accepts an API key via query parameter.
 """
 
-import json
 from typing import Optional
 
 import httpx
 
 # Default endpoint (public API) – model can be part of the URL
-DEFAULT_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent"
+DEFAULT_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
+GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta"
 
 
 async def complete(
@@ -19,7 +19,7 @@ async def complete(
     api_key: str,
     base_url: Optional[str] = None,
     max_tokens: int = 1024,
-    model: str = "gemini-1.5-flash",
+    model: str = "gemini-2.0-flash",
     **kwargs,
 ) -> str:
     """Call Gemini's generateContent API.
@@ -65,3 +65,29 @@ async def complete(
             if parts:
                 return parts[0].get("text", "")
         return ""
+
+
+async def list_models(
+    *,
+    api_key: str,
+    base_url: Optional[str] = None,
+) -> list[dict]:
+    """List available Gemini models that support ``generateContent``.
+
+    Returns a list of ``{id, name}`` dicts.
+    """
+    url = f"{base_url or GEMINI_API_BASE}/models"
+    params = {"key": api_key}
+
+    async with httpx.AsyncClient(timeout=15) as client:
+        response = await client.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+
+    models = []
+    for m in data.get("models", []):
+        methods = m.get("supportedGenerationMethods", [])
+        if "generateContent" in methods:
+            model_id = m["name"].replace("models/", "")
+            models.append({"id": model_id, "name": m.get("displayName", model_id)})
+    return models

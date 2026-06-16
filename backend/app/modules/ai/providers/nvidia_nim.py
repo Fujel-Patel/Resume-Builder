@@ -4,7 +4,6 @@ NVIDIA NIM provider implementation (OpenAI‑compatible).
 The NIM server expects the same request shape as the OpenAI Chat Completion API.
 """
 
-import json
 from typing import Optional
 
 import httpx

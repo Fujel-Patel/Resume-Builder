@@ -2,7 +2,7 @@
 
 import uuid
 from datetime import datetime
-from typing import List, Optional
+from typing import List
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
@@ -88,7 +88,13 @@ async def create_resume(
     )
     db.add(resume_data)
     await db.commit()
-    await db.refresh(resume)
+    # re-fetch with data relationship loaded for the response
+    result = await db.execute(
+        select(models.Resume)
+        .options(selectinload(models.Resume.data))
+        .where(models.Resume.id == resume.id)
+    )
+    resume = result.scalars().first()
     return resume
 
 
@@ -130,7 +136,13 @@ async def update_resume(
 
     db.add(resume)
     await db.commit()
-    await db.refresh(resume)
+    # re-fetch with data relationship loaded for the response
+    result = await db.execute(
+        select(models.Resume)
+        .options(selectinload(models.Resume.data))
+        .where(models.Resume.id == resume.id)
+    )
+    resume = result.scalars().first()
     return resume
 
 
@@ -144,3 +156,85 @@ async def soft_delete_resume(
     resume.deleted_at = datetime.utcnow()
     db.add(resume)
     await db.commit()
+
+
+def _extract_json(text: str) -> dict:
+    """Extract JSON from AI response, stripping markdown fences and preamble."""
+    import json
+    import re
+
+    text = text.strip()
+
+    # Try to find ```json ... ``` or ``` ... ``` block
+    match = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", text, re.DOTALL)
+    if match:
+        text = match.group(1).strip()
+
+    # Try to find { ... } with balanced braces
+    brace_start = text.find("{")
+    if brace_start >= 0:
+        depth = 0
+        for i in range(brace_start, len(text)):
+            if text[i] == "{":
+                depth += 1
+            elif text[i] == "}":
+                depth -= 1
+                if depth == 0:
+                    text = text[brace_start : i + 1]
+                    break
+
+    return json.loads(text)
+
+
+async def scan_resume(
+    user_id: uuid.UUID,
+    file_bytes: bytes,
+    file_ext: str,
+    db: AsyncSession,
+) -> dict:
+    """Save uploaded file, extract text, AI-parse into structured resume data."""
+    import json
+    import tempfile
+    from pathlib import Path
+
+    from app.modules.ai.prompts import RESUME_PARSE_PROMPT
+    from app.modules.ai.service import ai_complete
+    from app.utils.pdf_parser import extract_text, extract_text_from_docx
+
+    suffix = ".pdf" if file_ext == "pdf" else ".docx"
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        tmp.write(file_bytes)
+        tmp_path = Path(tmp.name)
+
+    try:
+        if suffix == ".pdf":
+            raw_text = extract_text(tmp_path)
+        else:
+            raw_text = extract_text_from_docx(tmp_path)
+    finally:
+        tmp_path.unlink(missing_ok=True)
+
+    if not raw_text.strip():
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "PARSE_ERROR", "message": "Could not extract text from file"},
+        )
+
+    prompt = f"{RESUME_PARSE_PROMPT}\n\nResume Text:\n{raw_text[:10000]}"
+    try:
+        result = await ai_complete(str(user_id), prompt, db)
+        parsed = _extract_json(result)
+    except json.JSONDecodeError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "AI_PARSE_ERROR", "message": "AI returned invalid JSON"},
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "AI_PROVIDER_ERROR", "message": str(e)},
+        )
+
+    return parsed
