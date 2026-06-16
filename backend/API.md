@@ -5,47 +5,50 @@ This document describes the RESTful API for Generative-CV, an AI-powered resume 
 
 ## API Endpoints Quick Reference
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/health` | Liveness probe |
-| GET | `/ready` | Readiness probe |
-| **Auth** | | |
-| POST | `/auth/signup` | Create a new user account |
-| POST | `/auth/login` | Login and obtain access token |
-| POST | `/auth/refresh` | Refresh access token via cookie |
-| POST | `/auth/logout` | Clear refresh token and log out |
-| POST | `/auth/forgot-password` | Initiate password reset |
-| POST | `/auth/reset-password` | Reset password using token |
-| GET | `/auth/verify-email` | Verify email address |
-| **Users** | | |
-| GET | `/users/me` | Get current user profile |
-| PATCH | `/users/me` | Update current user profile |
-| PATCH | `/users/me/password` | Change current user's password |
-| DELETE | `/users/me` | Delete user account |
-| **Resumes** | | |
-| GET | `/resumes` | List user's resumes |
-| POST | `/resumes` | Create a new resume |
-| GET | `/resumes/{resume_id}` | Get a specific resume |
-| PATCH | `/resumes/{resume_id}` | Update a resume |
-| DELETE | `/resumes/{resume_id}` | Soft-delete a resume |
-| POST | `/resumes/{resume_id}/export` | Export resume as PDF (501) |
-| POST | `/resumes/upload-scan` | Upload resume for AI parsing (501) |
-| **AI** | | |
-| POST | `/ai/suggest/summary` | Generate professional summary |
-| POST | `/ai/suggest/skills` | Suggest skills |
-| POST | `/ai/suggest/experience` | Improve experience bullets |
-| POST | `/ai/suggest/projects` | Improve project descriptions |
-| POST | `/ai/generate-resume` | Generate full resume |
-| **AI Providers** | | |
-| GET | `/settings/ai` | List AI providers |
-| POST | `/settings/ai` | Add AI provider |
-| PATCH | `/settings/ai/{provider_id}` | Update AI provider |
-| DELETE | `/settings/ai/{provider_id}` | Delete AI provider |
-| POST | `/settings/ai/verify` | Verify AI provider key |
-| **ATS** | | |
-| POST | `/ats/score` | Score resume against job description |
-| GET | `/ats/history` | Get paginated ATS scan history |
-| GET | `/ats/history/{scan_id}` | Get single ATS scan result |
+| # | Method | Path | Auth | Input | Description |
+|---|--------|------|------|-------|-------------|
+| | **Health** | | | | |
+| 1 | GET | `/health` | No | — | Liveness probe |
+| 2 | GET | `/ready` | No | — | Readiness probe |
+| | **Auth** | | | | |
+| 3 | POST | `/auth/signup` | No | JSON | Create a new user account |
+| 4 | POST | `/auth/login` | No | JSON | Login and obtain access token |
+| 5 | POST | `/auth/refresh` | Cookie | — | Refresh access token via cookie |
+| 6 | POST | `/auth/logout` | Cookie | — | Clear refresh token and log out |
+| 7 | POST | `/auth/forgot-password` | No | JSON | Initiate password reset |
+| 8 | POST | `/auth/reset-password` | No | JSON | Reset password using token |
+| 9 | GET | `/auth/verify-email` | No | Query | Verify email address |
+| | **Users** | | | | |
+| 10 | GET | `/users/me` | Bearer | — | Get current user profile |
+| 11 | PATCH | `/users/me` | Bearer | JSON | Update current user profile |
+| 12 | PATCH | `/users/me/password` | Bearer | JSON | Change current user's password |
+| 13 | DELETE | `/users/me` | Bearer | JSON | Delete user account |
+| | **Resumes** | | | | |
+| 14 | GET | `/resumes` | Bearer | — | List user's resumes |
+| 15 | POST | `/resumes` | Bearer | JSON | Create a new resume |
+| 16 | GET | `/resumes/{resume_id}` | Bearer | Path | Get a specific resume |
+| 17 | PATCH | `/resumes/{resume_id}` | Bearer | JSON | Update a resume |
+| 18 | DELETE | `/resumes/{resume_id}` | Bearer | Path | Soft-delete a resume |
+| 19 | POST | `/resumes/{resume_id}/export` | Bearer | Path | Export resume as PDF |
+| 20 | POST | `/resumes/upload-scan` | Bearer | File | Upload PDF/DOCX for AI parsing |
+| | **AI Suggestions** | | | | |
+| 21 | POST | `/ai/suggest/summary` | Bearer | JSON | Generate/improve professional summary |
+| 22 | POST | `/ai/suggest/skills` | Bearer | JSON | Suggest categorized skills |
+| 23 | POST | `/ai/suggest/experience` | Bearer | JSON | Improve experience bullets |
+| 24 | POST | `/ai/suggest/projects` | Bearer | JSON | Improve project descriptions |
+| 25 | POST | `/ai/generate-resume` | Bearer | JSON | Generate full resume from structured data |
+| 26 | POST | `/ai/optimize-resume` | Bearer | File+Text | Upload PDF + JD → optimized resume content |
+| | **AI Providers** | | | | |
+| 27 | GET | `/settings/ai` | Bearer | — | List AI providers |
+| 28 | POST | `/settings/ai` | Bearer | JSON | Add AI provider |
+| 29 | PATCH | `/settings/ai/{provider_id}` | Bearer | JSON | Update AI provider |
+| 30 | DELETE | `/settings/ai/{provider_id}` | Bearer | Path | Delete AI provider |
+| 31 | POST | `/settings/ai/verify` | Bearer | JSON | Verify API key + list available models |
+| | **ATS Scoring** | | | | |
+| 32 | POST | `/ats/score` | Bearer | JSON | Score resume text against job description |
+| 33 | POST | `/ats/score-upload` | Bearer | File+Text | Upload PDF + JD → ATS score |
+| 34 | GET | `/ats/history` | Bearer | Query | Get paginated ATS scan history |
+| 35 | GET | `/ats/history/{scan_id}` | Bearer | Path | Get single ATS scan result |
 
 ## Base URL
 ```
@@ -553,50 +556,90 @@ curl -X DELETE http://localhost:8000/api/v1/resumes/<resume_uuid> \
 ```
 
 #### POST /resumes/{resume_id}/export
-Export resume as PDF (Not Implemented - returns 501).
+Export resume as PDF file download.
 
 **Path Parameters:**
 - `resume_id`: UUID of the resume
 
 **Responses:**
-- 501 Not Implemented
+- 200 OK: `application/pdf` binary with `Content-Disposition: attachment`
+- 404 Not Found: Resume not found or not owned
 
-**Testing:** Not available (endpoint not implemented).
+**Logic:**
+1. Get current user from JWT token
+2. Fetch resume by ID with ownership check
+3. Render PDF via `render_resume_to_pdf()`
+4. Return binary PDF response
+
+**Testing:**
+```bash
+curl -X POST http://localhost:8000/api/v1/resumes/<resume_uuid>/export \
+  -H "Authorization: Bearer <access_token>" \
+  -o resume.pdf
+```
 
 #### POST /resumes/upload-scan
-Upload a PDF/DOCX resume for AI parsing (Not Implemented - returns 501).
+Upload a PDF/DOCX resume for AI-powered structured parsing.
 
-**Request Body:** Multipart form upload (PDF or DOCX, max 5MB).
+**Request Body:** Multipart form-data
+- `file`: PDF or DOCX file (max 5MB)
 
 **Responses:**
-- 501 Not Implemented
+- 200 OK: Returns structured resume JSON parsed by AI
+- 422 Unprocessable: File too large or unsupported format
 
-**Testing:** Not available (endpoint not implemented).
+**Logic:**
+1. Validate file type (PDF/DOCX only) and size (max 5MB)
+2. Extract text from the file
+3. Send raw text to AI with `RESUME_PARSE_PROMPT`
+4. Return structured JSON (personal info, summary, skills, experience, projects, education, etc.)
+
+**Testing:**
+```bash
+curl -X POST http://localhost:8000/api/v1/resumes/upload-scan \
+  -H "Authorization: Bearer <access_token>" \
+  -F "file=@resume.pdf"
+```
 
 ### AI Features
 All AI endpoints require JWT Bearer token. They use the user's configured AI provider (decrypts API key on demand).
 
 #### POST /ai/suggest/summary
-Generate AI-powered professional summary.
+Generate or improve a professional summary with AI.
 
 **Request Body:**
 ```json
 {
-  "job_title": "string",
-  "skills": ["string"],
-  "experience": ["string"],
-  "job_description": "string"
+  "job_title": "Full Stack Developer",
+  "skills": ["Python", "React", "Node.js"],
+  "experience": ["3 years backend development", "Built REST APIs"],
+  "job_description": "Looking for a Full Stack Developer with React and Node.js...",
+  "current_summary": "Experienced developer with backend skills"    ← optional, improves this if provided
 }
 ```
 
-**Responses:**
-- 200 OK: `{ "summary": "string" }`
+| Field | Type | Required |
+|-------|------|----------|
+| `job_title` | string | Yes |
+| `skills` | string[] | Yes |
+| `experience` | string[] | Yes |
+| `job_description` | string | Yes |
+| `current_summary` | string? | No — if provided, AI improves it instead of writing from scratch |
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": { "summary": "Highly skilled Full Stack Developer with 3 years of experience in Python, React, and Node.js... Built REST APIs..." },
+  "error": null
+}
+```
 
 **Logic:**
 1. Get current user from JWT token
-2. Build prompt using job title, skills, experience, and job description
-3. Call user's default AI provider to complete the prompt
-4. Return AI-generated summary
+2. Build prompt with job title, skills, experience, job description, and optional `current_summary`
+3. Call user's default AI provider
+4. Return AI-generated or improved summary text
 
 **Testing:**
 ```bash
@@ -604,32 +647,58 @@ curl -X POST http://localhost:8000/api/v1/ai/suggest/summary \
   -H "Authorization: Bearer <access_token>" \
   -H "Content-Type: application/json" \
   -d '{
-    "job_title": "Software Engineer",
-    "skills": ["Python", "FastAPI", "PostgreSQL"],
+    "job_title": "Full Stack Developer",
+    "skills": ["Python", "React", "Node.js"],
     "experience": ["3 years backend development", "API design"],
-    "job_description": "Looking for experienced backend engineer"
+    "job_description": "Looking for Full Stack Developer with React, Node.js, Python",
+    "current_summary": "Experienced developer with backend skills"
   }'
 ```
 
 #### POST /ai/suggest/skills
-Generate AI-powered skills suggestions.
+Suggest relevant skills (categorized) based on job description and your current skills.
 
 **Request Body:**
 ```json
 {
-  "job_description": "string",
-  "current_skills": ["string"]
+  "job_description": "Looking for a Full Stack Developer with React, Node.js, Python, and AWS...",
+  "current_skills": {
+    "frontend": ["React", "Next.js", "Tailwind CSS"],
+    "backend": ["Express.js", "FastAPI", "Node.js"],
+    "database": ["PostgreSQL", "MongoDB"],
+    "devops": ["Docker", "AWS"],
+    "other": ["Python", "TypeScript", "Git"]
+  }
 }
 ```
 
-**Responses:**
-- 200 OK: `{ "skills": ["string", ...] }`
+| Field | Type | Required |
+|-------|------|----------|
+| `job_description` | string | Yes |
+| `current_skills` | object (string → string[]) | Yes — skills grouped by category |
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "skills": {
+      "frontend": ["React", "Next.js", "TypeScript"],
+      "backend": ["Node.js", "Python", "REST APIs"],
+      "database": ["PostgreSQL", "MongoDB"],
+      "devops": ["Docker", "AWS", "CI/CD"],
+      "other": ["Git", "Agile", "Problem Solving"]
+    }
+  },
+  "error": null
+}
+```
 
 **Logic:**
 1. Get current user from JWT token
-2. Build prompt using job description and current skills
-3. Call AI service, parse response as JSON array of skills
-4. Return suggested skills
+2. Build prompt with job description and categorized skills
+3. Call AI service, parse response as categorized JSON object
+4. Return suggested skills grouped by category
 
 **Testing:**
 ```bash
@@ -637,31 +706,58 @@ curl -X POST http://localhost:8000/api/v1/ai/suggest/skills \
   -H "Authorization: Bearer <access_token>" \
   -H "Content-Type: application/json" \
   -d '{
-    "job_description": "Senior Python/Django developer needed",
-    "current_skills": ["Python", "REST APIs"]
+    "job_description": "Senior Full Stack Developer with React, Node.js, Python",
+    "current_skills": {
+      "frontend": ["React", "Next.js"],
+      "backend": ["Express.js", "FastAPI"],
+      "database": ["PostgreSQL"],
+      "devops": [],
+      "other": ["Python", "Git"]
+    }
   }'
 ```
 
 #### POST /ai/suggest/experience
-Improve experience bullets with AI.
+Improve experience bullet points with AI. Adds company context for better suggestions.
 
 **Request Body:**
 ```json
 {
-  "job_role": "string",
-  "job_description": "string|null",
-  "experience_bullets": ["string"]
+  "experience_bullets": ["Developed web applications", "Built REST APIs"],
+  "job_role": "Full Stack Developer",
+  "company": "Tech Corp",
+  "duration": "Jan 2022 - Present",
+  "job_description": "Looking for Full Stack Developer with React, Node.js..."
 }
 ```
 
-**Responses:**
-- 200 OK: `{ "bullets": ["string", ...] }`
+| Field | Type | Required |
+|-------|------|----------|
+| `experience_bullets` | string[] | Yes |
+| `job_role` | string | Yes |
+| `company` | string? | No |
+| `duration` | string? | No |
+| `job_description` | string? | No |
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "bullets": [
+      "Designed and developed scalable web applications at Tech Corp using React, Node.js, and Python...",
+      "Crafted robust RESTful APIs resulting in 30% reduction in development time..."
+    ]
+  },
+  "error": null
+}
+```
 
 **Logic:**
 1. Get current user from JWT token
-2. Build prompt using job role, description, and experience bullets
-3. Call AI service, parse response as JSON array of improved bullets
-4. Return improved bullets
+2. Build prompt with job role, company, duration, job description, and bullets
+3. Call AI service, parse response as JSON array
+4. Return improved bullet points
 
 **Testing:**
 ```bash
@@ -669,29 +765,51 @@ curl -X POST http://localhost:8000/api/v1/ai/suggest/experience \
   -H "Authorization: Bearer <access_token>" \
   -H "Content-Type: application/json" \
   -d '{
-    "job_role": "Software Engineer",
-    "experience_bullets": ["Developed web applications", "Worked with databases"]
+    "experience_bullets": ["Developed web applications", "Built REST APIs"],
+    "job_role": "Full Stack Developer",
+    "company": "Tech Corp",
+    "duration": "Jan 2022 - Present",
+    "job_description": "Looking for Full Stack Developer with React, Node.js, Python"
   }'
 ```
 
 #### POST /ai/suggest/projects
-Improve project descriptions with AI.
+Improve project descriptions with AI. Provide tech stack for context.
 
 **Request Body:**
 ```json
 {
-  "job_description": "string|null",
-  "project_descriptions": ["string"]
+  "project_descriptions": ["Built an e-commerce platform with authentication"],
+  "project_name": "ShopEase",
+  "tech_stack": ["React", "Node.js", "PostgreSQL", "Stripe"],
+  "job_description": "Looking for Full Stack Developer..."
 }
 ```
 
-**Responses:**
-- 200 OK: `{ "projects": ["string", ...] }`
+| Field | Type | Required |
+|-------|------|----------|
+| `project_descriptions` | string[] | Yes |
+| `project_name` | string? | No |
+| `tech_stack` | string[]? | No |
+| `job_description` | string? | No |
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "projects": [
+      "Designed and developed ShopEase — a full-stack e-commerce platform featuring user authentication, payment gateway integration via Stripe, and a responsive React frontend with Node.js backend..."
+    ]
+  },
+  "error": null
+}
+```
 
 **Logic:**
 1. Get current user from JWT token
-2. Build prompt using job description and project descriptions
-3. Call AI service, parse response as JSON array
+2. Build prompt with project name, tech stack, job description, and descriptions
+3. Call AI service, parse and normalize response as JSON array
 4. Return improved project descriptions
 
 **Testing:**
@@ -700,29 +818,69 @@ curl -X POST http://localhost:8000/api/v1/ai/suggest/projects \
   -H "Authorization: Bearer <access_token>" \
   -H "Content-Type: application/json" \
   -d '{
-    "project_descriptions": ["Built e-commerce platform", "Created machine learning model"]
+    "project_descriptions": ["Built e-commerce platform", "Created machine learning model"],
+    "project_name": "ShopEase",
+    "tech_stack": ["React", "Node.js", "PostgreSQL"],
+    "job_description": "Looking for Full Stack Developer"
   }'
 ```
 
 #### POST /ai/generate-resume
-Generate full resume with AI.
+Generate a full resume using AI from structured existing data + job description.
 
 **Request Body:**
 ```json
 {
-  "job_description": "string",
-  "existing_data": {}
+  "job_description": "Looking for a Full Stack Developer with React, Node.js...",
+  "existing_data": {
+    "personal": {
+      "first_name": "Fujel",
+      "last_name": "Patel",
+      "job_title": "Web Developer Intern",
+      "email": "fujel@email.com",
+      "mobile": "+1234567890",
+      "address": "City, State",
+      "github": "github.com/fujel",
+      "linkedin": "linkedin.com/in/fujel"
+    },
+    "summary": "Experienced developer...",
+    "skills": ["Python", "React", "Node.js"],
+    "experience": [
+      { "company": "Tech Corp", "role": "Developer", "duration": "2022-Present", "bullets": ["Built apps"] }
+    ],
+    "projects": [
+      { "name": "ShopEase", "description": "E-commerce platform", "tech_stack": ["React", "Node.js"] }
+    ],
+    "education": [
+      { "institution": "University", "degree": "B.Tech", "year": "2024", "grade": "8.5" }
+    ],
+    "certifications": [],
+    "custom_sections": []
+  }
 }
 ```
 
-**Responses:**
-- 200 OK: `{ "resume": { ... } }`
+| Field | Type | Required |
+|-------|------|----------|
+| `job_description` | string | Yes |
+| `existing_data` | object | Yes — must match `ResumeContent` schema (personal, summary, skills, experience, projects, education, certifications, custom_sections) |
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "resume": { "personal": {...}, "summary": "...", "skills": [...], ... }
+  },
+  "error": null
+}
+```
 
 **Logic:**
 1. Get current user from JWT token
 2. Build prompt combining job description and existing resume data
-3. Call AI service to generate improved full resume
-4. Return AI-generated resume JSON
+3. Call AI service to generate tailored resume JSON
+4. Return AI-generated resume
 
 **Testing:**
 ```bash
@@ -730,13 +888,96 @@ curl -X POST http://localhost:8000/api/v1/ai/generate-resume \
   -H "Authorization: Bearer <access_token>" \
   -H "Content-Type: application/json" \
   -d '{
-    "job_description": "Senior Full Stack Engineer position",
-    "existing_data": {"personal_info": {"name": "Jane Doe"}, "skills": ["JavaScript", "React"]}
+    "job_description": "Senior Full Stack Engineer position requiring React, Node.js, Python, PostgreSQL",
+    "existing_data": {
+      "personal": { "first_name": "Jane", "last_name": "Doe", "job_title": "Developer", "email": "jane@email.com", "mobile": "", "address": "", "github": "", "linkedin": "", "portfolio": "" },
+      "summary": "",
+      "skills": ["JavaScript", "React", "Node.js"],
+      "experience": [],
+      "projects": [],
+      "education": [],
+      "certifications": [],
+      "custom_sections": []
+    }
   }'
+```
+
+#### POST /ai/optimize-resume
+Upload your PDF/DOCX resume + job description → AI parses it, then optimizes content for the target role. Keeps personal info & education intact — only changes job title, summary, skills, experience bullets, and project descriptions.
+
+**Request:** Multipart form-data
+
+| Field | Type | Required |
+|-------|------|----------|
+| `file` | File (PDF or DOCX) | Yes — max 5MB |
+| `job_description` | string | Yes |
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "parsed": {
+      "personal": { "first_name": "Fujel", "last_name": "Patel", "job_title": "Web Developer Intern", ... },
+      "summary": "Web Developer Intern experienced in full-stack development...",
+      "skills": ["Languages: JavaScript, Python", "Frontend: React.js, Next.js", ...],
+      "experience": [{
+        "company": "Honeybee Digital",
+        "role": "Web Developer Intern",
+        "duration": "12/2025 to 03/2026",
+        "bullets": ["Built RESTful API routes using Flask & Python..."]
+      }],
+      "projects": [{ "name": "InvoiceIQ", "description": "", "tech_stack": ["Claude Vision API", "FastAPI", ...] }],
+      "education": [...],
+      "certifications": [],
+      "custom_sections": []
+    },
+    "optimized": {
+      "personal": { ... "job_title": "Full Stack Developer - AI Trainer" ... },
+      "summary": "Highly motivated Full Stack Developer with experience in AI training...",
+      "skills": ["Languages: JavaScript, TypeScript, Python", "Frontend: React.js, Next.js", "AI Tools: GitHub-Copilot, OpenCode, Claude, Gemini, Claude-Code", ...],
+      "experience": [{
+        "company": "Honeybee Digital",
+        "role": "Web Developer Intern",
+        "duration": "12/2025 to 03/2026",
+        "bullets": [
+          "Developed and trained AI models using Python and Flask..., resulting in a 30% increase in efficiency.",
+          "Designed and implemented an automated ETL pipeline..., reducing data processing time by 25%.",
+          "Optimized MySQL schema..., improving data retrieval speed by 40%."
+        ]
+      }],
+      "projects": [{
+        "name": "InvoiceIQ — AI Document Intelligence API",
+        "description": "Developed a cloud-based API using Claude Vision API... improving accuracy by 20% and reducing processing time by 50%.",
+        "tech_stack": ["Claude Vision API", "FastAPI", "Supabase", "Pydantic v2"]
+      }],
+      "education": [ ... unchanged ... ],
+      "certifications": [],
+      "custom_sections": []
+    }
+  },
+  "error": null
+}
+```
+
+**Logic (2-stage):**
+1. Get current user from JWT token
+2. **Parse**: Extract text from uploaded PDF/DOCX → send to AI with `RESUME_PARSE_PROMPT` → get structured JSON
+3. **Optimize**: Send parsed data + job description to AI with `OPTIMIZE_RESUME_PROMPT` → get optimized content
+4. Return both `parsed` (original) and `optimized` (tailored for the job)
+
+**Testing:**
+```bash
+curl -X POST http://localhost:8000/api/v1/ai/optimize-resume \
+  -H "Authorization: Bearer <access_token>" \
+  -F "file=@resume.pdf" \
+  -F "job_description=DataAnnotation is looking for a Full Stack Developer - AI Trainer to help train AI models. Qualifications: JavaScript, TypeScript, Python, React..."
 ```
 
 ### AI Provider Settings
 Manage AI provider API keys for resume generation. All endpoints require JWT Bearer token. API keys are encrypted at rest using AES-256-GCM and never returned in responses.
+
+> **Supported providers:** `gemini`, `openrouter`, `groq`, `custom`, `nvidia-nim` (also accepts `nvidia` as alias)
 
 #### GET /settings/ai
 List all AI providers configured by the authenticated user.
@@ -744,15 +985,20 @@ List all AI providers configured by the authenticated user.
 **Responses:**
 - 200 OK:
 ```json
-[
-  {
-    "id": "uuid",
-    "provider_name": "anthropic|gemini|nvidia-nim|custom",
-    "base_url": "string|null",
-    "is_default": false,
-    "is_verified": false
-  }
-]
+{
+  "success": true,
+  "data": [
+    {
+      "id": "uuid",
+      "provider_name": "gemini|openrouter|groq|custom|nvidia-nim",
+      "base_url": "string|null",
+      "model": "string|null",
+      "is_default": false,
+      "is_verified": false
+    }
+  ],
+  "error": null
+}
 ```
 
 **Logic:**
@@ -772,17 +1018,21 @@ Add a new AI provider configuration.
 **Request Body:**
 ```json
 {
-  "provider_name": "anthropic|gemini|nvidia-nim|custom",
-  "api_key": "string",
-  "base_url": "string|null",
-  "is_default": false
+  "provider_name": "gemini",
+  "api_key": "AIzaSy...",
+  "base_url": null,
+  "model": "gemini-2.0-flash",
+  "is_default": true
 }
 ```
 
-**Validation:**
-- `provider_name` must be one of: `anthropic`, `gemini`, `nvidia-nim`, `custom`
-- `base_url` is validated against SSRF attacks (blocks localhost, private IPs, cloud metadata IPs)
-- Duplicate `(user_id, provider_name)` pair returns 409 Conflict
+| Field | Type | Required | Notes |
+|-------|------|----------|-------|
+| `provider_name` | string | Yes | One of: `gemini`, `openrouter`, `groq`, `custom`, `nvidia-nim` |
+| `api_key` | string | Yes | Encrypted with AES-256-GCM at rest |
+| `base_url` | string? | No | Required for `custom`, `nvidia-nim` providers. Validated against SSRF. |
+| `model` | string? | No | Selected model name (e.g. `gemini-2.0-flash`, `gpt-4o-mini`) |
+| `is_default` | bool | No | If `true`, clears default on other providers |
 
 **Responses:**
 - 201 Created: Returns provider info (without API key)
@@ -793,7 +1043,7 @@ Add a new AI provider configuration.
 2. Validate `base_url` for SSRF protection
 3. Encrypt API key with AES-256-GCM
 4. If `is_default=True`, reset existing defaults for this user
-5. Save provider to database
+5. Save provider to database (sets `is_verified: False`)
 6. Return provider info (API key never exposed)
 
 **Testing:**
@@ -801,7 +1051,7 @@ Add a new AI provider configuration.
 curl -X POST http://localhost:8000/api/v1/settings/ai \
   -H "Authorization: Bearer <access_token>" \
   -H "Content-Type: application/json" \
-  -d '{"provider_name": "anthropic", "api_key": "sk-ant-...", "is_default": true}'
+  -d '{"provider_name": "gemini", "api_key": "AIzaSy...", "model": "gemini-2.0-flash", "is_default": true}'
 ```
 
 #### PATCH /settings/ai/{provider_id}
@@ -813,30 +1063,29 @@ Update an existing AI provider configuration.
 **Request Body (partial):**
 ```json
 {
-  "api_key": "string|null",
-  "base_url": "string|null",
-  "is_default": true|null
+  "api_key": "sk-new-...",
+  "model": "gemini-2.0-flash",
+  "is_default": true
 }
 ```
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `api_key` | string? | If changed, resets `is_verified` to `False` |
+| `base_url` | string? | Validated against SSRF |
+| `model` | string? | Change the selected model |
+| `is_default` | bool? | If `true`, clears default on other providers |
 
 **Responses:**
 - 200 OK: Updated provider info
 - 404 Not Found: Provider not found or not owned
-
-**Logic:**
-1. Get current user from JWT token
-2. Fetch provider by ID scoped to user (ownership check)
-3. Validate `base_url` if provided (SSRF protection)
-4. If `api_key` changes, reset `is_verified` to False
-5. If `is_default=True`, clear existing defaults for this user
-6. Save changes and return updated provider
 
 **Testing:**
 ```bash
 curl -X PATCH http://localhost:8000/api/v1/settings/ai/<provider_uuid> \
   -H "Authorization: Bearer <access_token>" \
   -H "Content-Type: application/json" \
-  -d '{"api_key": "sk-new-...", "is_default": true}'
+  -d '{"api_key": "sk-new-...", "model": "gemini-2.0-flash", "is_default": true}'
 ```
 
 #### DELETE /settings/ai/{provider_id}
@@ -849,12 +1098,6 @@ Delete an AI provider configuration.
 - 200 OK: `{ "message": "AI provider removed" }`
 - 404 Not Found: Provider not found or not owned
 
-**Logic:**
-1. Get current user from JWT token
-2. Fetch provider by ID scoped to user
-3. Delete from database
-4. Return success message
-
 **Testing:**
 ```bash
 curl -X DELETE http://localhost:8000/api/v1/settings/ai/<provider_uuid> \
@@ -862,38 +1105,55 @@ curl -X DELETE http://localhost:8000/api/v1/settings/ai/<provider_uuid> \
 ```
 
 #### POST /settings/ai/verify
-Verify an AI provider API key by making a test call.
+Verify an AI provider API key AND list available models in a single call.
 
 **Request Body:**
 ```json
 {
-  "provider_name": "anthropic|gemini|nvidia-nim|custom",
-  "api_key": "string",
-  "base_url": "string|null"
+  "provider_name": "gemini",
+  "api_key": "AIzaSy...",
+  "base_url": null
 }
 ```
 
-**Responses:**
-- 200 OK:
+**Response (success):**
 ```json
 {
-  "valid": true
+  "success": true,
+  "data": {
+    "valid": true,
+    "models": ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash", "gemini-1.5-pro"]
+  },
+  "error": null
+}
+```
+
+**Response (failure):**
+```json
+{
+  "success": true,
+  "data": {
+    "valid": false,
+    "models": null,
+    "error": "API key is invalid: 400 Invalid API key"
+  },
+  "error": null
 }
 ```
 
 **Logic:**
 1. Get current user from JWT token
 2. Validate `base_url` for SSRF protection
-3. Make a minimal test call to the provider ("Reply with just: OK", max_tokens=5)
-4. If call succeeds and provider exists in DB, mark `is_verified = True`
-5. Return validation result
+3. Call provider's models-list endpoint (e.g. `GET /v1/models` or `GET /v1beta/models`) instead of chat completions — avoids needing a model before user selects one
+4. If valid and provider exists in DB, mark `is_verified = True`
+5. Return `{ valid, models[], error? }`
 
 **Testing:**
 ```bash
 curl -X POST http://localhost:8000/api/v1/settings/ai/verify \
   -H "Authorization: Bearer <access_token>" \
   -H "Content-Type: application/json" \
-  -d '{"provider_name": "anthropic", "api_key": "sk-ant-..."}'
+  -d '{"provider_name": "gemini", "api_key": "AIzaSy..."}'
 ```
 
 ### ATS (Applicant Tracking System) Scores
@@ -905,36 +1165,45 @@ Score a resume against a job description using AI, and store the result.
 **Request Body:**
 ```json
 {
-  "resume_text": "string",
-  "job_description": "string|null"
+  "resume_text": "Experienced software engineer with Python and Django skills...",
+  "job_description": "Seeking engineer with Python, Django, and AWS experience"
 }
 ```
 
-**Responses:**
-- 200 OK:
+| Field | Type | Required |
+|-------|------|----------|
+| `resume_text` | string | Yes — raw resume text |
+| `job_description` | string? | No — target job description |
+
+**Response:**
 ```json
 {
-  "id": "uuid",
-  "user_id": "uuid",
-  "resume_id": null,
-  "overall_score": 85,
-  "score_report": {
-    "overall_score": 85,
-    "section_scores": { ... },
-    "missing_keywords": ["string"],
-    "suggestions": ["string"]
+  "success": true,
+  "data": {
+    "id": "75ac672f-ef13-4e90-b723-d278704e9e0d",
+    "user_id": "4f60623c-a9e4-4b44-a8d1-47cd04e82603",
+    "resume_id": null,
+    "overall_score": 82,
+    "score_report": {
+      "overall_score": 82,
+      "section_scores": { "format": 85, "keywords": 70, "readability": 90, "completeness": 78 },
+      "missing_keywords": ["Full Stack Developer", "AI Trainer"],
+      "suggestions": ["Highlight experience in JavaScript, TypeScript, and Python", "Emphasize skills in React.js, Next.js, Node.js, and MySQL"]
+    },
+    "job_description": "Looking for a Full Stack Developer...",
+    "created_at": "2026-06-16T17:21:53.082249+00:00"
   },
-  "job_description": "string",
-  "created_at": "datetime"
+  "error": null
 }
 ```
 
 **Logic:**
 1. Get current user from JWT token
 2. Build ATS prompt with job description and resume text
-3. Call AI service, validate response contains required keys: `overall_score`, `section_scores`, `missing_keywords`, `suggestions`
-4. Create `ATSScan` record in database
-5. Return scan result
+3. Call AI service, extract JSON (handles markdown-wrapped responses)
+4. Validate required keys: `overall_score`, `section_scores`, `missing_keywords`, `suggestions`
+5. Create `ATSScan` record in database
+6. Return scan result
 
 **Testing:**
 ```bash
@@ -945,6 +1214,33 @@ curl -X POST http://localhost:8000/api/v1/ats/score \
     "resume_text": "Experienced software engineer with Python and Django skills...",
     "job_description": "Seeking engineer with Python, Django, and AWS experience"
   }'
+```
+
+#### POST /ats/score-upload
+Upload your PDF/DOCX resume + optional job description → get ATS score. Same as `POST /ats/score` but handles file parsing automatically.
+
+**Request:** Multipart form-data
+
+| Field | Type | Required |
+|-------|------|----------|
+| `file` | File (PDF or DOCX) | Yes — max 5MB |
+| `job_description` | string | No |
+
+**Response:** Same shape as `POST /ats/score`
+
+**Logic:**
+1. Get current user from JWT token
+2. Validate file type (PDF/DOCX) and size (max 5MB)
+3. Extract text from file using PyMuPDF (PDF) or python-docx (DOCX)
+4. Call `ats_service.score_resume()` with extracted text + job description
+5. Return ATS scan result
+
+**Testing:**
+```bash
+curl -X POST http://localhost:8000/api/v1/ats/score-upload \
+  -H "Authorization: Bearer <access_token>" \
+  -F "file=@resume.pdf" \
+  -F "job_description=Looking for a Full Stack Developer with React, Node.js, Python"
 ```
 
 #### GET /ats/history

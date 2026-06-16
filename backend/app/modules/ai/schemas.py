@@ -24,13 +24,14 @@ class SummaryRequest(BaseModel):
     skills: List[str]
     experience: List[str]
     job_description: str
+    current_summary: Optional[str] = None
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
 
 class SkillsRequest(BaseModel):
     job_description: str
-    current_skills: List[str]
+    current_skills: Dict[str, List[str]]
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
@@ -38,6 +39,8 @@ class SkillsRequest(BaseModel):
 class ExperienceRequest(BaseModel):
     experience_bullets: List[str]
     job_role: str
+    company: Optional[str] = None
+    duration: Optional[str] = None
     job_description: Optional[str] = None
 
     model_config = ConfigDict(str_strip_whitespace=True)
@@ -45,6 +48,8 @@ class ExperienceRequest(BaseModel):
 
 class ProjectsRequest(BaseModel):
     project_descriptions: List[str]
+    project_name: Optional[str] = None
+    tech_stack: Optional[List[str]] = None
     job_description: Optional[str] = None
 
     model_config = ConfigDict(str_strip_whitespace=True)

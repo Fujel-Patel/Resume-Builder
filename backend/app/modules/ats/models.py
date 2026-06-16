@@ -5,7 +5,7 @@ Matches the PRD schema (section 5.4) and stores the AI-generated score report as
 
 import uuid
 
-from sqlalchemy import JSON, UUID, Column, DateTime, Integer, Text
+from sqlalchemy import JSON, Column, DateTime, Integer, Text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.sql import func
 

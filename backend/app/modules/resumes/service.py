@@ -216,7 +216,7 @@ async def scan_resume(
 
     if not raw_text.strip():
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail={"code": "PARSE_ERROR", "message": "Could not extract text from file"},
         )
 
@@ -226,14 +226,14 @@ async def scan_resume(
         parsed = _extract_json(result)
     except json.JSONDecodeError:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail={"code": "AI_PARSE_ERROR", "message": "AI returned invalid JSON"},
         )
     except HTTPException:
         raise
     except Exception as e:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail={"code": "AI_PROVIDER_ERROR", "message": str(e)},
         )
 

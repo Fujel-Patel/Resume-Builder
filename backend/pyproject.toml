@@ -54,5 +54,10 @@ dev = [
     "pre-commit>=3.8.0",
 ]
 
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]
+
 [tool.setuptools.packages.find]
 where = ["."]   # Adjust if you have a different package layout

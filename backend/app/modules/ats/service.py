@@ -5,6 +5,7 @@ module to generate a JSON score report.
 """
 
 import json
+import re
 import uuid
 from typing import List, Optional
 
@@ -69,6 +70,34 @@ async def _create_scan(
 
 
 # ----------------------------------------------------------------------
+# Helpers
+# ----------------------------------------------------------------------
+
+
+def _extract_json(text: str) -> dict:
+    """Extract JSON from AI response, stripping markdown fences and preamble."""
+    text = text.strip()
+
+    match = re.search(r"```(?:json)?\s*\n?(.*?)\n?```", text, re.DOTALL)
+    if match:
+        text = match.group(1).strip()
+
+    brace_start = text.find("{")
+    if brace_start >= 0:
+        depth = 0
+        for i in range(brace_start, len(text)):
+            if text[i] == "{":
+                depth += 1
+            elif text[i] == "}":
+                depth -= 1
+                if depth == 0:
+                    text = text[brace_start : i + 1]
+                    break
+
+    return json.loads(text)
+
+
+# ----------------------------------------------------------------------
 # Core scoring flow – uses AI module
 # ----------------------------------------------------------------------
 
@@ -101,7 +130,7 @@ async def score_resume(
 
     # Parse JSON – raise a clear error if the format is wrong
     try:
-        result_dict = json.loads(raw_result)
+        result_dict = _extract_json(raw_result)
     except json.JSONDecodeError as exc:
         raise ValueError(f"Failed to parse ATS AI response as JSON: {exc}")
 
@@ -117,7 +146,7 @@ async def score_resume(
         raise ValueError(f"ATS AI response missing required keys: {missing}")
 
     # Prepare a schema object for consistency (optional but helpful)
-    score_response = ats_schemas.ATSScoreResponse(**result_dict)
+    score_response = ats_schemas.ATSScoreResponse(**result_dict, score_report=result_dict)
 
     # Persist the scan using the internal create helper
     scan_create = ats_schemas.ATSScanCreate(
