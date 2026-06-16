@@ -20,13 +20,14 @@ export function FormSection({ title, defaultOpen = false, children }: FormSectio
       >
         <span>{title}</span>
         <div className="flex items-center gap-2">
-          <div
+          <button
+            type="button"
             onClick={(e) => { e.stopPropagation() }}
             className="flex size-6 items-center justify-center rounded-md text-muted-foreground hover:text-brand hover:bg-brand/10 transition-colors"
-            title="AI Improve"
+            aria-label="AI Improve"
           >
             <Sparkles className="size-3.5" />
-          </div>
+          </button>
           {open ? <ChevronUp className="size-4 text-muted-foreground" /> : <ChevronDown className="size-4 text-muted-foreground" />}
         </div>
       </button>

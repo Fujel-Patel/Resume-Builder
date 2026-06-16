@@ -1,3 +1,4 @@
+import { EnhancedCard } from "@/components/ui/enhanced-card"
 import {
   Sparkles,
   Upload,
@@ -59,10 +60,7 @@ export function Features() {
 
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="group rounded-card border bg-card p-6 ring-1 ring-foreground/5 transition-all duration-200 hover:-translate-y-0.5 hover:ring-brand/30"
-            >
+            <EnhancedCard key={feature.title} glow className="flex flex-col">
               <div className="flex size-10 items-center justify-center rounded-lg bg-brand/10">
                 <feature.icon className="size-5 text-brand" />
               </div>
@@ -72,7 +70,7 @@ export function Features() {
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                 {feature.description}
               </p>
-            </div>
+            </EnhancedCard>
           ))}
         </div>
       </div>

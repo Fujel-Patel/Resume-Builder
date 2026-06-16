@@ -5,9 +5,10 @@ import { DashboardShell } from "@/components/layout/dashboard-shell"
 import { Button } from "@/components/ui/button"
 import { EnhancedCard } from "@/components/ui/enhanced-card"
 import { Badge } from "@/components/ui/badge"
+import { FileUpload } from "@/components/ui/file-upload"
 import { cn } from "@/lib/utils"
 import {
-  Sparkles, Upload, FileText, Check, ArrowRight, Lightbulb, Download,
+  Sparkles, FileText, Check, ArrowRight, Lightbulb, Download,
   Clipboard, RotateCcw, ArrowLeft, ChevronRight, Target, Search,
   X, Eye
 } from "lucide-react"
@@ -38,7 +39,6 @@ export function AiGeneratorPage() {
   const [step, setStep] = useState(1)
   const [jobDesc, setJobDesc] = useState("")
   const [file, setFile] = useState<{ name: string } | null>(null)
-  const [dragOver, setDragOver] = useState(false)
   const [progress, setProgress] = useState(0)
   const [processing, setProcessing] = useState(false)
 
@@ -172,31 +172,12 @@ export function AiGeneratorPage() {
                             <p className="text-xs text-muted-foreground">Ready for analysis</p>
                           </div>
                         </div>
-                        <button onClick={() => setFile(null)} className="text-muted-foreground hover:text-destructive transition-colors">
+                        <button onClick={() => setFile(null)} className="text-muted-foreground hover:text-destructive transition-colors" aria-label="Remove file">
                           <X className="size-4" />
                         </button>
                       </div>
                     ) : (
-                      <div
-                        onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
-                        onDragLeave={() => setDragOver(false)}
-                        onDrop={(e) => { e.preventDefault(); setDragOver(false); setFile({ name: "resume.pdf" }) }}
-                        className={cn(
-                          "flex flex-col items-center justify-center rounded-lg border-2 border-dashed py-12 transition-colors",
-                          dragOver ? "border-brand bg-brand/5" : "border-border"
-                        )}
-                      >
-                        <div className="flex size-14 items-center justify-center rounded-xl bg-brand/10">
-                          <Upload className="size-6 text-brand" />
-                        </div>
-                        <p className="mt-4 text-sm font-medium text-foreground">Drop your resume here</p>
-                        <p className="mt-1 text-xs text-muted-foreground">or click to browse</p>
-                        <p className="mt-2 text-[11px] text-muted-foreground">PDF, DOCX, TXT &middot; Max 10MB</p>
-                        <Button variant="brandOutline" size="sm" className="mt-4">
-                          <Upload className="size-3.5" />
-                          Browse Files
-                        </Button>
-                      </div>
+                      <FileUpload onFile={(f) => setFile({ name: f.name })} />
                     )}
                   </div>
 

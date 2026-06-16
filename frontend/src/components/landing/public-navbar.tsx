@@ -49,6 +49,7 @@ export function PublicNavbar() {
           size="icon"
           className="md:hidden"
           onClick={() => setOpen(!open)}
+          aria-label={open ? "Close menu" : "Open menu"}
         >
           <Menu className="size-4" />
         </Button>

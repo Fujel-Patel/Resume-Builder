@@ -5,6 +5,8 @@ import { DashboardShell } from "@/components/layout/dashboard-shell"
 import { Button } from "@/components/ui/button"
 import { EnhancedCard } from "@/components/ui/enhanced-card"
 import { Badge } from "@/components/ui/badge"
+import { FileUpload } from "@/components/ui/file-upload"
+import { ScoreGauge } from "@/features/resume/score-gauge"
 import { Sparkles, Upload, FileText, Plus, AlertTriangle, Info, CheckCircle, X, RotateCcw, BarChart3, FileSpreadsheet, Hash, AlertCircle } from "lucide-react"
 
 const sectionScores = [
@@ -39,10 +41,13 @@ export function AtsScorePage() {
   const [file, setFile] = useState<{ name: string; size: string } | null>({ name: "senior-designer-resume.pdf", size: "245 KB" })
   const [activeTab, setActiveTab] = useState<"upload" | "paste">("upload")
   const [jobDesc, setJobDesc] = useState("")
-  const [dragOver, setDragOver] = useState(false)
   const overallScore = 86
 
   const removeFile = () => setFile(null)
+
+  const handleFile = (f: File) => {
+    setFile({ name: f.name, size: `${(f.size / 1024).toFixed(0)} KB` })
+  }
 
   return (
     <DashboardShell title="ATS Score Analysis">
@@ -94,29 +99,13 @@ export function AtsScorePage() {
                       <BarChart3 className="size-3.5" />
                       Check ATS
                     </Button>
-                    <button onClick={removeFile} className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+                    <button onClick={removeFile} className="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors" aria-label="Remove file">
                       <X className="size-4" />
                     </button>
                   </div>
                 </div>
               ) : (
-                <div
-                  onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
-                  onDragLeave={() => setDragOver(false)}
-                  onDrop={(e) => { e.preventDefault(); setDragOver(false); setFile({ name: "resume.pdf", size: "245 KB" }) }}
-                  className={`flex flex-col items-center justify-center rounded-lg border-2 border-dashed py-10 transition-colors ${dragOver ? "border-brand bg-brand/5" : "border-border"}`}
-                >
-                  <div className="flex size-14 items-center justify-center rounded-xl bg-brand/10">
-                    <Upload className="size-6 text-brand" />
-                  </div>
-                  <p className="mt-4 text-sm font-medium text-foreground">Upload your resume</p>
-                  <p className="mt-1 text-xs text-muted-foreground">Drag & drop or click to browse</p>
-                  <p className="mt-3 text-[11px] text-muted-foreground">Supports PDF, DOCX, TXT &middot; Max 10MB</p>
-                  <Button variant="brandOutline" size="sm" className="mt-4">
-                    <Upload className="size-3.5" />
-                    Browse Files
-                  </Button>
-                </div>
+                <FileUpload onFile={handleFile} />
               )
             ) : (
               <div className="space-y-3">
@@ -142,14 +131,7 @@ export function AtsScorePage() {
           <div className="lg:col-span-2">
             <EnhancedCard className="flex flex-col items-center py-8">
               <div className="relative">
-                <svg width="180" height="180" viewBox="0 0 180 180" className="-rotate-90">
-                  <circle cx="90" cy="90" r="78" fill="none" stroke="currentColor" strokeWidth="10" className="text-muted" />
-                  <circle cx="90" cy="90" r="78" fill="none" stroke="#00FFF0" strokeWidth="10" strokeLinecap="round"
-                    strokeDasharray={490.1}
-                    strokeDashoffset={490.1 - (overallScore / 100) * 490.1}
-                    className="drop-shadow-[0_0_8px_#00FFF0]"
-                  />
-                </svg>
+                <ScoreGauge score={overallScore} size="lg" variant="brand" className="drop-shadow-[0_0_8px_#00FFF0]" />
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                   <span className="text-4xl font-bold text-foreground">{overallScore}%</span>
                   <Badge variant="brand">Excellent</Badge>

@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { EnhancedCard } from "@/components/ui/enhanced-card"
 import type { StatCardData } from "@/types/design"
 import { TrendingUp, TrendingDown } from "lucide-react"
 
@@ -11,12 +12,7 @@ type StatCardProps = {
 
 export function StatCard({ data, className }: StatCardProps) {
   return (
-    <div
-      className={cn(
-        "rounded-card bg-card p-4 ring-1 ring-foreground/10 transition-all duration-200 hover:-translate-y-0.5",
-        className
-      )}
-    >
+    <EnhancedCard className={className}>
       <div className="flex items-center justify-between">
         <div className="flex size-10 items-center justify-center rounded-lg bg-brand/10">
           <data.icon className="size-5 text-brand" />
@@ -43,6 +39,6 @@ export function StatCard({ data, className }: StatCardProps) {
         <p className="text-2xl font-semibold text-foreground">{data.value}</p>
         <p className="text-xs text-muted-foreground">{data.label}</p>
       </div>
-    </div>
+    </EnhancedCard>
   )
 }

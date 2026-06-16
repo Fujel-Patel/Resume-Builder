@@ -53,7 +53,7 @@ export function Sidebar() {
               Generative-CV
             </span>
           </Link>
-          <Button variant="ghost" size="icon" onClick={close} className="lg:hidden">
+          <Button variant="ghost" size="icon" onClick={close} className="lg:hidden" aria-label="Close sidebar">
             <X className="size-4" />
           </Button>
         </div>

@@ -2,9 +2,9 @@
 
 import { DashboardShell } from "@/components/layout/dashboard-shell"
 import { StatCard } from "@/components/ui/stat-card"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { EnhancedCard } from "@/components/ui/enhanced-card"
+import { ResumeListItem } from "@/features/resume/resume-list-item"
 import { FileText, BarChart3, Briefcase, Sparkles, Plus, TrendingUp, Search } from "lucide-react"
 
 const stats = [
@@ -21,12 +21,6 @@ const recentResumes = [
   { name: "Product Manager", role: "Linear - PM2", date: "Oct 5, 2024", score: 88, status: "Optimized" as const },
   { name: "DevOps Lead", role: "Vercel - Staff", date: "Sep 28, 2024", score: 71, status: "Draft" as const },
 ]
-
-const statusVariant = {
-  Optimized: "success" as const,
-  Draft: "warning" as const,
-  Complete: "brand" as const,
-}
 
 export function DashboardHome() {
   return (
@@ -61,25 +55,7 @@ export function DashboardHome() {
               <div className="divide-y">
                 {recentResumes.map((r) => (
                   <div key={r.name} className="flex items-center gap-4 px-4 py-3 text-sm hover:bg-muted/30 transition-colors">
-                    <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand/10">
-                      <FileText className="size-4 text-brand" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-foreground truncate">{r.name}</p>
-                      <p className="text-xs text-muted-foreground">{r.role} &middot; {r.date}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm font-semibold text-foreground">{r.score}</span>
-                      <svg className="size-8 -rotate-90" viewBox="0 0 36 36">
-                        <circle cx="18" cy="18" r="15.5" fill="none" stroke="currentColor" strokeWidth="3" className="text-muted" />
-                        <circle cx="18" cy="18" r="15.5" fill="none" strokeWidth="3" strokeLinecap="round"
-                          stroke={r.score >= 80 ? "#22C55E" : r.score >= 60 ? "#EAB308" : "#EF4444"}
-                          strokeDasharray={97.4}
-                          strokeDashoffset={97.4 - (r.score / 100) * 97.4}
-                        />
-                      </svg>
-                    </div>
-                    <Badge variant={statusVariant[r.status]}>{r.status}</Badge>
+                    <ResumeListItem resume={r} />
                   </div>
                 ))}
               </div>
