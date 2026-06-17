@@ -1,0 +1,71 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+.venv/
+env/
+venv/
+.eggs/
+*.egg-info/
+*.egg
+
+# Build outputs
+.next/
+.next-trace/
+out/
+build/
+dist/
+*.tsbuildinfo
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage/
+htmlcov/
+
+# Logs
+*.log
+server.log
+
+# TypeScript
+next-env.d.ts
+
+# Playwright / E2E artifacts
+.playwright-mcp/
+
+# Vercel
+.vercel
+
+# Misc
+*.pem
+*.key
+*.cert
