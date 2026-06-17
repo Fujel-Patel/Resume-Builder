@@ -13,7 +13,6 @@ const tiers = [
       "PDF export",
     ],
     cta: "Get Started",
-    variant: "outline" as const,
     featured: false,
   },
   {
@@ -29,7 +28,6 @@ const tiers = [
       "Priority support",
     ],
     cta: "Start Pro",
-    variant: "brand" as const,
     featured: true,
   },
   {
@@ -44,7 +42,6 @@ const tiers = [
       "Dedicated support",
     ],
     cta: "Contact Sales",
-    variant: "outline" as const,
     featured: false,
   },
 ]
@@ -54,36 +51,41 @@ export function Pricing() {
     <section id="pricing" className="py-16 lg:py-24">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-h2 text-foreground">Simple Pricing</h2>
+          <h2 className="text-h2 text-foreground font-heading">Simple Pricing</h2>
           <p className="mt-3 text-body text-muted-foreground">
             No hidden fees. Start free, upgrade when you need more.
           </p>
         </div>
 
         <div className="mt-12 grid gap-6 lg:grid-cols-3">
-          {tiers.map((tier) => (
+          {tiers.map((tier, index) => (
             <div
               key={tier.name}
-              className={`relative rounded-card border p-6 ring-1 ${
+              className={`relative rounded-card border p-6 ring-1 transition-all duration-300 animate-slide-up ${
                 tier.featured
-                  ? "border-brand/30 bg-card ring-brand/20"
-                  : "border-border bg-card ring-foreground/5"
+                  ? "border-brand/40 bg-card ring-brand/30 hover:ring-brand/50 hover:shadow-glow-brand hover:-translate-y-1"
+                  : "border-border bg-card ring-foreground/5 hover:ring-foreground/20 hover:-translate-y-0.5"
               }`}
+              style={{ animationDelay: `${index * 150}ms`, animationFillMode: "backwards" }}
             >
               {tier.featured && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                  <span className="rounded-full bg-brand px-3 py-0.5 text-xs font-semibold text-black">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                  <span className="rounded-full bg-brand px-3 py-0.5 text-xs font-semibold text-black animate-glow-pulse shadow-glow-brand">
                     Most Popular
                   </span>
                 </div>
               )}
 
-              <div className="mb-4">
-                <h3 className="text-sm font-semibold text-foreground">
+              {tier.featured && (
+                <div className="absolute inset-0 rounded-card bg-gradient-to-b from-brand/5 via-transparent to-transparent pointer-events-none" />
+              )}
+
+              <div className="mb-4 relative z-10">
+                <h3 className="text-sm font-semibold text-foreground font-heading">
                   {tier.name}
                 </h3>
                 <div className="mt-2 flex items-baseline gap-1">
-                  <span className="text-3xl font-bold text-foreground">
+                  <span className="text-3xl font-bold text-foreground font-heading">
                     {tier.price}
                   </span>
                   {tier.period && (
@@ -97,10 +99,10 @@ export function Pricing() {
                 </p>
               </div>
 
-              <ul className="mb-6 space-y-2.5">
+              <ul className="mb-6 space-y-2.5 relative z-10">
                 {tier.features.map((feature) => (
                   <li key={feature} className="flex items-center gap-2 text-sm">
-                    <Check className="size-4 text-brand" />
+                    <Check className="size-4 text-brand shrink-0" />
                     <span className="text-muted-foreground">{feature}</span>
                   </li>
                 ))}
@@ -108,9 +110,9 @@ export function Pricing() {
 
               <Link
                 href="/signup"
-                className={`inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg px-2.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 ${
+                className={`relative z-10 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg px-2.5 text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 ${
                   tier.featured
-                    ? "bg-brand text-black hover:bg-brand-dark"
+                    ? "bg-brand text-black hover:bg-brand-dark hover:scale-[1.02] hover:shadow-glow-brand"
                     : "border border-border bg-background text-foreground hover:bg-muted"
                 }`}
               >

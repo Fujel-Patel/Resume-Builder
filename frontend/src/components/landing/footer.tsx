@@ -30,15 +30,15 @@ const footerLinks = [
 
 export function Footer() {
   return (
-    <footer className="border-t py-12">
+    <footer className="border-t border-border/40 py-12">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-2">
-              <div className="flex size-7 items-center justify-center rounded-md bg-brand">
+            <div className="flex items-center gap-2 group">
+              <div className="flex size-7 items-center justify-center rounded-md bg-brand transition-all duration-300 group-hover:shadow-glow-brand">
                 <Sparkles className="size-4 text-black" />
               </div>
-              <span className="text-sm font-semibold text-foreground">
+              <span className="text-sm font-heading font-semibold text-foreground">
                 Generative-CV
               </span>
             </div>
@@ -50,7 +50,7 @@ export function Footer() {
 
           {footerLinks.map((group) => (
             <div key={group.heading}>
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-foreground">
+              <h4 className="text-xs font-semibold font-heading uppercase tracking-wider text-foreground">
                 {group.heading}
               </h4>
               <ul className="mt-4 space-y-2">
@@ -58,7 +58,7 @@ export function Footer() {
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+                      className="relative text-sm text-muted-foreground transition-colors hover:text-foreground after:absolute after:bottom-[-2px] after:left-0 after:h-px after:w-0 after:bg-brand after:transition-all after:duration-300 hover:after:w-full"
                     >
                       {link.label}
                     </Link>
@@ -69,7 +69,7 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-12 border-t pt-6">
+        <div className="mt-12 border-t border-border/40 pt-6">
           <p className="text-xs text-muted-foreground/60 text-center">
             &copy; {new Date().getFullYear()} Generative-CV. All rights reserved.
           </p>

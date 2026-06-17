@@ -26,10 +26,10 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section className="border-y py-16 lg:py-24">
+    <section className="border-y border-border/40 py-16 lg:py-24">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <h2 className="text-h2 text-foreground">How It Works</h2>
+          <h2 className="text-h2 text-foreground font-heading">How It Works</h2>
           <p className="mt-3 text-body text-muted-foreground">
             Three simple steps to a better resume.
           </p>
@@ -37,17 +37,21 @@ export function HowItWorks() {
 
         <div className="mt-12 grid gap-8 md:grid-cols-3">
           {steps.map((step, index) => (
-            <div key={step.number} className="relative text-center">
+            <div
+              key={step.number}
+              className="relative text-center animate-slide-up"
+              style={{ animationDelay: `${index * 150}ms`, animationFillMode: "backwards" }}
+            >
               {index < steps.length - 1 && (
-                <div className="absolute top-8 left-[60%] hidden h-px w-[80%] bg-border md:block" />
+                <div className="absolute top-8 left-[60%] hidden h-px w-[80%] bg-gradient-to-r from-brand/40 via-brand/20 to-transparent md:block" />
               )}
-              <div className="mx-auto flex size-16 items-center justify-center rounded-full border-2 border-brand/20 bg-brand/5">
-                <step.icon className="size-7 text-brand" />
+              <div className="mx-auto flex size-16 items-center justify-center rounded-full border-2 border-brand/20 bg-brand/5 transition-all duration-300 hover:border-brand/40 hover:shadow-glow-brand hover:scale-105">
+                <step.icon className="size-7 text-brand animate-float" style={{ animationDelay: `${index * 0.5}s` }} />
               </div>
-              <span className="mt-4 block text-sm font-bold text-brand">
+              <span className="mt-4 block text-2xl font-bold font-heading text-brand">
                 {step.number}
               </span>
-              <h3 className="mt-2 text-sm font-semibold text-foreground">
+              <h3 className="mt-2 text-sm font-semibold text-foreground font-heading">
                 {step.title}
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-muted-foreground">

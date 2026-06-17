@@ -14,9 +14,9 @@ export function EnhancedCard({ children, className, glow, hover = true }: Enhanc
   return (
     <div
       className={cn(
-        "rounded-card bg-card p-4 ring-1 ring-foreground/10 text-sm text-card-foreground transition-all duration-200",
-        hover && "hover:-translate-y-0.5 hover:ring-foreground/20",
-        glow && "ring-brand/30 hover:ring-brand/50",
+        "rounded-card bg-card p-4 ring-1 ring-foreground/10 text-sm text-card-foreground transition-all duration-300",
+        hover && "hover:-translate-y-1 hover:ring-foreground/20",
+        glow && "ring-brand/30 hover:ring-brand/50 hover:shadow-glow-brand",
         className
       )}
     >

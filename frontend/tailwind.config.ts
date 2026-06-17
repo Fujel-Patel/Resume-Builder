@@ -68,8 +68,8 @@ const config: Config = {
         pill: "9999px",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        heading: ["Inter", "system-ui", "sans-serif"],
+        sans: ["var(--font-dm-sans)", "system-ui", "sans-serif"],
+        heading: ["var(--font-space-grotesk)", "system-ui", "sans-serif"],
       },
       fontSize: {
         "h1": ["48px", { lineHeight: "1.1", fontWeight: "700" }],
@@ -95,16 +95,24 @@ const config: Config = {
           to: { opacity: "0" },
         },
         "slide-up": {
-          from: { transform: "translateY(8px)", opacity: "0" },
+          from: { transform: "translateY(12px)", opacity: "0" },
           to: { transform: "translateY(0)", opacity: "1" },
         },
         "slide-down": {
-          from: { transform: "translateY(-8px)", opacity: "0" },
+          from: { transform: "translateY(-12px)", opacity: "0" },
           to: { transform: "translateY(0)", opacity: "1" },
         },
         "scale-in": {
           from: { transform: "scale(0.95)", opacity: "0" },
           to: { transform: "scale(1)", opacity: "1" },
+        },
+        "glow-pulse": {
+          "0%, 100%": { opacity: "1" },
+          "50%": { opacity: "0.7" },
+        },
+        float: {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-4px)" },
         },
         "accordion-down": {
           from: { height: "0" },
@@ -116,11 +124,13 @@ const config: Config = {
         },
       },
       animation: {
-        "fade-in": "fade-in 150ms ease-in-out",
+        "fade-in": "fade-in 600ms ease-out forwards",
         "fade-out": "fade-out 150ms ease-in-out",
-        "slide-up": "slide-up 200ms ease-out",
-        "slide-down": "slide-down 200ms ease-out",
-        "scale-in": "scale-in 200ms ease-out",
+        "slide-up": "slide-up 600ms ease-out forwards",
+        "slide-down": "slide-down 400ms ease-out forwards",
+        "scale-in": "scale-in 400ms ease-out forwards",
+        "glow-pulse": "glow-pulse 2s ease-in-out infinite",
+        float: "float 3s ease-in-out infinite",
         "accordion-down": "accordion-down 200ms ease-out",
         "accordion-up": "accordion-up 200ms ease-out",
       },
