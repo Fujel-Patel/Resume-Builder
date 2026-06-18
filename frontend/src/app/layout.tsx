@@ -3,6 +3,8 @@ import { Space_Grotesk, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { ReduxProvider } from "@/providers/redux-provider";
+import { Toaster } from "@/components/ui/sonner";
+import { UnauthorizedOverlay } from "@/components/auth/unauthorized-overlay";
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
@@ -28,7 +30,11 @@ export default function RootLayout({
     <html lang="en" className={`${spaceGrotesk.variable} ${dmSans.variable} h-full antialiased`} suppressHydrationWarning>
       <body className="min-h-full flex flex-col">
         <ReduxProvider>
-          <ThemeProvider>{children}</ThemeProvider>
+          <ThemeProvider>
+            {children}
+            <Toaster />
+            <UnauthorizedOverlay />
+          </ThemeProvider>
         </ReduxProvider>
       </body>
     </html>

@@ -7,9 +7,10 @@ type FormSectionProps = {
   title: string
   defaultOpen?: boolean
   children: React.ReactNode
+  actions?: React.ReactNode
 }
 
-export function FormSection({ title, defaultOpen = false, children }: FormSectionProps) {
+export function FormSection({ title, defaultOpen = false, children, actions }: FormSectionProps) {
   const [open, setOpen] = useState(defaultOpen)
 
   return (
@@ -20,18 +21,29 @@ export function FormSection({ title, defaultOpen = false, children }: FormSectio
       >
         <span>{title}</span>
         <div className="flex items-center gap-2">
-          <button
-            type="button"
+          <span
+            role="button"
+            tabIndex={0}
             onClick={(e) => { e.stopPropagation() }}
-            className="flex size-6 items-center justify-center rounded-md text-muted-foreground hover:text-brand hover:bg-brand/10 transition-colors"
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") e.stopPropagation() }}
+            className="flex size-6 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:text-brand hover:bg-brand/10 transition-colors"
             aria-label="AI Improve"
           >
             <Sparkles className="size-3.5" />
-          </button>
+          </span>
           {open ? <ChevronUp className="size-4 text-muted-foreground" /> : <ChevronDown className="size-4 text-muted-foreground" />}
         </div>
       </button>
-      {open && <div className="px-4 pb-4 space-y-3">{children}</div>}
+      {open && (
+        <div className="pb-4">
+          <div className="px-4 space-y-3">{children}</div>
+          {actions && (
+            <div className="flex justify-end border-t px-4 pt-3 mt-3">
+              {actions}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

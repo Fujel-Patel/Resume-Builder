@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import {
   LayoutDashboard,
   FileText,
@@ -16,6 +16,9 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "./theme-toggle"
 import { useSidebar } from "@/contexts/sidebar-context"
+import { useAppDispatch } from "@/lib/hooks"
+import { resetAuth } from "@/lib/features/auth/authSlice"
+import { logoutApi } from "@/lib/api/auth"
 import type { NavItem } from "@/types/design"
 
 const navItems: NavItem[] = [
@@ -29,6 +32,8 @@ const navItems: NavItem[] = [
 
 export function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
+  const dispatch = useAppDispatch()
   const { isOpen, close } = useSidebar()
 
   return (
@@ -88,6 +93,11 @@ export function Sidebar() {
           <Button
             variant="ghost"
             className="w-full justify-start gap-3 text-sidebar-foreground/70"
+            onClick={() => {
+              dispatch(resetAuth())
+              logoutApi()
+              router.push("/login")
+            }}
           >
             <LogOut className="size-4" />
             Logout

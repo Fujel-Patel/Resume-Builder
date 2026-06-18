@@ -67,6 +67,18 @@ export function ResumePreview({ data, template }: ResumePreviewProps) {
           </div>
         )}
 
+        {data.projects.length > 0 && (
+          <div className="mt-4">
+            <SectionTitle>Projects</SectionTitle>
+            {data.projects.map((proj, i) => (
+              <div key={i} className="mt-2">
+                <p className="text-[12px] font-semibold text-gray-900">{proj.name}</p>
+                {proj.description && <p className="mt-0.5 text-[11px] leading-relaxed text-gray-700">{proj.description}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+
         {data.education.length > 0 && (
           <div className="mt-4">
             <SectionTitle>Education</SectionTitle>
@@ -81,18 +93,6 @@ export function ResumePreview({ data, template }: ResumePreviewProps) {
                     <p className="text-[10px] text-gray-500">{edu.startDate} – {edu.endDate || "Present"}</p>
                   )}
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {data.projects.length > 0 && (
-          <div className="mt-4">
-            <SectionTitle>Projects</SectionTitle>
-            {data.projects.map((proj, i) => (
-              <div key={i} className="mt-2">
-                <p className="text-[12px] font-semibold text-gray-900">{proj.name}</p>
-                {proj.description && <p className="mt-0.5 text-[11px] leading-relaxed text-gray-700">{proj.description}</p>}
               </div>
             ))}
           </div>

@@ -13,12 +13,13 @@ from app.modules.ai.models import AIProvider
 from app.modules.ai.providers.openai_compatible import PROVIDER_DEFAULTS
 from app.modules.ai.service import (
     _validate_base_url,
+    list_provider_models,
     verify_api_key,
 )
 from app.modules.users import models as user_models
 from app.types.common import success
 from app.utils.auth import get_current_user
-from app.utils.encryption import encrypt
+from app.utils.encryption import decrypt, encrypt
 
 router = APIRouter()
 
@@ -271,6 +272,22 @@ async def delete_provider(
     await db.delete(provider)
     await db.commit()
     return success({"message": "AI provider removed"})
+
+
+@router.get("/{provider_id}/models")
+async def list_models(
+    provider_id: uuid.UUID,
+    current_user: user_models.User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    provider = await _get_provider(db, provider_id, current_user.id)
+    api_key = decrypt(provider.api_key_encrypted)
+    models = await list_provider_models(
+        provider_name=provider.provider_name,
+        api_key=api_key,
+        base_url=provider.base_url,
+    )
+    return success(models)
 
 
 @router.post("/verify")

@@ -1,19 +1,32 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2 } from "lucide-react"
+import { useAppDispatch, useAppSelector } from "@/lib/hooks"
+import { signup, clearError } from "@/lib/features/auth/authSlice"
 
 export function SignupForm() {
+  const router = useRouter()
+  const dispatch = useAppDispatch()
+  const { loading, error, user } = useAppSelector((s) => s.auth)
+
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
-  const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [generalError, setGeneralError] = useState("")
+
+  useEffect(() => {
+    if (user) router.push("/dashboard")
+  }, [user, router])
+
+  useEffect(() => {
+    dispatch(clearError())
+  }, [dispatch])
 
   const validate = () => {
     const errs: Record<string, string> = {}
@@ -30,11 +43,8 @@ export function SignupForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setGeneralError("")
     if (!validate()) return
-    setLoading(true)
-    await new Promise((r) => setTimeout(r, 1500))
-    setLoading(false)
+    dispatch(signup({ name, email, password }))
   }
 
   return (
@@ -46,12 +56,12 @@ export function SignupForm() {
         </p>
       </div>
 
-      {generalError && (
+      {error && (
         <div
           role="alert"
           className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
         >
-          {generalError}
+          {error}
         </div>
       )}
 

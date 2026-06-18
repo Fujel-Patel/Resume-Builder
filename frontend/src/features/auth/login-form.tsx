@@ -1,17 +1,30 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2 } from "lucide-react"
+import { useAppDispatch, useAppSelector } from "@/lib/hooks"
+import { login, clearError } from "@/lib/features/auth/authSlice"
 
 export function LoginForm() {
+  const router = useRouter()
+  const dispatch = useAppDispatch()
+  const { loading, error, user } = useAppSelector((s) => s.auth)
+
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [generalError, setGeneralError] = useState("")
+
+  useEffect(() => {
+    if (user) router.push("/dashboard")
+  }, [user, router])
+
+  useEffect(() => {
+    dispatch(clearError())
+  }, [dispatch])
 
   const validate = () => {
     const errs: Record<string, string> = {}
@@ -24,12 +37,8 @@ export function LoginForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setGeneralError("")
     if (!validate()) return
-    setLoading(true)
-    await new Promise((r) => setTimeout(r, 1500))
-    setLoading(false)
-    setGeneralError("Invalid email or password")
+    dispatch(login({ email, password }))
   }
 
   return (
@@ -41,12 +50,12 @@ export function LoginForm() {
         </p>
       </div>
 
-      {generalError && (
+      {error && (
         <div
           role="alert"
           className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
         >
-          {generalError}
+          {error}
         </div>
       )}
 

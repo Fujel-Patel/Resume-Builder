@@ -1,11 +1,13 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { DashboardShell } from "@/components/layout/dashboard-shell"
 import { EditorPanel } from "@/features/resume/editor-panel"
 import { PreviewPanel } from "@/features/resume/preview-panel"
 import { Button } from "@/components/ui/button"
-import { Save, Download, Eye, PenLine } from "lucide-react"
+import { Download, Eye, PenLine, ArrowLeft } from "lucide-react"
+import { saveSection, getResumeApi, toFrontendResumeData } from "@/lib/api/resumes"
 import type { ResumeData } from "@/features/resume/types"
 
 const defaultResume: ResumeData = {
@@ -29,19 +31,97 @@ const defaultResume: ResumeData = {
 }
 
 export function ResumeBuilder() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [data, setData] = useState<ResumeData>(defaultResume)
   const [template, setTemplate] = useState<"classic" | "modern" | "minimal">("classic")
   const [mobileTab, setMobileTab] = useState<"editor" | "preview">("editor")
+  const [resumeId, setResumeId] = useState<string | null>(null)
+  const [saving, setSaving] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
+  const resumeIdRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    resumeIdRef.current = resumeId
+  }, [resumeId])
+
+  useEffect(() => {
+    const id = searchParams.get("id")
+    if (id) {
+      getResumeApi(id)
+        .then((r) => {
+          const saved = toFrontendResumeData(r)
+          setData({
+            personal: {
+              name: saved.personal.name || defaultResume.personal.name,
+              title: saved.personal.title || defaultResume.personal.title,
+              email: saved.personal.email || defaultResume.personal.email,
+              phone: saved.personal.phone || defaultResume.personal.phone,
+              location: saved.personal.location || defaultResume.personal.location,
+            },
+            links: {
+              linkedin: saved.links.linkedin || defaultResume.links.linkedin,
+              github: saved.links.github || defaultResume.links.github,
+              portfolio: saved.links.portfolio || defaultResume.links.portfolio,
+              website: saved.links.website || defaultResume.links.website,
+            },
+            summary: saved.summary || defaultResume.summary,
+            skills: saved.skills.length > 0 ? saved.skills : defaultResume.skills,
+            experience: saved.experience.length > 0 ? saved.experience : defaultResume.experience,
+            education: saved.education.length > 0 ? saved.education : defaultResume.education,
+            projects: saved.projects.length > 0 ? saved.projects : defaultResume.projects,
+            certifications: saved.certifications.length > 0 ? saved.certifications : defaultResume.certifications,
+          })
+          setResumeId(r.id)
+        })
+        .catch(() => {
+          // resume not found — start fresh
+        })
+        .finally(() => setLoading(false))
+    } else {
+      setLoading(false)
+    }
+  }, [searchParams])
 
   const handleChange = useCallback((next: ResumeData) => setData(next), [])
+
+  const handleSaveSection = useCallback(async (section: keyof ResumeData) => {
+    setSaving(section)
+    try {
+      const currentId = resumeIdRef.current
+      const id = await saveSection(currentId, data, section)
+      if (!currentId) {
+        setResumeId(id)
+        router.replace(`/resume/new?id=${id}`, { scroll: false })
+      }
+    } catch {
+      // silently fail — user can retry
+    } finally {
+      setSaving(null)
+    }
+  }, [data, router])
+
+  if (loading) {
+    return (
+      <DashboardShell title="Resume Builder">
+        <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
+          <div className="size-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      </DashboardShell>
+    )
+  }
 
   return (
     <DashboardShell title="Resume Builder">
       <div className="flex h-[calc(100vh-3.5rem)] flex-col">
         <div className="flex items-center justify-between border-b bg-card px-4 py-2.5 lg:px-6">
-          <h2 className="text-sm font-semibold text-foreground">Resume Builder</h2>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon-xs" onClick={() => router.back()} aria-label="Go back">
+              <ArrowLeft className="size-4" />
+            </Button>
+            <h2 className="text-sm font-semibold text-foreground">Resume Builder</h2>
+          </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm"><Save className="size-3.5" /> Save</Button>
             <Button variant="brand" size="sm"><Download className="size-3.5" /> Download</Button>
           </div>
         </div>
@@ -60,7 +140,7 @@ export function ResumeBuilder() {
         <div className="flex flex-1 overflow-hidden">
           <div className={`w-full lg:w-[45%] overflow-auto border-r ${mobileTab === "preview" ? "hidden lg:block" : ""}`}>
             <div className="p-4 lg:p-6">
-              <EditorPanel data={data} onChange={handleChange} />
+              <EditorPanel data={data} onChange={handleChange} onSave={handleSaveSection} saving={saving} />
             </div>
           </div>
           <div className={`w-full lg:w-[55%] overflow-hidden ${mobileTab === "editor" ? "hidden lg:block" : ""}`}>

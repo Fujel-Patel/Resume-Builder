@@ -1,5 +1,10 @@
+import { AuthGuard } from "@/components/auth/auth-guard"
 import { ProfilePage } from "./profile-page"
 
 export default function Profile() {
-  return <ProfilePage />
+  return (
+    <AuthGuard>
+      <ProfilePage />
+    </AuthGuard>
+  )
 }

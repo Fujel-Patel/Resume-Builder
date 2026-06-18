@@ -2,22 +2,29 @@
 
 import { FormSection } from "@/features/resume/form-section"
 import { TagInput } from "@/features/resume/tag-input"
-import { Plus, Trash2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Plus, Trash2, Save } from "lucide-react"
 import type { ResumeData, ExperienceEntry, EducationEntry, ProjectEntry, CertificationEntry } from "@/features/resume/types"
 
 type EditorPanelProps = {
   data: ResumeData
   onChange: (data: ResumeData) => void
+  onSave: (section: keyof ResumeData) => void
+  saving: string | null
 }
 
-export function EditorPanel({ data, onChange }: EditorPanelProps) {
+export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps) {
   const update = <K extends keyof ResumeData>(section: K, value: ResumeData[K]) => {
     onChange({ ...data, [section]: value })
   }
 
   return (
     <div className="space-y-3">
-      <FormSection title="Personal" defaultOpen>
+      <FormSection
+        title="Personal"
+        defaultOpen
+        actions={<SaveBtn section="personal" saving={saving} onSave={onSave} />}
+      >
         <InputField label="Full Name" value={data.personal.name} onChange={(v) => update("personal", { ...data.personal, name: v })} placeholder="John Doe" />
         <InputField label="Job Title" value={data.personal.title} onChange={(v) => update("personal", { ...data.personal, title: v })} placeholder="Senior Product Designer" />
         <InputField label="Email" value={data.personal.email} onChange={(v) => update("personal", { ...data.personal, email: v })} placeholder="john@example.com" />
@@ -25,14 +32,20 @@ export function EditorPanel({ data, onChange }: EditorPanelProps) {
         <InputField label="Location" value={data.personal.location} onChange={(v) => update("personal", { ...data.personal, location: v })} placeholder="San Francisco, CA" />
       </FormSection>
 
-      <FormSection title="Links">
+      <FormSection
+        title="Links"
+        actions={<SaveBtn section="links" saving={saving} onSave={onSave} />}
+      >
         <InputField label="LinkedIn" value={data.links.linkedin} onChange={(v) => update("links", { ...data.links, linkedin: v })} placeholder="username" />
         <InputField label="GitHub" value={data.links.github} onChange={(v) => update("links", { ...data.links, github: v })} placeholder="username" />
         <InputField label="Portfolio" value={data.links.portfolio} onChange={(v) => update("links", { ...data.links, portfolio: v })} placeholder="https://" />
         <InputField label="Website" value={data.links.website} onChange={(v) => update("links", { ...data.links, website: v })} placeholder="https://" />
       </FormSection>
 
-      <FormSection title="Summary">
+      <FormSection
+        title="Summary"
+        actions={<SaveBtn section="summary" saving={saving} onSave={onSave} />}
+      >
         <textarea
           value={data.summary}
           onChange={(e) => update("summary", e.target.value)}
@@ -42,7 +55,10 @@ export function EditorPanel({ data, onChange }: EditorPanelProps) {
         />
       </FormSection>
 
-      <FormSection title="Skills">
+      <FormSection
+        title="Skills"
+        actions={<SaveBtn section="skills" saving={saving} onSave={onSave} />}
+      >
         <TagInput
           tags={data.skills}
           onChange={(v) => update("skills", v)}
@@ -51,28 +67,40 @@ export function EditorPanel({ data, onChange }: EditorPanelProps) {
         <p className="text-xs text-muted-foreground">Suggested: React, TypeScript, Python, AWS, Figma</p>
       </FormSection>
 
-      <FormSection title="Experience">
+      <FormSection
+        title="Experience"
+        actions={<SaveBtn section="experience" saving={saving} onSave={onSave} />}
+      >
         <ExperienceEditor
           entries={data.experience}
           onChange={(v) => update("experience", v)}
         />
       </FormSection>
 
-      <FormSection title="Projects">
+      <FormSection
+        title="Projects"
+        actions={<SaveBtn section="projects" saving={saving} onSave={onSave} />}
+      >
         <ProjectsEditor
           entries={data.projects}
           onChange={(v) => update("projects", v)}
         />
       </FormSection>
 
-      <FormSection title="Education">
+      <FormSection
+        title="Education"
+        actions={<SaveBtn section="education" saving={saving} onSave={onSave} />}
+      >
         <EducationEditor
           entries={data.education}
           onChange={(v) => update("education", v)}
         />
       </FormSection>
 
-      <FormSection title="Certifications">
+      <FormSection
+        title="Certifications"
+        actions={<SaveBtn section="certifications" saving={saving} onSave={onSave} />}
+      >
         <CertificationsEditor
           entries={data.certifications}
           onChange={(v) => update("certifications", v)}
@@ -188,6 +216,16 @@ function EducationEditor({ entries, onChange }: { entries: EducationEntry[]; onC
         <Plus className="size-3.5" /> Add Education
       </button>
     </div>
+  )
+}
+
+function SaveBtn({ section, saving, onSave }: { section: keyof ResumeData; saving: string | null; onSave: (s: keyof ResumeData) => void }) {
+  const isSaving = saving === section
+  return (
+    <Button size="xs" variant="outline" onClick={() => onSave(section)} disabled={isSaving}>
+      <Save className="size-3" />
+      {isSaving ? "Saving..." : "Save"}
+    </Button>
   )
 }
 

@@ -1,42 +1,106 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
+import {
+  signupApi,
+  loginApi,
+  logoutApi,
+  getMeApi,
+  refreshApi,
+  type UserOut,
+} from "@/lib/api/auth"
+import { setAccessToken, getAccessToken, clearAccessToken } from "@/lib/auth/token-manager"
 
 type AuthState = {
-  user: { name: string; email: string } | null
+  user: UserOut | null
+  token: string | null
   loading: boolean
   error: string | null
 }
 
 const initialState: AuthState = {
   user: null,
-  loading: false,
+  token: getAccessToken(),
+  loading: true,
   error: null,
 }
 
 export const login = createAsyncThunk(
   "auth/login",
-  async ({ email }: { email: string; _password: string }) => {
-    await new Promise((r) => setTimeout(r, 1500))
-    return { name: email.split("@")[0], email }
-  }
+  async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
+    try {
+      const tokenData = await loginApi(email, password)
+      const user = await getMeApi()
+      return { user, access_token: tokenData.access_token }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Login failed"
+      return rejectWithValue(message)
+    }
+  },
 )
 
 export const signup = createAsyncThunk(
   "auth/signup",
-  async ({ name, email }: { name: string; email: string; _password: string }) => {
-    await new Promise((r) => setTimeout(r, 1500))
-    return { name, email }
-  }
+  async (
+    { name, email, password }: { name: string; email: string; password: string },
+    { rejectWithValue },
+  ) => {
+    try {
+      const user = await signupApi(name, email, password)
+      const tokenData = await loginApi(email, password)
+      return { user, access_token: tokenData.access_token }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Signup failed"
+      return rejectWithValue(message)
+    }
+  },
 )
+
+export const initializeAuth = createAsyncThunk(
+  "auth/initialize",
+  async (_, { rejectWithValue }) => {
+    let token = getAccessToken()
+    try {
+      if (token) {
+        const user = await getMeApi()
+        return { user, access_token: token }
+      }
+    } catch {
+      // token may be stale — try refresh
+    }
+    const refreshed = await refreshApi()
+    if (refreshed) {
+      token = refreshed.access_token
+      try {
+        const user = await getMeApi()
+        return { user, access_token: token }
+      } catch {
+        clearAccessToken()
+        return rejectWithValue("Session expired")
+      }
+    }
+    clearAccessToken()
+    return { user: null, access_token: null }
+  },
+)
+
+export const logout = createAsyncThunk("auth/logout", async () => {
+  await logoutApi()
+})
 
 const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    logout(state) {
-      state.user = null
-    },
     clearError(state) {
       state.error = null
+    },
+    resetAuth(state) {
+      state.user = null
+      state.token = null
+      state.error = null
+      clearAccessToken()
+    },
+    setUser(state, action) {
+      state.user = action.payload
     },
   },
   extraReducers: (builder) => {
@@ -47,11 +111,13 @@ const authSlice = createSlice({
       })
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false
-        state.user = action.payload
+        state.user = action.payload.user
+        state.token = action.payload.access_token
+        setAccessToken(action.payload.access_token)
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false
-        state.error = action.error.message ?? "Login failed"
+        state.error = (action.payload as string) ?? "Login failed"
       })
       .addCase(signup.pending, (state) => {
         state.loading = true
@@ -59,14 +125,33 @@ const authSlice = createSlice({
       })
       .addCase(signup.fulfilled, (state, action) => {
         state.loading = false
-        state.user = action.payload
+        state.user = action.payload.user
+        state.token = action.payload.access_token
+        setAccessToken(action.payload.access_token)
       })
       .addCase(signup.rejected, (state, action) => {
         state.loading = false
-        state.error = action.error.message ?? "Signup failed"
+        state.error = (action.payload as string) ?? "Signup failed"
+      })
+      .addCase(initializeAuth.fulfilled, (state, action) => {
+        state.loading = false
+        if (action.payload.user) {
+          state.user = action.payload.user
+          state.token = action.payload.access_token
+        }
+      })
+      .addCase(initializeAuth.rejected, (state) => {
+        state.loading = false
+        clearAccessToken()
+      })
+      .addCase(logout.fulfilled, (state) => {
+        state.user = null
+        state.token = null
+        clearAccessToken()
       })
   },
 })
 
-export const { logout, clearError } = authSlice.actions
+export { logout as logoutUser }
+export const { clearError, resetAuth, setUser } = authSlice.actions
 export default authSlice.reducer
