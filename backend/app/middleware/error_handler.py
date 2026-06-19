@@ -74,6 +74,8 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         loc = ".".join(str(x) for x in error["loc"] if x != "body")
         fields.setdefault(loc, []).append(error["msg"])
 
+    logger.warning("Validation error for %s: %s", request.url.path, exc.errors())
+
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content=_error_body(

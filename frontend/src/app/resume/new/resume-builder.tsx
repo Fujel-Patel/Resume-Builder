@@ -5,16 +5,18 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { DashboardShell } from "@/components/layout/dashboard-shell"
 import { EditorPanel } from "@/features/resume/editor-panel"
 import { PreviewPanel } from "@/features/resume/preview-panel"
+import { TemplatePicker } from "@/features/resume/template-switcher"
 import { Button } from "@/components/ui/button"
 import { Download, Eye, PenLine, ArrowLeft } from "lucide-react"
-import { saveSection, getResumeApi, toFrontendResumeData } from "@/lib/api/resumes"
-import type { ResumeData } from "@/features/resume/types"
+import { saveSection, getResumeApi, toFrontendResumeData, exportResumePdf } from "@/lib/api/resumes"
+import type { ResumeData, ResumeTemplate } from "@/features/resume/types"
 
 const defaultResume: ResumeData = {
   personal: { name: "John Doe", title: "Senior Product Designer", email: "john@example.com", phone: "+1 (555) 123-4567", location: "San Francisco, CA" },
   links: { linkedin: "johndoe", github: "johndoe", portfolio: "johndoe.design", website: "" },
   summary: "Senior Product Designer with 8+ years of experience crafting user-centered digital products. Passionate about design systems, accessibility, and bridging the gap between business goals and user needs.",
   skills: ["Product Design", "Figma", "Design Systems", "Prototyping", "User Research", "HTML/CSS"],
+  skillGroups: null,
   experience: [
     { company: "Linear", role: "Senior Product Designer", startDate: "2022", endDate: "Present", description: "Lead designer for the core product experience. Redesigned the project management interface, resulting in a 25% increase in user engagement. Established the company design system." },
     { company: "Stripe", role: "Product Designer", startDate: "2019", endDate: "2022", description: "Designed payment workflows serving millions of users. Collaborated with engineering to ship 15+ major features. Improved checkout conversion by 12%." },
@@ -34,7 +36,7 @@ export function ResumeBuilder() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [data, setData] = useState<ResumeData>(defaultResume)
-  const [template, setTemplate] = useState<"classic" | "modern" | "minimal">("classic")
+  const [template, setTemplate] = useState<ResumeTemplate>("classic")
   const [mobileTab, setMobileTab] = useState<"editor" | "preview">("editor")
   const [resumeId, setResumeId] = useState<string | null>(null)
   const [saving, setSaving] = useState<string | null>(null)
@@ -67,6 +69,7 @@ export function ResumeBuilder() {
             },
             summary: saved.summary || defaultResume.summary,
             skills: saved.skills.length > 0 ? saved.skills : defaultResume.skills,
+            skillGroups: saved.skillGroups ?? defaultResume.skillGroups,
             experience: saved.experience.length > 0 ? saved.experience : defaultResume.experience,
             education: saved.education.length > 0 ? saved.education : defaultResume.education,
             projects: saved.projects.length > 0 ? saved.projects : defaultResume.projects,
@@ -101,6 +104,28 @@ export function ResumeBuilder() {
     }
   }, [data, router])
 
+  const handleDownload = useCallback(async () => {
+    let id = resumeIdRef.current
+    if (!id) {
+      try {
+        id = await saveSection(null, data, "personal")
+        if (id) {
+          setResumeId(id)
+          router.replace(`/resume/new?id=${id}`, { scroll: false })
+        }
+      } catch {
+        return
+      }
+    }
+    if (id) {
+      try {
+        await exportResumePdf(id)
+      } catch {
+        // download failed
+      }
+    }
+  }, [data, router])
+
   if (loading) {
     return (
       <DashboardShell title="Resume Builder">
@@ -115,14 +140,17 @@ export function ResumeBuilder() {
     <DashboardShell title="Resume Builder">
       <div className="flex h-[calc(100vh-3.5rem)] flex-col">
         <div className="flex items-center justify-between border-b bg-card px-4 py-2.5 lg:px-6">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon-xs" onClick={() => router.back()} aria-label="Go back">
               <ArrowLeft className="size-4" />
             </Button>
             <h2 className="text-sm font-semibold text-foreground">Resume Builder</h2>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="brand" size="sm"><Download className="size-3.5" /> Download</Button>
+            <TemplatePicker active={template} onChange={setTemplate} />
+            <Button variant="brand" size="sm" onClick={handleDownload}>
+              <Download className="size-3.5" /> Download PDF
+            </Button>
           </div>
         </div>
 
@@ -144,7 +172,7 @@ export function ResumeBuilder() {
             </div>
           </div>
           <div className={`w-full lg:w-[55%] overflow-hidden ${mobileTab === "editor" ? "hidden lg:block" : ""}`}>
-            <PreviewPanel data={data} template={template} onTemplateChange={setTemplate} />
+            <PreviewPanel data={data} template={template} />
           </div>
         </div>
       </div>

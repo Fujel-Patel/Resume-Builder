@@ -99,7 +99,9 @@ async def get_provider_by_name(
     return result.scalars().first()
 
 
-async def ai_complete(user_id: str, prompt: str, db: AsyncSession) -> str:
+async def ai_complete(
+    user_id: str, prompt: str, db: AsyncSession, max_tokens: int = 1024
+) -> str:
     """Route a prompt to the user's default AI provider.
 
     Decrypts the stored API key, selects the appropriate provider function,
@@ -123,6 +125,7 @@ async def ai_complete(user_id: str, prompt: str, db: AsyncSession) -> str:
         api_key=api_key,
         base_url=base_url,
         model=provider.model or "gpt-4o-mini",
+        max_tokens=max_tokens,
     )
 
 

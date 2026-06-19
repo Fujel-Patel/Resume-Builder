@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     SMTP_PASS: str = ""
     EMAIL_FROM: str = "noreply@generative-cv.com"
 
+    # Uploaded file storage for "default" template preservation
+    UPLOAD_DIR: str = "./uploads"
+
     # Supabase / Storage
     SUPABASE_URL: str = ""
     SUPABASE_SERVICE_KEY: str = ""

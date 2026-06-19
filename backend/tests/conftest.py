@@ -82,8 +82,9 @@ def mock_user():
 @pytest.fixture
 def mock_db():
     db = MagicMock()
-    db.execute = AsyncMock()
+    db.execute = AsyncMock(return_value=mock_result())
     db.add = MagicMock()
+    db.flush = AsyncMock()
     db.commit = AsyncMock()
     db.refresh = AsyncMock(side_effect=_set_server_defaults)
     db.delete = AsyncMock()

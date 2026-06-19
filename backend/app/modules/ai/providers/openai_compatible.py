@@ -58,7 +58,7 @@ async def complete(
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": max_tokens,
     }
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=300) as client:
         response = await client.post(url, headers=headers, json=payload)
         response.raise_for_status()
         data = response.json()

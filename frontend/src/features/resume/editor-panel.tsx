@@ -1,9 +1,17 @@
 "use client"
 
+import { useState, useCallback } from "react"
 import { FormSection } from "@/features/resume/form-section"
 import { TagInput } from "@/features/resume/tag-input"
 import { Button } from "@/components/ui/button"
 import { Plus, Trash2, Save } from "lucide-react"
+import { toast } from "sonner"
+import {
+  suggestSummaryApi,
+  suggestSkillsApi,
+  suggestExperienceApi,
+  suggestProjectsApi,
+} from "@/lib/api/ai-suggest"
 import type { ResumeData, ExperienceEntry, EducationEntry, ProjectEntry, CertificationEntry } from "@/features/resume/types"
 
 type EditorPanelProps = {
@@ -14,9 +22,113 @@ type EditorPanelProps = {
 }
 
 export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps) {
+  const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({})
+
   const update = <K extends keyof ResumeData>(section: K, value: ResumeData[K]) => {
     onChange({ ...data, [section]: value })
   }
+
+  const withAILoading = useCallback(
+    async (section: string, fn: () => Promise<void>) => {
+      setAiLoading((prev) => ({ ...prev, [section]: true }))
+      try {
+        await fn()
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "AI request failed"
+        toast.error(msg)
+      } finally {
+        setAiLoading((prev) => ({ ...prev, [section]: false }))
+      }
+    },
+    [],
+  )
+
+  const handleImproveSummary = useCallback(async () => {
+    await withAILoading("summary", async () => {
+      const experience = data.experience.map((e) => e.description).filter(Boolean)
+      const result = await suggestSummaryApi({
+        job_title: data.personal.title || "",
+        skills: data.skills.length > 0 ? data.skills : [""],
+        experience: experience.length > 0 ? experience : [""],
+        job_description: "",
+        current_summary: data.summary || null,
+      })
+      update("summary", result.summary)
+      toast.success("Summary improved")
+    })
+  }, [data, withAILoading, update])
+
+  const handleSuggestSkills = useCallback(async () => {
+    await withAILoading("skills", async () => {
+      const result = await suggestSkillsApi({
+        job_description: "",
+        current_skills: data.skills.length > 0
+          ? { other: data.skills }
+          : { other: [] },
+      })
+      const allSkills = Object.values(result.skills).flat()
+      update("skills", allSkills)
+      update("skillGroups", result.skills)
+      toast.success("Skills organized into groups")
+    })
+  }, [data, withAILoading, update])
+
+  const handleImproveExperience = useCallback(async () => {
+    await withAILoading("experience", async () => {
+      const bullets = data.experience.map((e) => e.description).filter(Boolean)
+      if (bullets.length === 0) {
+        toast.error("Add at least one experience entry first")
+        return
+      }
+      const first = data.experience[0]
+      const result = await suggestExperienceApi({
+        experience_bullets: bullets,
+        job_role: first.role || "",
+        company: first.company || null,
+      })
+      if (result.bullets.length === data.experience.length) {
+        const next = data.experience.map((e, i) => ({ ...e, description: result.bullets[i] }))
+        update("experience", next)
+      } else {
+        const next = data.experience.map((e, i) => ({
+          ...e,
+          description: result.bullets[i] ?? e.description,
+        }))
+        update("experience", next)
+        toast.warning("Bullet count mismatch — some entries may not have been updated")
+      }
+      toast.success("Experience improved")
+    })
+  }, [data, withAILoading, update])
+
+  const handleImproveProjects = useCallback(async () => {
+    await withAILoading("projects", async () => {
+      const descriptions = data.projects.map((p) => p.description).filter(Boolean)
+      if (descriptions.length === 0) {
+        toast.error("Add at least one project entry first")
+        return
+      }
+      const first = data.projects[0]
+      const techNames = data.skills.length > 0 ? data.skills : undefined
+      const result = await suggestProjectsApi({
+        project_descriptions: descriptions,
+        project_name: first.name || null,
+        tech_stack: techNames ?? null,
+      })
+      if (result.projects.length === data.projects.length) {
+        const next = data.projects.map((p, i) => ({ ...p, description: result.projects[i] }))
+        update("projects", next)
+      } else {
+        const next = data.projects.map((p, i) => ({
+          ...p,
+          description: result.projects[i] ?? p.description,
+        }))
+        update("projects", next)
+        toast.warning("Project count mismatch — some entries may not have been updated")
+      }
+      toast.success("Projects improved")
+    })
+  }, [data, withAILoading, update])
 
   return (
     <div className="space-y-3">
@@ -44,6 +156,8 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
 
       <FormSection
         title="Summary"
+        onAISuggest={handleImproveSummary}
+        aiLoading={!!aiLoading.summary}
         actions={<SaveBtn section="summary" saving={saving} onSave={onSave} />}
       >
         <textarea
@@ -57,18 +171,36 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
 
       <FormSection
         title="Skills"
+        onAISuggest={handleSuggestSkills}
+        aiLoading={!!aiLoading.skills}
         actions={<SaveBtn section="skills" saving={saving} onSave={onSave} />}
       >
         <TagInput
           tags={data.skills}
-          onChange={(v) => update("skills", v)}
+          onChange={(v) => {
+            update("skills", v)
+            update("skillGroups", null)
+          }}
           placeholder="Type a skill and press Enter..."
         />
-        <p className="text-xs text-muted-foreground">Suggested: React, TypeScript, Python, AWS, Figma</p>
+        {data.skillGroups && Object.keys(data.skillGroups).length > 0 && (
+          <div className="space-y-1.5 rounded-lg border bg-muted/30 p-3">
+            <p className="text-xs font-medium text-muted-foreground">Grouped Preview</p>
+            {Object.entries(data.skillGroups).map(([group, skills]) => (
+              <div key={group} className="text-xs">
+                <span className="font-semibold text-foreground">{group.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}: </span>
+                <span className="text-muted-foreground">{skills.join(", ")}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="text-xs text-muted-foreground">Edit skills above, or use AI to organize into groups</p>
       </FormSection>
 
       <FormSection
         title="Experience"
+        onAISuggest={handleImproveExperience}
+        aiLoading={!!aiLoading.experience}
         actions={<SaveBtn section="experience" saving={saving} onSave={onSave} />}
       >
         <ExperienceEditor
@@ -79,6 +211,8 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
 
       <FormSection
         title="Projects"
+        onAISuggest={handleImproveProjects}
+        aiLoading={!!aiLoading.projects}
         actions={<SaveBtn section="projects" saving={saving} onSave={onSave} />}
       >
         <ProjectsEditor

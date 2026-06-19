@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @page { size: A4; margin: 2cm; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 11pt;
+    line-height: 1.4;
+    color: #222;
+  }
+  .name {
+    font-size: 18pt;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 2pt;
+  }
+  .job-title {
+    font-size: 12pt;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    margin-bottom: 6pt;
+    color: #555;
+  }
+  .contact-line {
+    text-align: center;
+    font-size: 9pt;
+    color: #666;
+    margin-bottom: 10pt;
+  }
+  .section-title {
+    font-size: 12pt;
+    font-weight: bold;
+    color: #333;
+    border-bottom: 1px solid #999;
+    padding-bottom: 2pt;
+    margin-top: 14pt;
+    margin-bottom: 5pt;
+  }
+  .entry {
+    margin-bottom: 7pt;
+  }
+  .entry-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .entry-role { font-weight: bold; }
+  .entry-duration { font-style: italic; color: #666; white-space: nowrap; margin-left: 6pt; }
+  .entry-desc { margin-top: 1pt; }
+</style>
+</head>
+<body>
+
+<div class="name">{{ personal.first_name }} {{ personal.last_name }}</div>
+{% if personal.job_title %}<div class="job-title">{{ personal.job_title }}</div>{% endif %}
+<div class="contact-line">
+{% if personal.email %}{{ personal.email }}{% endif %}
+{% if personal.mobile %} · {{ personal.mobile }}{% endif %}
+{% if personal.address %} · {{ personal.address }}{% endif %}
+{% if personal.github %} · {{ personal.github }}{% endif %}
+{% if personal.linkedin %} · {{ personal.linkedin }}{% endif %}
+</div>
+
+{% if summary %}
+<div class="section-title">Professional Summary</div>
+<p>{{ summary }}</p>
+{% endif %}
+
+{% if skills %}
+<div class="section-title">Skills</div>
+<p>{{ skills | join(", ") }}</p>
+{% endif %}
+
+{% if experience %}
+<div class="section-title">Experience</div>
+{% for exp in experience %}
+<div class="entry">
+  <div class="entry-header">
+    <div>
+      <span class="entry-role">{{ exp.role }}</span>
+      {% if exp.company %}<span> – {{ exp.company }}</span>{% endif %}
+    </div>
+    {% if exp.duration %}<span class="entry-duration">{{ exp.duration }}</span>{% endif %}
+  </div>
+  {% if exp.bullets and exp.bullets|length > 0 %}
+  <div class="entry-desc">{{ exp.bullets | join(" • ") }}</div>
+  {% endif %}
+</div>
+{% endfor %}
+{% endif %}
+
+{% if projects %}
+<div class="section-title">Projects</div>
+{% for proj in projects %}
+<div class="entry">
+  <div class="entry-header">
+    <div>
+      <span class="entry-role">{{ proj.name }}</span>
+    </div>
+  </div>
+  {% if proj.description %}
+  <div class="entry-desc">{{ proj.description }}</div>
+  {% endif %}
+</div>
+{% endfor %}
+{% endif %}
+
+{% if education %}
+<div class="section-title">Education</div>
+{% for edu in education %}
+<div class="entry">
+  <div class="entry-header">
+    <div>
+      <span class="entry-role">{{ edu.institution }}</span>
+      {% if edu.degree %}<span>, {{ edu.degree }}</span>{% endif %}
+    </div>
+    {% if edu.year %}<span class="entry-duration">{{ edu.year }}{% if edu.grade %} – {{ edu.grade }}{% endif %}</span>{% endif %}
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if certifications %}
+<div class="section-title">Certifications</div>
+{% for cert in certifications %}
+<div class="entry">
+  <div class="entry-header">
+    <div>
+      <span class="entry-role">{{ cert.name }}</span>
+      {% if cert.issuer %}<span> – {{ cert.issuer }}</span>{% endif %}
+    </div>
+    {% if cert.year %}<span class="entry-duration">{{ cert.year }}</span>{% endif %}
+  </div>
+</div>
+{% endfor %}
+{% endif %}
+
+</body>
+</html>

@@ -53,7 +53,7 @@ async def complete(
         "generationConfig": {"maxOutputTokens": max_tokens},
     }
 
-    async with httpx.AsyncClient(timeout=30) as client:
+    async with httpx.AsyncClient(timeout=300) as client:
         response = await client.post(url, params=params, json=payload)
         response.raise_for_status()
         data = response.json()

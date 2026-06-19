@@ -80,6 +80,7 @@ async def create_resume(
         personal=content.personal.model_dump() if content and content.personal else None,
         summary=content.summary if content else None,
         skills=content.skills if content else None,
+        skill_groups=content.skill_groups if content and content.skill_groups else None,
         experience=[e.model_dump() for e in content.experience] if content and content.experience else None,
         projects=[p.model_dump() for p in content.projects] if content and content.projects else None,
         education=[e.model_dump() for e in content.education] if content and content.education else None,
@@ -122,6 +123,8 @@ async def update_resume(
             rd.summary = content.summary
         if content.skills is not None:
             rd.skills = content.skills
+        if content.skill_groups is not None:
+            rd.skill_groups = content.skill_groups
         if content.experience is not None:
             rd.experience = [e.model_dump() for e in content.experience]
         if content.projects is not None:

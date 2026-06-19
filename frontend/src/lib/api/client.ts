@@ -34,6 +34,8 @@ async function refreshAccessToken(): Promise<string | null> {
   return token ?? null
 }
 
+const REQUEST_TIMEOUT = 300_000 // 5 minutes
+
 async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -49,11 +51,27 @@ async function request<T>(
     headers["Content-Type"] = "application/json"
   }
 
-  let res = await fetch(`${BASE_URL}${path}`, {
-    ...options,
-    headers,
-    credentials: "include",
-  })
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
+
+  let res: Response
+  try {
+    res = await fetch(`${BASE_URL}${path}`, {
+      ...options,
+      headers,
+      credentials: "include",
+      signal: controller.signal,
+    })
+  } catch (err) {
+    clearTimeout(timeout)
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new ApiRequestError(408, {
+        code: "REQUEST_TIMEOUT",
+        message: "Request timed out after 5 minutes. The AI model may be overloaded — please try again.",
+      })
+    }
+    throw err
+  }
 
   if (res.status === 401 && token) {
     const newToken = await refreshAccessToken()
@@ -111,4 +129,87 @@ export const api = {
       method: "POST",
       body: formData,
     }),
+  download: async (path: string): Promise<Blob> => {
+    const token = getAccessToken()
+    const headers: Record<string, string> = {}
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`
+    }
+
+    let res = await fetch(`${BASE_URL}${path}`, {
+      method: "POST",
+      headers,
+      credentials: "include",
+    })
+
+    if (res.status === 401 && token) {
+      const newToken = await refreshAccessToken()
+      if (newToken) {
+        headers["Authorization"] = `Bearer ${newToken}`
+        res = await fetch(`${BASE_URL}${path}`, {
+          method: "POST",
+          headers,
+          credentials: "include",
+        })
+      } else {
+        clearAccessToken()
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("auth:unauthorized"))
+        }
+      }
+    }
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      const detail = body?.detail
+      const message = body?.error?.message ?? (typeof detail === "string" ? detail : detail?.message) ?? `Export failed (${res.status})`
+      throw new ApiRequestError(res.status, {
+        code: body?.error?.code ?? detail?.code ?? "EXPORT_ERROR",
+        message,
+      })
+    }
+
+    return res.blob()
+  },
+  fetchHtml: async (path: string): Promise<string> => {
+    const token = getAccessToken()
+    const headers: Record<string, string> = {}
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`
+    }
+
+    let res = await fetch(`${BASE_URL}${path}`, {
+      method: "GET",
+      headers,
+      credentials: "include",
+    })
+
+    if (res.status === 401 && token) {
+      const newToken = await refreshAccessToken()
+      if (newToken) {
+        headers["Authorization"] = `Bearer ${newToken}`
+        res = await fetch(`${BASE_URL}${path}`, {
+          method: "GET",
+          headers,
+          credentials: "include",
+        })
+      } else {
+        clearAccessToken()
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("auth:unauthorized"))
+        }
+      }
+    }
+
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      const message = body?.detail?.message ?? `Preview failed (${res.status})`
+      throw new ApiRequestError(res.status, {
+        code: body?.detail?.code ?? "PREVIEW_ERROR",
+        message,
+      })
+    }
+
+    return res.text()
+  },
 }

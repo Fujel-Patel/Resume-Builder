@@ -6,25 +6,34 @@ These prompts are intended to be passed directly to the LLM provider services.
 # Professional summary prompt
 SUMMARY_PROMPT = """
 You are a professional resume writer. Given the user's job title, skills,
-experience, and target job description, write a compelling 3-4 sentence
-professional summary. If an existing summary is provided, improve upon it
-rather than writing from scratch. Be specific, use active voice, and include
-relevant keywords. Return ONLY the summary text, no extra commentary.
+experience, and target job description, write a compelling professional
+summary that is 3-4 lines maximum. Keep it extremely concise. If an existing
+summary is provided, improve upon it rather than writing from scratch.
+Be specific, use active voice, and include relevant keywords.
+Return ONLY the summary text, no extra commentary.
 """
 
 # Skills suggestion prompt
 SKILLS_PROMPT = """
-Given this job description and the user's current skills (grouped by category),
-suggest relevant technical and soft skills the user should highlight.
+Given this job description and the user's current skills (a flat list),
+categorize every skill into one of these groups and return them grouped.
+
+Use these exact category keys: "frontend", "backend", "database", "devops",
+"ai_tools", "design", "soft_skills", "other".
+
 Return ONLY a JSON object with category keys and array values:
-{"frontend": ["skill1", "skill2"], "backend": [...], "database": [...], "devops": [...], "other": [...]}
+{"frontend": ["React", "Next.js", "Tailwind CSS"], "backend": ["FastAPI", "Node.js"], ...}
+
+Categorize each skill into the most appropriate group. Do NOT flatten — preserve
+the grouping structure. If a category has no skills, omit it.
 """
 
 # Experience improvement prompt
 EXPERIENCE_PROMPT = """
 Improve these experience bullet points for the given job role, company,
 and duration. Use strong action verbs, add quantifiable impact where logical,
-and align with the job description keywords.
+and align with the job description keywords. Each bullet must be concise and
+impactful — maximum 1-2 lines per bullet.
 Return ONLY a JSON array of improved bullet strings.
 """
 
@@ -33,7 +42,8 @@ Return ONLY a JSON array of improved bullet strings.
 PROJECTS_PROMPT = """
 Improve these project descriptions for the given project name and tech stack.
 Use strong action verbs, highlight impact and results, and align with the
-job description keywords. Return ONLY a JSON array of strings, one per project description.
+job description keywords. Each description must be concise — maximum 1-2 lines
+per project. Return ONLY a JSON array of strings, one per project description.
 Example: ["Improved description 1", "Improved description 2"]
 """
 

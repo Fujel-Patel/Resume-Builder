@@ -2,6 +2,7 @@
 
 import json
 import re
+import uuid as uuid_lib
 
 import tempfile
 from pathlib import Path
@@ -10,7 +11,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.database import get_db
+from app.config.settings import settings
 from app.modules.ai import prompts, schemas as ai_schemas, service as ai_service
+from app.modules.resumes import schemas as resume_schemas
+from app.modules.resumes import service as resume_service
 from app.modules.users import models as user_models
 from app.types.common import success
 from app.utils.auth import get_current_user
@@ -35,7 +39,15 @@ def _extract_json(text: str) -> dict:
                 if depth == 0:
                     text = text[brace_start : i + 1]
                     break
-    return json.loads(text)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+    try:
+        return json.loads(text, strict=False)
+    except json.JSONDecodeError:
+        pass
+    raise json.JSONDecodeError("Could not extract valid JSON from response", text, 0)
 
 
 def _ai_error(msg: str) -> HTTPException:
@@ -237,6 +249,15 @@ async def optimize_resume(
         )
 
     ext = ".pdf" if file.content_type == "application/pdf" else ".docx"
+    file_type = "pdf" if ext == ".pdf" else "docx"
+
+    # Save original file permanently for "default" template
+    user_upload_dir = Path(settings.UPLOAD_DIR) / str(current_user.id)
+    user_upload_dir.mkdir(parents=True, exist_ok=True)
+    file_uuid = uuid_lib.uuid4().hex
+    original_path = user_upload_dir / f"{file_uuid}{ext}"
+    original_path.write_bytes(content)
+
     with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
         tmp.write(content)
         tmp_path = Path(tmp.name)
@@ -250,6 +271,7 @@ async def optimize_resume(
         tmp_path.unlink(missing_ok=True)
 
     if not resume_text.strip():
+        original_path.unlink(missing_ok=True)
         raise HTTPException(
             status_code=422,
             detail={"code": "PARSE_ERROR", "message": "Could not extract text from file"},
@@ -258,11 +280,15 @@ async def optimize_resume(
     # Step 1: Parse resume using AI
     parse_prompt = f"{prompts.RESUME_PARSE_PROMPT}\n{resume_text}"
     try:
-        raw_parsed = await ai_service.ai_complete(str(current_user.id), parse_prompt, db)
+        raw_parsed = await ai_service.ai_complete(
+            str(current_user.id), parse_prompt, db, max_tokens=4096
+        )
         parsed = _extract_json(raw_parsed)
     except json.JSONDecodeError:
+        original_path.unlink(missing_ok=True)
         raise _ai_error("AI returned invalid JSON during resume parsing")
     except Exception as e:
+        original_path.unlink(missing_ok=True)
         raise _ai_error(str(e))
 
     # Step 2: Optimize parsed resume for the job description
@@ -272,14 +298,49 @@ async def optimize_resume(
         f"Parsed Resume: {json.dumps(parsed)}\n"
     )
     try:
-        raw_optimized = await ai_service.ai_complete(str(current_user.id), optimize_prompt, db)
+        raw_optimized = await ai_service.ai_complete(
+            str(current_user.id), optimize_prompt, db, max_tokens=4096
+        )
         optimized = _extract_json(raw_optimized)
     except json.JSONDecodeError:
+        original_path.unlink(missing_ok=True)
         raise _ai_error("AI returned invalid JSON during resume optimization")
     except Exception as e:
+        original_path.unlink(missing_ok=True)
         raise _ai_error(str(e))
+
+    # Extract visual style from original file for "default" template rendering
+    from app.utils.style_extractor import extract_and_generate_template
+
+    template_style = extract_and_generate_template(original_path, file_type)
+
+    # Create resume record with original file reference
+    try:
+        title = optimized.get("personal", {}).get("job_title", "") or "Optimized Resume"
+        content = resume_schemas.ResumeContent(**optimized)
+        resume_in = resume_schemas.ResumeCreate(
+            title=title,
+            template_id="default",
+            content=content,
+        )
+        resume = await resume_service.create_resume(db, current_user.id, resume_in)
+        # Set original file + parsed data + template_style fields directly on the ORM instance
+        setattr(resume, "original_file_path", str(original_path))
+        setattr(resume, "original_file_type", file_type)
+        if resume.data is not None:
+            setattr(resume.data, "parsed_data", parsed)
+            setattr(resume.data, "template_style", template_style)
+        db.add(resume)
+        await db.commit()
+    except Exception as e:
+        original_path.unlink(missing_ok=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "RESUME_CREATE_ERROR", "message": f"Failed to save resume: {e}"},
+        )
 
     return success({
         "parsed": parsed,
         "optimized": optimized,
+        "resume_id": str(resume.id),
     })

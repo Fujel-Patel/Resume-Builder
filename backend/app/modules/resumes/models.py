@@ -22,7 +22,9 @@ class Resume(Base):
         index=True,
     )
     title = Column(String(255), nullable=False)
-    template_id = Column(String(100), nullable=False)  # classic | modern | minimal | creative
+    template_id = Column(String(100), nullable=False)  # classic | modern | minimal | creative | default
+    original_file_path = Column(String(500), nullable=True)
+    original_file_type = Column(String(10), nullable=True)  # "pdf" or "docx"
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -51,11 +53,14 @@ class ResumeData(Base):
     personal = Column(JSONB, nullable=True)       # {name, email, mobile, address, links, job_title}
     summary = Column(Text, nullable=True)
     skills = Column(JSONB, nullable=True)          # string[]
+    skill_groups = Column(JSONB, nullable=True)     # {frontend: [...], backend: [...], ...}
     experience = Column(JSONB, nullable=True)      # [{company, role, duration, bullets}]
     projects = Column(JSONB, nullable=True)        # [{name, description, link, tech_stack}]
     education = Column(JSONB, nullable=True)       # [{institution, degree, year, grade}]
     certifications = Column(JSONB, nullable=True)  # [{name, issuer, year, link}]
     custom_sections = Column(JSONB, nullable=True) # [{label, content}]
+    parsed_data = Column(JSONB, nullable=True)     # original AI-parsed content (before optimization)
+    template_style = Column(JSONB, nullable=True)  # extracted visual style for "default" template
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),

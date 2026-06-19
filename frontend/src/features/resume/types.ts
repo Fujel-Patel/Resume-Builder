@@ -1,3 +1,5 @@
+export type ResumeTemplate = "classic" | "modern" | "minimal" | "creative" | "default"
+
 export type ResumeData = {
   personal: {
     name: string
@@ -14,6 +16,7 @@ export type ResumeData = {
   }
   summary: string
   skills: string[]
+  skillGroups: Record<string, string[]> | null
   experience: ExperienceEntry[]
   education: EducationEntry[]
   projects: ProjectEntry[]

@@ -1,82 +1,266 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { DashboardShell } from "@/components/layout/dashboard-shell"
 import { Button } from "@/components/ui/button"
 import { EnhancedCard } from "@/components/ui/enhanced-card"
 import { Badge } from "@/components/ui/badge"
 import { FileUpload } from "@/components/ui/file-upload"
+import { ResumePreview } from "@/features/resume/resume-preview"
 import { cn } from "@/lib/utils"
 import {
   Sparkles, FileText, Check, ArrowRight, Lightbulb, Download,
-  Clipboard, RotateCcw, ArrowLeft, ChevronRight, Target, Search,
-  X, Eye
+  RotateCcw, ArrowLeft, ChevronRight, Target, Search,
+  X, Eye, RefreshCw, AlertCircle
 } from "lucide-react"
+import { optimizeResumeApi, type BackendResumeContent } from "@/lib/api/ai-suggest"
+import { updateResumeApi, exportResumePdf } from "@/lib/api/resumes"
+import { api } from "@/lib/api/client"
+import type { ResumeTemplate, ResumeData } from "@/features/resume/types"
 
 const STEPS = [
-  { id: 1, label: "Job Description" },
-  { id: 2, label: "Upload Resume" },
-  { id: 3, label: "AI Processing" },
-  { id: 4, label: "Compare" },
-  { id: 5, label: "Export" },
+  { id: 1, label: "Job Description & Resume" },
+  { id: 2, label: "AI Processing" },
+  { id: 3, label: "Compare" },
+  { id: 4, label: "Export" },
 ]
 
 const tips: Record<number, string> = {
-  1: "Paste a detailed job description for the best keyword matching results. Include required skills and qualifications.",
-  2: "Upload a PDF or DOCX resume. You can also select from recently optimized resumes.",
-  3: "Our AI is analyzing your resume against the job description. This takes about 30 seconds.",
-  4: "Review the changes side-by-side. Green highlights show optimized content added by AI.",
-  5: "Download your optimized resume in your preferred format. Your original is always preserved.",
+  1: "Paste a detailed job description and upload your resume. Both are needed for the best keyword matching results.",
+  2: "Our AI is analyzing your resume against the job description. This takes about 30 seconds.",
+  3: "Review the changes side-by-side. Green highlights show optimized content added by AI.",
+  4: "Download your optimized resume in your preferred format. Your original is always preserved.",
 }
 
-const recentResumes = [
-  { name: "Senior Product Designer", role: "Google - L5", date: "Oct 24, 2024", score: 92 },
-  { name: "Full-Stack Engineer", role: "Stripe - L3", date: "Oct 18, 2024", score: 78 },
-  { name: "ML Engineer", role: "OpenAI - IC4", date: "Oct 12, 2024", score: 86 },
+const PROCESS_PHASES = [
+  "Uploading resume...",
+  "Parsing resume structure...",
+  "Optimizing against job description...",
 ]
 
+const TEMPLATES: { id: ResumeTemplate; label: string; desc: string }[] = [
+  { id: "default", label: "Default", desc: "Preserves original uploaded format" },
+  { id: "classic", label: "Classic", desc: "Traditional serif layout" },
+  { id: "modern", label: "Modern", desc: "Dark navy header, clean sans" },
+  { id: "minimal", label: "Minimal", desc: "Light, airy, compact" },
+  { id: "creative", label: "Creative", desc: "Two-column with dark sidebar" },
+]
+
+function toFrontend(d: BackendResumeContent | null): ResumeData | null {
+  if (!d) return null
+  const p = d.personal
+  return {
+    personal: {
+      name: `${p.first_name} ${p.last_name}`.trim() || "",
+      title: p.job_title || "",
+      email: p.email || "",
+      phone: p.mobile || "",
+      location: p.address || "",
+    },
+    links: {
+      linkedin: p.linkedin || "",
+      github: p.github || "",
+      portfolio: p.portfolio || "",
+      website: "",
+    },
+    summary: d.summary || "",
+    skills: d.skills || [],
+    skillGroups: d.skill_groups ?? null,
+    experience: (d.experience || []).map((e) => ({
+      company: e.company || "",
+      role: e.role || "",
+      startDate: (e.duration || "").split(" - ")[0] || "",
+      endDate: (e.duration || "").split(" - ")[1] || "",
+      description: (e.bullets || []).join("\n"),
+    })),
+    education: (d.education || []).map((e) => ({
+      school: e.institution || "",
+      degree: e.degree || "",
+      field: "",
+      startDate: e.year || "",
+      endDate: e.grade || "",
+    })),
+    projects: (d.projects || []).map((p) => ({
+      name: p.name || "",
+      description: p.description || "",
+    })),
+    certifications: (d.certifications || []).map((c) => ({
+      name: c.name || "",
+      issuer: c.issuer || "",
+      date: c.year || "",
+    })),
+  }
+}
+
+function diff(a: string | undefined, b: string | undefined): boolean {
+  return a?.trim() !== b?.trim()
+}
+
+function diffArr<T>(a: T[] | undefined, b: T[] | undefined): boolean {
+  return JSON.stringify(a) !== JSON.stringify(b)
+}
+
+function CompareSection({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-lg border bg-card">
+      <div className="border-b px-4 py-2">
+        <p className="text-xs font-medium text-foreground">{label}</p>
+      </div>
+      <div className="p-4">
+        {children}
+      </div>
+    </div>
+  )
+}
+
 export function AiGeneratorPage() {
+  const router = useRouter()
   const [step, setStep] = useState(1)
   const [jobDesc, setJobDesc] = useState("")
-  const [file, setFile] = useState<{ name: string } | null>(null)
+  const [file, setFile] = useState<File | null>(null)
   const [progress, setProgress] = useState(0)
   const [processing, setProcessing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [parsedData, setParsedData] = useState<BackendResumeContent | null>(null)
+  const [optimizedData, setOptimizedData] = useState<BackendResumeContent | null>(null)
+  const [resumeId, setResumeId] = useState<string | null>(null)
+  const [template, setTemplate] = useState<ResumeTemplate>("default")
+  const [saving, setSaving] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+  const [phase, setPhase] = useState("")
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null)
+
+  const startProcessing = useCallback(async () => {
+    if (!file) return
+    setProcessing(true)
+    setError(null)
+    setProgress(0)
+    setPhase(PROCESS_PHASES[0])
+
+    const interval = setInterval(() => {
+      setProgress((p) => {
+        if (p >= 95) {
+          clearInterval(interval)
+          return 95
+        }
+        return p + Math.floor(Math.random() * 8) + 2
+      })
+    }, 500)
+
+    setTimeout(() => setPhase(PROCESS_PHASES[1]), 2000)
+    setTimeout(() => setPhase(PROCESS_PHASES[2]), 4000)
+
+    try {
+      const result = await optimizeResumeApi(file, jobDesc)
+      setParsedData(result.parsed)
+      setOptimizedData(result.optimized)
+      setResumeId(result.resume_id)
+      clearInterval(interval)
+      setProgress(100)
+      setTimeout(() => {
+        setProcessing(false)
+        setStep(3)
+      }, 600)
+    } catch (err: unknown) {
+      clearInterval(interval)
+      const msg = err instanceof Error ? err.message : "Failed to optimize resume"
+      setError(msg)
+      setProcessing(false)
+      setProgress(0)
+    }
+  }, [file, jobDesc])
 
   useEffect(() => {
-    if (step === 3 && !processing) {
-      setProcessing(true)
-      setProgress(0)
-      const interval = setInterval(() => {
-        setProgress((p) => {
-          if (p >= 100) {
-            clearInterval(interval)
-            return 100
-          }
-          return p + Math.floor(Math.random() * 15) + 5
-        })
-      }, 600)
-      setTimeout(() => {
-        clearInterval(interval)
-        setProcessing(false)
-        setStep(4)
-        setProgress(100)
-      }, 4000)
-      return () => clearInterval(interval)
+    if (step === 2 && !processing && !parsedData && !error) {
+      startProcessing()
     }
-  }, [step, processing])
+  }, [step, processing, parsedData, error, startProcessing])
+
+  useEffect(() => {
+    if (step === 4 && resumeId && template === "default") {
+      let cancelled = false
+      let retries = 0
+      const maxRetries = 2
+
+      const fetchPreview = () => {
+        api.fetchHtml(`/resumes/${resumeId}/preview-html?template=default`)
+          .then((html) => {
+            if (!cancelled && html && html.trim().length > 0) {
+              setPreviewHtml(html)
+            } else if (!cancelled) {
+              setPreviewHtml(null)
+            }
+          })
+          .catch(() => {
+            if (!cancelled) {
+              retries++
+              if (retries <= maxRetries) {
+                setTimeout(fetchPreview, 500 * retries)
+              } else {
+                setPreviewHtml(null)
+              }
+            }
+          })
+      }
+      fetchPreview()
+      return () => { cancelled = true }
+    } else if (step !== 4) {
+      setPreviewHtml(null)
+    }
+  }, [step, resumeId, template])
 
   const canContinue = () => {
-    if (step === 1) return jobDesc.trim().length > 50
-    if (step === 2) return file !== null
+    if (step === 1) return jobDesc.trim().length > 50 && file !== null
     return true
   }
 
   const nextStep = () => {
-    if (step < 5 && (step !== 3)) setStep(step + 1)
+    if (step < 4 && step !== 2) setStep(step + 1)
   }
 
   const prevStep = () => {
-    if (step > 1 && step !== 3) setStep(step - 1)
+    if (step > 1 && step !== 2) setStep(step - 1)
+  }
+
+  const handleAcceptChanges = async () => {
+    if (!optimizedData || !resumeId) return
+    setSaving(true)
+    try {
+      await updateResumeApi(resumeId, {
+        template_id: template,
+        content: optimizedData as unknown as Record<string, unknown>,
+      })
+      setStep(4)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to save resume"
+      setError(msg)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDownloadPdf = async () => {
+    if (!resumeId) return
+    setDownloading(true)
+    setError(null)
+    try {
+      const blob = await api.download(`/resumes/${resumeId}/export?template=${template}`)
+      const ext = blob.type.includes("wordprocessingml") ? "docx" : "pdf"
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `resume-${resumeId.slice(0, 8)}.${ext}`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to download resume"
+      setError(msg)
+    } finally {
+      setDownloading(false)
+    }
   }
 
   const handleStartOver = () => {
@@ -85,7 +269,17 @@ export function AiGeneratorPage() {
     setFile(null)
     setProgress(0)
     setProcessing(false)
+    setError(null)
+    setParsedData(null)
+    setOptimizedData(null)
+    setResumeId(null)
+    setTemplate("default")
+    setSaving(false)
+    setPhase("")
   }
+
+  const parsedFrontend = toFrontend(parsedData)
+  const optimizedFrontend = toFrontend(optimizedData)
 
   return (
     <DashboardShell title="AI Resume Generator">
@@ -117,7 +311,7 @@ export function AiGeneratorPage() {
                 </div>
               ))}
             </div>
-            {step === 5 && (
+            {step === 4 && (
               <Button variant="ghost" size="sm" onClick={handleStartOver}>
                 <RotateCcw className="size-3.5" />
                 Start Over
@@ -129,16 +323,16 @@ export function AiGeneratorPage() {
         <div className="flex flex-1 overflow-hidden">
           <div className="flex-1 overflow-auto p-4 lg:p-6">
             {step === 1 && (
-              <div className="mx-auto max-w-2xl space-y-5">
+              <div className="mx-auto max-w-3xl space-y-6">
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground">Paste the job description</h2>
-                  <p className="text-sm text-muted-foreground">We&apos;ll analyze it to match your resume against the requirements.</p>
+                  <h2 className="text-lg font-semibold text-foreground">Paste job description & upload resume</h2>
+                  <p className="text-sm text-muted-foreground">Provide both to get the best AI-optimized resume tailored for this role.</p>
                 </div>
                 <EnhancedCard>
                   <textarea
                     value={jobDesc}
                     onChange={(e) => setJobDesc(e.target.value)}
-                    rows={14}
+                    rows={8}
                     className="w-full resize-none rounded-lg border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                     placeholder="Paste the full job description here... Include required skills, qualifications, and responsibilities."
                   />
@@ -150,15 +344,6 @@ export function AiGeneratorPage() {
                     </Button>
                   </div>
                 </EnhancedCard>
-              </div>
-            )}
-
-            {step === 2 && (
-              <div className="mx-auto max-w-3xl space-y-5">
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">Upload your resume</h2>
-                  <p className="text-sm text-muted-foreground">Upload a resume or select one you&apos;ve already optimized.</p>
-                </div>
                 <div className="grid gap-5 lg:grid-cols-2">
                   <div>
                     {file ? (
@@ -177,27 +362,32 @@ export function AiGeneratorPage() {
                         </button>
                       </div>
                     ) : (
-                      <FileUpload onFile={(f) => setFile({ name: f.name })} />
+                      <FileUpload onFile={(f) => setFile(f)} />
                     )}
                   </div>
-
                   <div>
-                    <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Recent Resumes</p>
+                    <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Template</p>
                     <div className="space-y-2">
-                      {recentResumes.map((r) => (
+                      {TEMPLATES.map((t) => (
                         <button
-                          key={r.name}
-                          onClick={() => setFile({ name: r.name })}
-                          className="flex w-full items-center gap-3 rounded-lg border bg-card p-3 text-left transition-colors hover:border-foreground/20"
+                          key={t.id}
+                          onClick={() => setTemplate(t.id)}
+                          className={cn(
+                            "flex w-full items-center gap-3 rounded-lg border bg-card p-3 text-left transition-colors hover:border-foreground/20",
+                            template === t.id && "border-brand/50 ring-1 ring-brand/20"
+                          )}
                         >
-                          <div className="flex size-9 items-center justify-center rounded-lg bg-brand/10">
-                            <FileText className="size-4 text-brand" />
+                          <div className={cn(
+                            "flex size-9 items-center justify-center rounded-lg",
+                            template === t.id ? "bg-brand/10" : "bg-muted"
+                          )}>
+                            <FileText className={cn("size-4", template === t.id ? "text-brand" : "text-muted-foreground")} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-foreground truncate">{r.name}</p>
-                            <p className="text-[11px] text-muted-foreground">{r.role} &middot; {r.date}</p>
+                            <p className="text-xs font-medium text-foreground">{t.label}</p>
+                            <p className="text-[11px] text-muted-foreground">{t.desc}</p>
                           </div>
-                          <span className="text-xs font-semibold text-foreground">{r.score}</span>
+                          {template === t.id && <Check className="size-3.5 text-brand" />}
                         </button>
                       ))}
                     </div>
@@ -206,164 +396,234 @@ export function AiGeneratorPage() {
               </div>
             )}
 
-            {step === 3 && (
+            {step === 2 && (
               <div className="mx-auto max-w-md flex flex-col items-center justify-center py-16 text-center">
-                <div className="relative">
-                  <div className="absolute inset-0 animate-ping rounded-full bg-brand/20" />
-                  <div className="relative flex size-20 items-center justify-center rounded-full bg-brand/10">
-                    <Sparkles className="size-8 text-brand" />
-                  </div>
-                </div>
-                <h2 className="mt-6 text-lg font-semibold text-foreground">AI is processing your resume</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Analyzing against the job description...</p>
-                <div className="mt-6 w-full max-w-xs">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs text-muted-foreground">Matching keywords</span>
-                    <span className="text-xs font-medium text-foreground">{Math.min(progress, 100)}%</span>
-                  </div>
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-brand transition-all duration-300"
-                      style={{ width: `${Math.min(progress, 100)}%` }}
-                    />
-                  </div>
-                </div>
-                <div className="mt-8 grid grid-cols-3 gap-4 text-center">
-                  {["Parsing", "Matching", "Optimizing"].map((s) => (
-                    <div key={s} className="flex flex-col items-center gap-1.5">
-                      <div className={cn(
-                        "size-2 rounded-full transition-colors",
-                        progress < 33 ? (s === "Parsing" ? "bg-brand" : "bg-muted") :
-                        progress < 66 ? (s !== "Optimizing" ? "bg-emerald-500" : "bg-muted") :
-                        "bg-emerald-500"
-                      )} />
-                      <span className="text-[11px] text-muted-foreground">{s}</span>
+                {error ? (
+                  <>
+                    <div className="flex size-20 items-center justify-center rounded-full bg-destructive/10">
+                      <AlertCircle className="size-8 text-destructive" />
                     </div>
-                  ))}
-                </div>
+                    <h2 className="mt-6 text-lg font-semibold text-foreground">Processing failed</h2>
+                    <p className="mt-2 text-sm text-muted-foreground max-w-xs">{error}</p>
+                    <Button variant="brand" className="mt-6" onClick={startProcessing}>
+                      <RefreshCw className="size-3.5" />
+                      Retry
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <div className="relative">
+                      <div className="absolute inset-0 animate-ping rounded-full bg-brand/20" />
+                      <div className="relative flex size-20 items-center justify-center rounded-full bg-brand/10">
+                        <Sparkles className="size-8 text-brand" />
+                      </div>
+                    </div>
+                    <h2 className="mt-6 text-lg font-semibold text-foreground">AI is processing your resume</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">{phase}</p>
+                    <div className="mt-6 w-full max-w-xs">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs text-muted-foreground">Progress</span>
+                        <span className="text-xs font-medium text-foreground">{Math.min(progress, 100)}%</span>
+                      </div>
+                      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-brand transition-all duration-300"
+                          style={{ width: `${Math.min(progress, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
-            {step === 4 && (
+            {step === 3 && parsedFrontend && optimizedFrontend && (
               <div className="mx-auto max-w-5xl space-y-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold text-foreground">Compare versions</h2>
-                    <p className="text-sm text-muted-foreground">Review AI-optimized changes before applying.</p>
+                    <h2 className="text-lg font-semibold text-foreground">Review AI changes</h2>
+                    <p className="text-sm text-muted-foreground">Review changes before applying them to your resume.</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1">
-                      <span className="text-xs text-muted-foreground line-through">86%</span>
-                      <ArrowRight className="size-3 text-emerald-500" />
-                      <span className="text-sm font-bold text-emerald-500">94%</span>
-                      <Badge variant="success">+8 pts</Badge>
-                    </div>
-                  </div>
+                  <Badge variant="success">Optimized</Badge>
                 </div>
 
-                <div className="grid gap-5 lg:grid-cols-2">
-                  <div>
-                    <div className="mb-2 flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-muted-foreground/40" />
-                      <span className="text-xs font-medium text-muted-foreground uppercase">Original</span>
-                    </div>
-                    <div className="rounded-card border bg-white p-5 text-black text-xs leading-relaxed space-y-3 shadow-sm">
-                      <div className="text-center">
-                        <p className="text-sm font-bold">John Doe</p>
-                        <p className="text-[11px] text-gray-500">john@example.com &middot; (555) 123-4567</p>
-                      </div>
-                      <div>
-                        <div className="border-b border-gray-200 pb-0.5 mb-1">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-600">PROFESSIONAL SUMMARY</span>
-                        </div>
-                        <p>Senior Product Designer with experience crafting user-centered products.</p>
-                      </div>
-                      <div>
-                        <div className="border-b border-gray-200 pb-0.5 mb-1">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-600">EXPERIENCE</span>
-                        </div>
-                        <p className="font-medium">Senior Product Designer</p>
-                        <p className="text-gray-500">Linear &middot; 2022 - Present</p>
-                        <p>Lead designer for the core product experience. Redesigned the project management interface.</p>
-                      </div>
-                    </div>
+                {error && (
+                  <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                    {error}
                   </div>
+                )}
 
-                  <div>
-                    <div className="mb-2 flex items-center gap-2">
-                      <div className="size-2 rounded-full bg-emerald-500" />
-                      <span className="text-xs font-medium text-emerald-500 uppercase">AI Optimized</span>
-                    </div>
-                    <div className="rounded-card border border-emerald-500/30 bg-white p-5 text-black text-xs leading-relaxed space-y-3 shadow-sm shadow-emerald-500/5">
-                      <div className="text-center">
-                        <p className="text-sm font-bold">John Doe</p>
-                        <p className="text-[11px] text-gray-500">john@example.com &middot; (555) 123-4567 &middot; linkedin.com/in/johndoe</p>
-                      </div>
-                      <div>
-                        <div className="border-b border-gray-200 pb-0.5 mb-1">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-600">PROFESSIONAL SUMMARY</span>
+                <div className="space-y-4">
+                  {diff(parsedFrontend.personal.title, optimizedFrontend.personal.title) && (
+                    <CompareSection label="Job Title">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="rounded-lg border bg-card p-3">
+                          <p className="text-[11px] text-muted-foreground mb-1">Original</p>
+                          <p className="text-sm text-foreground">{parsedFrontend.personal.title || "(none)"}</p>
                         </div>
-                        <p>Senior Product Designer with <span className="bg-emerald-100 px-0.5 rounded">8+ years of experience</span> crafting user-centered digital products. <span className="bg-emerald-100 px-0.5 rounded">Expert in design systems, accessibility, and driving measurable business outcomes through thoughtful UX.</span></p>
-                      </div>
-                      <div>
-                        <div className="border-b border-gray-200 pb-0.5 mb-1">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-gray-600">EXPERIENCE</span>
+                        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
+                          <p className="text-[11px] text-emerald-600 mb-1">Optimized</p>
+                          <p className="text-sm font-medium text-foreground">{optimizedFrontend.personal.title || "(none)"}</p>
                         </div>
-                        <p className="font-medium">Senior Product Designer</p>
-                        <p className="text-gray-500">Linear &middot; 2022 - Present</p>
-                        <p>Lead designer for the core product experience. Redesigned the project management interface, <span className="bg-emerald-100 px-0.5 rounded">resulting in a 25% increase in user engagement</span>. Established the company design system <span className="bg-emerald-100 px-0.5 rounded">adopted by 40+ engineers</span>.</p>
                       </div>
-                    </div>
-                  </div>
-                </div>
+                    </CompareSection>
+                  )}
 
-                <div className="flex items-center justify-center gap-3">
-                  <Button variant="outline" size="lg">
-                    <X className="size-4" />
-                    Reject Changes
-                  </Button>
-                  <Button variant="brand" size="lg" onClick={nextStep}>
-                    <Check className="size-4" />
-                    Accept Changes
-                  </Button>
+                  {diff(parsedFrontend.summary, optimizedFrontend.summary) && (
+                    <CompareSection label="Professional Summary">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="rounded-lg border bg-card p-3">
+                          <p className="text-[11px] text-muted-foreground mb-1">Original</p>
+                          <p className="text-xs leading-relaxed text-foreground">{parsedFrontend.summary || "(none)"}</p>
+                        </div>
+                        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
+                          <p className="text-[11px] text-emerald-600 mb-1">Optimized</p>
+                          <p className="text-xs leading-relaxed text-foreground">{optimizedFrontend.summary || "(none)"}</p>
+                        </div>
+                      </div>
+                    </CompareSection>
+                  )}
+
+                  {diffArr(parsedFrontend.skills, optimizedFrontend.skills) && (
+                    <CompareSection label="Skills">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="rounded-lg border bg-card p-3">
+                          <p className="text-[11px] text-muted-foreground mb-2">Original</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {parsedFrontend.skills.map((s) => (
+                              <span key={s} className="rounded-md bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">{s}</span>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
+                          <p className="text-[11px] text-emerald-600 mb-2">Optimized</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {optimizedFrontend.skills.map((s) => (
+                              <span key={s} className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-700 font-medium">{s}</span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </CompareSection>
+                  )}
+
+                  {optimizedFrontend.experience.map((exp, i) => {
+                    const orig = parsedFrontend.experience[i]
+                    if (!orig || !diff(orig.description, exp.description)) return null
+                    return (
+                      <CompareSection key={`exp-${i}`} label={`Experience — ${exp.role} @ ${exp.company}`}>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="rounded-lg border bg-card p-3">
+                            <p className="text-[11px] text-muted-foreground mb-1">Original</p>
+                            <p className="text-xs leading-relaxed text-foreground whitespace-pre-wrap">{orig.description || "(none)"}</p>
+                          </div>
+                          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
+                            <p className="text-[11px] text-emerald-600 mb-1">Optimized</p>
+                            <p className="text-xs leading-relaxed text-foreground whitespace-pre-wrap">{exp.description || "(none)"}</p>
+                          </div>
+                        </div>
+                      </CompareSection>
+                    )
+                  })}
+
+                  {optimizedFrontend.projects.map((proj, i) => {
+                    const orig = parsedFrontend.projects[i]
+                    if (!orig || !diff(orig.description, proj.description)) return null
+                    return (
+                      <CompareSection key={`proj-${i}`} label={`Project — ${proj.name}`}>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="rounded-lg border bg-card p-3">
+                            <p className="text-[11px] text-muted-foreground mb-1">Original</p>
+                            <p className="text-xs leading-relaxed text-foreground">{orig.description || "(none)"}</p>
+                          </div>
+                          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
+                            <p className="text-[11px] text-emerald-600 mb-1">Optimized</p>
+                            <p className="text-xs leading-relaxed text-foreground">{proj.description || "(none)"}</p>
+                          </div>
+                        </div>
+                      </CompareSection>
+                    )
+                  })}
                 </div>
               </div>
             )}
 
-            {step === 5 && (
-              <div className="mx-auto max-w-lg flex flex-col items-center py-12 text-center">
-                <div className="flex size-16 items-center justify-center rounded-full bg-emerald-500/10">
-                  <Check className="size-8 text-emerald-500" />
-                </div>
-                <h2 className="mt-5 text-xl font-semibold text-foreground">Resume Optimized!</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Your ATS score improved by 8 points. Ready to export?</p>
-                <div className="mt-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1">
-                  <span className="text-xs font-medium text-emerald-500">86% &rarr; 94% ATS Score</span>
+            {step === 4 && optimizedFrontend && (
+              <div className="mx-auto max-w-4xl space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-foreground">Export your optimized resume</h2>
+                    <p className="text-sm text-muted-foreground">Choose a template and download your optimized resume.</p>
+                  </div>
+                  <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1">
+                    <Check className="size-3.5 text-emerald-500" />
+                    <span className="text-xs font-medium text-emerald-500">Resume saved</span>
+                  </div>
                 </div>
 
-                <div className="mt-8 grid w-full gap-3 sm:grid-cols-3">
-                  {[
-                    { icon: Download, label: "PDF", desc: "Printable format" },
-                    { icon: FileText, label: "DOCX", desc: "Editable Word file" },
-                    { icon: Clipboard, label: "Clipboard", desc: "Copy to clipboard" },
-                  ].map((opt) => (
-                    <button
-                      key={opt.label}
-                      className="flex flex-col items-center gap-2 rounded-card border bg-card p-5 transition-all hover:-translate-y-0.5 hover:border-brand/30 hover:shadow-lg hover:shadow-brand/5"
-                    >
-                      <div className="flex size-10 items-center justify-center rounded-lg bg-brand/10">
-                        <opt.icon className="size-5 text-brand" />
+                {error && (
+                  <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+                    {error}
+                  </div>
+                )}
+
+                <div className="grid gap-6 lg:grid-cols-3">
+                  <div className="lg:col-span-1 space-y-4">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Template</p>
+                    <div className="space-y-2">
+                      {TEMPLATES.map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => setTemplate(t.id)}
+                          className={cn(
+                            "flex w-full items-center gap-3 rounded-lg border bg-card p-3 text-left transition-colors hover:border-foreground/20",
+                            template === t.id && "border-brand/50 ring-1 ring-brand/20"
+                          )}
+                        >
+                          <div className={cn(
+                            "flex size-9 items-center justify-center rounded-lg",
+                            template === t.id ? "bg-brand/10" : "bg-muted"
+                          )}>
+                            <FileText className={cn("size-4", template === t.id ? "text-brand" : "text-muted-foreground")} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-foreground">{t.label}</p>
+                            <p className="text-[11px] text-muted-foreground">{t.desc}</p>
+                          </div>
+                          {template === t.id && <Check className="size-3.5 text-brand" />}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="space-y-2 pt-2">
+                      <Button variant="brand" className="w-full" onClick={handleDownloadPdf} disabled={!resumeId || downloading}>
+                        <Download className="size-4" />
+                        {downloading ? "Downloading..." : template === "default" ? "Download (Original Format)" : "Download PDF"}
+                      </Button>
+                      <Button variant="outline" className="w-full" onClick={() => resumeId && router.push(`/resume/new?id=${resumeId}`)} disabled={!resumeId}>
+                        <Eye className="size-4" />
+                        Open in Builder
+                      </Button>
+                      <Button variant="ghost" size="sm" className="w-full text-muted-foreground" onClick={handleStartOver}>
+                        <RotateCcw className="size-3.5" />
+                        Start Over
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="lg:col-span-2">
+                    <div className="overflow-hidden rounded-lg border shadow-sm">
+                      <div className="bg-muted px-4 py-2 border-b">
+                        <p className="text-xs font-medium text-muted-foreground">Preview — {TEMPLATES.find((t) => t.id === template)?.label}</p>
                       </div>
-                      <span className="text-sm font-medium text-foreground">{opt.label}</span>
-                      <span className="text-[11px] text-muted-foreground">{opt.desc}</span>
-                    </button>
-                  ))}
+                      <div className="bg-[#0A0A0A] p-4" style={{ minHeight: 400 }}>
+                        <div className="mx-auto max-w-[210mm] scale-[0.7] origin-top">
+                          <ResumePreview data={optimizedFrontend} template={template} previewHtml={previewHtml} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-
-                <button onClick={handleStartOver} className="mt-8 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                  <RotateCcw className="inline size-3 mr-1" />
-                  Start over with a new resume
-                </button>
               </div>
             )}
           </div>
@@ -392,7 +652,7 @@ export function AiGeneratorPage() {
           </aside>
         </div>
 
-        {step !== 3 && step !== 5 && (
+        {step !== 2 && step !== 4 && (
           <div className="flex items-center justify-between border-t bg-card px-4 py-3 lg:px-6">
             <Button
               variant="ghost"
@@ -406,11 +666,11 @@ export function AiGeneratorPage() {
             <Button
               variant="brand"
               size="sm"
-              onClick={nextStep}
-              disabled={!canContinue()}
+              onClick={step === 3 ? handleAcceptChanges : nextStep}
+              disabled={!canContinue() || saving}
             >
-              {step === 4 ? "Accept Changes" : "Continue"}
-              <ArrowRight className="size-3.5" />
+              {step === 3 ? (saving ? "Saving..." : "Accept Changes") : "Continue"}
+              {step !== 3 && <ArrowRight className="size-3.5" />}
             </Button>
           </div>
         )}

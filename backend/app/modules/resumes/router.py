@@ -2,7 +2,7 @@
 
 import uuid
 
-from fastapi import APIRouter, Depends, File, HTTPException, Response, UploadFile, status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, Response, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.database import get_db
@@ -16,6 +16,16 @@ router = APIRouter()
 
 def _resume_to_dict(resume) -> dict:
     return schemas.ResumeResponse.model_validate(resume).model_dump()
+
+
+def _cors_response(response: Response, request: Request) -> Response:
+    origin = request.headers.get("origin", "")
+    if origin:
+        response.headers["Access-Control-Allow-Origin"] = origin
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
 
 # GET /resumes
@@ -74,14 +84,20 @@ async def delete_resume(
     return success({"message": "Resume deleted"})
 
 
-# POST /resumes/{id}/export — PDF download
+# POST /resumes/{id}/export — PDF (or original format for "default")
 @router.post("/{resume_id}/export")
 async def export_resume(
+    request: Request,
     resume_id: uuid.UUID,
     current_user: user_models.User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    template: str = Query(None, description="Override template ID for this export"),
 ):
     resume = await service.get_resume(db, resume_id, current_user.id)
+
+    effective_template = template or str(resume.template_id)
+    if effective_template == "default":
+        resume.template_id = "default"
 
     from app.modules.resumes.export import render_resume_to_pdf
 
@@ -94,10 +110,47 @@ async def export_resume(
         )
 
     filename = f"resume_{resume_id}.pdf"
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    return _cors_response(
+        Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        ),
+        request,
+    )
+
+
+# GET /resumes/{id}/preview-html — rendered HTML for live preview
+@router.get("/{resume_id}/preview-html")
+async def preview_html(
+    request: Request,
+    resume_id: uuid.UUID,
+    current_user: user_models.User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    template: str = Query(None, description="Override template ID for this preview"),
+):
+    resume = await service.get_resume(db, resume_id, current_user.id)
+
+    effective_template = template or str(resume.template_id)
+    if effective_template == "default":
+        resume.template_id = "default"
+
+    from app.modules.resumes.export import render_resume_to_html
+
+    try:
+        html_content = render_resume_to_html(resume)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "HTML_GENERATION_ERROR", "message": f"Failed to generate preview: {e}"},
+        )
+
+    return _cors_response(
+        Response(
+            content=html_content,
+            media_type="text/html; charset=utf-8",
+        ),
+        request,
     )
 
 

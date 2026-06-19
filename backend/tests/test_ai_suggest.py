@@ -1,4 +1,14 @@
-from unittest.mock import patch
+import uuid
+from unittest.mock import AsyncMock, MagicMock, patch
+
+
+def mock_result(scalar_value=None, scalars_all=None):
+    result = MagicMock()
+    scalars = MagicMock()
+    scalars.first.return_value = scalar_value
+    scalars.all.return_value = scalars_all if scalars_all is not None else []
+    result.scalars.return_value = scalars
+    return result
 
 BASE = "/api/v1/ai"
 
@@ -145,14 +155,21 @@ class TestGenerateResume:
 
 
 class TestOptimizeResume:
+    @patch("app.utils.style_extractor.extract_and_generate_template")
     @patch("app.modules.ai.service.ai_complete")
     @patch("app.modules.ai.router.extract_text")
-    def test_pdf(self, mock_extract, mock_ai, client):
+    def test_pdf(self, mock_extract, mock_ai, mock_style, client, mock_db):
         mock_extract.return_value = "John Doe - Experienced Python developer"
+        mock_style.return_value = None
         mock_ai.side_effect = [
             '{"personal": {"first_name": "John"}, "summary": "Experienced", "skills": ["Python"], "experience": [], "projects": [], "education": [], "certifications": []}',
             '{"personal": {"first_name": "John"}, "summary": "Experienced Python developer with 5 years", "skills": ["Python", "FastAPI"], "experience": [], "projects": [], "education": [], "certifications": []}',
         ]
+
+        mock_resume = MagicMock()
+        mock_resume.id = uuid.UUID("00000000-0000-0000-0000-000000000001")
+        mock_resume.data = MagicMock()
+        mock_db.execute = AsyncMock(return_value=mock_result(scalar_value=mock_resume))
 
         resp = client.post(
             f"{BASE}/optimize-resume",
@@ -165,14 +182,21 @@ class TestOptimizeResume:
         assert "optimized" in data
         assert data["parsed"]["personal"]["first_name"] == "John"
 
+    @patch("app.utils.style_extractor.extract_and_generate_template")
     @patch("app.modules.ai.service.ai_complete")
     @patch("app.modules.ai.router.extract_text_from_docx")
-    def test_docx(self, mock_extract, mock_ai, client):
+    def test_docx(self, mock_extract, mock_ai, mock_style, client, mock_db):
         mock_extract.return_value = "Jane Doe - Developer"
+        mock_style.return_value = None
         mock_ai.side_effect = [
             '{"personal": {"first_name": "Jane"}, "summary": "Dev", "skills": ["React"], "experience": [], "projects": [], "education": [], "certifications": []}',
             '{"personal": {"first_name": "Jane"}, "summary": "Optimized dev", "skills": ["React", "Next.js"], "experience": [], "projects": [], "education": [], "certifications": []}',
         ]
+
+        mock_resume = MagicMock()
+        mock_resume.id = uuid.UUID("00000000-0000-0000-0000-000000000002")
+        mock_resume.data = MagicMock()
+        mock_db.execute = AsyncMock(return_value=mock_result(scalar_value=mock_resume))
 
         resp = client.post(
             f"{BASE}/optimize-resume",

@@ -62,6 +62,7 @@ class ResumeContent(BaseModel):
     personal: Optional[PersonalInfo] = None
     summary: Optional[str] = None
     skills: Optional[List[str]] = None
+    skill_groups: Optional[Dict[str, List[str]]] = None
     experience: Optional[List[ExperienceItem]] = None
     projects: Optional[List[ProjectItem]] = None
     education: Optional[List[EducationItem]] = None
@@ -73,7 +74,7 @@ class ResumeContent(BaseModel):
 # Request schemas
 # ---------------------------------------------------------------------------
 
-TEMPLATE_IDS = {"classic", "modern", "minimal", "creative"}
+TEMPLATE_IDS = {"classic", "modern", "minimal", "creative", "default"}
 
 
 class ResumeCreate(BaseModel):
@@ -106,6 +107,7 @@ class ResumeDataResponse(BaseModel):
     personal: Optional[Dict] = None
     summary: Optional[str] = None
     skills: Optional[List[str]] = None
+    skill_groups: Optional[Dict[str, List[str]]] = None
     experience: Optional[List[Dict]] = None
     projects: Optional[List[Dict]] = None
     education: Optional[List[Dict]] = None

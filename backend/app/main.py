@@ -49,7 +49,13 @@ app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 
 # ---------------------------------------------------------------------------
-# CORS — never wildcard with credentials per PRD
+# Middleware — order matters: ErrorHandler wraps Auth, CORS wraps everything
+# ---------------------------------------------------------------------------
+app.add_middleware(AuthMiddleware)
+app.add_middleware(ErrorHandlerMiddleware)
+
+# ---------------------------------------------------------------------------
+# CORS — outermost so it runs LAST on response (catches error responses too)
 # ---------------------------------------------------------------------------
 origins = list({
     settings.CLIENT_URL,
@@ -64,12 +70,6 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
-
-# ---------------------------------------------------------------------------
-# Middleware — order matters: ErrorHandler outermost, Auth inner
-# ---------------------------------------------------------------------------
-app.add_middleware(AuthMiddleware)
-app.add_middleware(ErrorHandlerMiddleware)
 
 # ---------------------------------------------------------------------------
 # Exception handlers

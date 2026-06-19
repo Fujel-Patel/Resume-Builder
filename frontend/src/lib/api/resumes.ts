@@ -47,6 +47,7 @@ function toBackendAll(data: ResumeData): JsonDict {
     },
     summary: data.summary,
     skills: data.skills,
+    skill_groups: data.skillGroups ?? {},
     experience: data.experience.map((e) => ({
       company: e.company,
       role: e.role,
@@ -95,7 +96,9 @@ function toBackendSection(data: ResumeData, section: keyof ResumeData): JsonDict
     case "summary":
       return { summary: data.summary }
     case "skills":
-      return { skills: data.skills }
+      return { skills: data.skills, skill_groups: data.skillGroups ?? {} }
+    case "skillGroups":
+      return { skill_groups: data.skillGroups ?? {} }
     case "experience":
       return {
         experience: data.experience.map((e) => ({
@@ -220,6 +223,7 @@ export function toFrontendResumeData(r: ResumeResponse): ResumeData {
     },
     summary: str(d.summary),
     skills: Array.isArray(d.skills) ? (d.skills as string[]) : [],
+    skillGroups: (d.skill_groups as Record<string, string[]>) ?? null,
     experience: arr(d.experience).map((e: JsonDict) => {
       const dur = str(e.duration)
       const parts = dur.split(" - ")
