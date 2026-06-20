@@ -25,6 +25,7 @@ class Resume(Base):
     template_id = Column(String(100), nullable=False)  # classic | modern | minimal | creative | default
     original_file_path = Column(String(500), nullable=True)
     original_file_type = Column(String(10), nullable=True)  # "pdf" or "docx"
+    injected_file_path = Column(String(500), nullable=True)  # AI-optimized DOCX
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

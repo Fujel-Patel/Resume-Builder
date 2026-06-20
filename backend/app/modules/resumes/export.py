@@ -1,4 +1,4 @@
-"""Resume PDF export — Jinja2 templates → WeasyPrint PDF."""
+"""Resume export — serves injected DOCX or renders Jinja2 → PDF."""
 
 from pathlib import Path
 from typing import Dict, Optional
@@ -40,6 +40,15 @@ def _build_context(resume: Resume) -> dict:
     }
 
 
+def get_injected_docx_bytes(resume: Resume) -> bytes | None:
+    """Read the injected DOCX file from disk, if it exists."""
+    path = getattr(resume, "injected_file_path", None)
+    if not path:
+        return None
+    p = Path(str(path))
+    return p.read_bytes() if p.is_file() else None
+
+
 def render_resume_to_html(resume: Resume) -> str:
     template_id = resume.template_id
     context = _build_context(resume)
@@ -51,7 +60,6 @@ def render_resume_to_html(resume: Resume) -> str:
         if ts:
             jinja_html = style_to_template_jinja(ts)
             return _env.from_string(jinja_html).render(**context)
-        # Fallback to default.html
         template = _env.get_template("default.html")
         return template.render(**context)
 
@@ -63,5 +71,11 @@ def render_resume_to_html(resume: Resume) -> str:
 
 
 def render_resume_to_pdf(resume: Resume) -> bytes:
+    """Return injected DOCX bytes (for default template) or render Jinja2 → PDF."""
+    if resume.template_id == "default":
+        injected = get_injected_docx_bytes(resume)
+        if injected is not None:
+            return injected
+
     html_content = render_resume_to_html(resume)
     return HTML(string=html_content, base_url="about:blank").write_pdf()

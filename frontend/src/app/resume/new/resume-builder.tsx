@@ -8,7 +8,7 @@ import { PreviewPanel } from "@/features/resume/preview-panel"
 import { TemplatePicker } from "@/features/resume/template-switcher"
 import { Button } from "@/components/ui/button"
 import { Download, Eye, PenLine, ArrowLeft } from "lucide-react"
-import { saveSection, getResumeApi, toFrontendResumeData, exportResumePdf } from "@/lib/api/resumes"
+import { saveSection, getResumeApi, toFrontendResumeData, exportResume } from "@/lib/api/resumes"
 import type { ResumeData, ResumeTemplate } from "@/features/resume/types"
 
 const defaultResume: ResumeData = {
@@ -119,7 +119,7 @@ export function ResumeBuilder() {
     }
     if (id) {
       try {
-        await exportResumePdf(id)
+        await exportResume(id)
       } catch {
         // download failed
       }

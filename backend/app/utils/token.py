@@ -1,5 +1,4 @@
 import hashlib
-from typing import Any
 
 
 def hash_token_sha256(token: str) -> str:

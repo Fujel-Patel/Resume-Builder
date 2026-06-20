@@ -87,6 +87,30 @@
 }
 
 @layer utilities {
+  @keyframes swipe-fill {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
+  .swipe-delete {
+    position: relative;
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .swipe-delete::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background: hsl(var(--destructive));
+    animation: swipe-fill 0.4s ease-in-out forwards;
+  }
+
   .text-glow-brand {
     text-shadow: 0 0 20px hsl(175 100% 50% / 0.5), 0 0 40px hsl(175 100% 50% / 0.3);
   }

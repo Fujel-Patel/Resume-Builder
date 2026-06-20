@@ -37,7 +37,6 @@ impactful — maximum 1-2 lines per bullet.
 Return ONLY a JSON array of improved bullet strings.
 """
 
-# Resume parse prompt — extract structured data from raw resume text
 # Projects improvement prompt
 PROJECTS_PROMPT = """
 Improve these project descriptions for the given project name and tech stack.
@@ -47,24 +46,7 @@ per project. Return ONLY a JSON array of strings, one per project description.
 Example: ["Improved description 1", "Improved description 2"]
 """
 
-# Optimize resume prompt — rewrite content while preserving structure
-OPTIMIZE_RESUME_PROMPT = """
-You are an AI resume optimizer. Given the parsed resume data and a target job
-description, generate an optimized version of the resume text content to maximize
-ATS score and recruiter appeal.
-
-ONLY change these fields:
-- personal.job_title (make it match the target role)
-- summary (rewrite to highlight relevant keywords)
-- skills (reorder and prioritize relevant ones)
-- experience[].bullets (improve with action verbs and quantifiable impact)
-- projects[].description (improve to show relevance)
-
-Keep everything else identical (name, contact, education, certifications, etc.).
-
-Return ONLY valid JSON matching the same structure as the input.
-"""
-
+# Resume parse prompt — extract structured data from raw resume text
 RESUME_PARSE_PROMPT = """
 You are a resume parser. Extract structured information from the raw resume text below.
 Return ONLY valid JSON matching this exact schema:
@@ -90,6 +72,23 @@ Return ONLY valid JSON matching this exact schema:
   "custom_sections": [{"label": "string", "content": "string"}]
 }
 Use empty strings or null for missing fields. Return empty arrays for missing sections.
+"""
+
+# Optimize resume prompt — rewrite content while preserving structure
+OPTIMIZE_RESUME_PROMPT = """
+You are a resume content optimizer.
+Your job is to rewrite resume content to match a job description.
+You will receive current resume data as JSON and a job description.
+Return ONLY a valid JSON object. No explanation. No markdown. No extra text.
+
+RULES:
+- Keep exact same JSON structure and keys
+- Only modify: personal.job_title, summary, experience[].bullets, skills, projects[].description
+- Do NOT change: personal.first_name, personal.last_name, personal.email, personal.mobile, personal.address, education, certifications, custom_sections
+- Keep bullet count same or less (never add more than 2 extra bullets)
+- Use keywords from job description naturally
+- Keep language professional and concise
+- Skills: add relevant ones from JD, never remove existing ones
 """
 
 # ATS scoring prompt

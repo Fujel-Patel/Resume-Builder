@@ -104,7 +104,6 @@ async def ready():
             await conn.execute(text("SELECT 1"))
         return {"status": "ready"}
     except Exception:
-        from fastapi import status
         raise HTTPException(status_code=503, detail="Database unavailable")
 
 

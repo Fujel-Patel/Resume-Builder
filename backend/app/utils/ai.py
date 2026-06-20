@@ -6,8 +6,6 @@ import fitz  # PyMuPDF
 import pdfplumber
 import docx2txt
 import io
-from typing import Union
-from app.config.settings import settings
 
 
 def extract_resume_text(file_content: bytes, filename: str) -> str:

@@ -21,7 +21,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Skeleton } from "@/components/ui/skeleton"
-import { toast } from "sonner"
 import {
   Key,
   Save,
@@ -171,7 +170,6 @@ export function AiSettingsPage() {
         update.model = form.model || null
         if (form.is_default) update.is_default = true
         await updateProviderApi(editingId, update)
-        toast.success("Provider updated")
       } else {
         const create: AIProviderCreate = {
           provider_name: form.provider_name,
@@ -181,12 +179,10 @@ export function AiSettingsPage() {
           is_default: form.is_default,
         }
         await addProviderApi(create)
-        toast.success("Provider added")
       }
       setDialogOpen(false)
       await fetchProviders()
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to save provider")
+    } catch {
     } finally {
       setSaving(false)
     }
@@ -194,7 +190,6 @@ export function AiSettingsPage() {
 
   const handleInlineVerify = async () => {
     if (!form.api_key) {
-      toast.error("Enter an API key to verify")
       return
     }
     setVerifyingInline(true)
@@ -213,12 +208,9 @@ export function AiSettingsPage() {
         if (models.length > 0) {
           updateForm({ model: models[0].id })
         }
-        toast.success("Connection verified — models loaded")
       } else {
-        toast.error(result.error || "Verification failed")
       }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Verification failed")
+    } catch {
     } finally {
       setVerifyingInline(false)
     }
@@ -245,19 +237,14 @@ export function AiSettingsPage() {
       })
       setVerifyResult(result)
       if (result.valid) {
-        toast.success(
-          `${PROVIDER_LABELS[verifyTarget.provider_name] || verifyTarget.provider_name} connection verified`,
-        )
         setProviders((prev) =>
           prev.map((pr) =>
             pr.id === verifyTarget.id ? { ...pr, is_verified: true } : pr,
           ),
         )
       } else {
-        toast.error(result.error || "Verification failed")
       }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Verification failed")
+    } catch {
     } finally {
       setVerifying(false)
     }
@@ -274,12 +261,10 @@ export function AiSettingsPage() {
     setDeleting(true)
     try {
       await deleteProviderApi(deleteTarget.id)
-      toast.success("Provider removed")
       setProviders((prev) => prev.filter((p) => p.id !== deleteTarget.id))
       setDeleteOpen(false)
       setDeleteTarget(null)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to delete provider")
+    } catch {
     } finally {
       setDeleting(false)
     }
@@ -289,18 +274,13 @@ export function AiSettingsPage() {
     try {
       await updateProviderApi(p.id, { is_default: true })
       await fetchProviders()
-      toast.success(
-        `${PROVIDER_LABELS[p.provider_name] || p.provider_name} set as default`,
-      )
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to set default")
+    } catch {
     }
   }
 
   const handleLoadModels = async () => {
     if (!editingId) return
     if (!form.api_key && !providers.find((p) => p.id === editingId)?.is_verified) {
-      toast.error("Enter your API key to fetch models")
       return
     }
     setLoadingModels(true)
@@ -311,12 +291,9 @@ export function AiSettingsPage() {
         setAvailableModels(models)
         setModelCustomMode(false)
         updateForm({ model: form.model || models[0].id })
-        toast.success(`${models.length} model${models.length > 1 ? "s" : ""} loaded`)
       } else {
-        toast.error("No models returned from provider")
       }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to load models")
+    } catch {
     } finally {
       setLoadingModels(false)
     }

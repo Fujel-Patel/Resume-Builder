@@ -4,8 +4,17 @@ import { useState, useCallback } from "react"
 import { FormSection } from "@/features/resume/form-section"
 import { TagInput } from "@/features/resume/tag-input"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash2, Save } from "lucide-react"
-import { toast } from "sonner"
+import { Plus, Trash2, Save, Loader2 } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog"
 import {
   suggestSummaryApi,
   suggestSkillsApi,
@@ -23,6 +32,26 @@ type EditorPanelProps = {
 
 export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps) {
   const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({})
+  const [pendingDelete, setPendingDelete] = useState<{ section: string; index: number } | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return
+    setDeleting(true)
+    const { section, index } = pendingDelete
+    await new Promise((r) => setTimeout(r, 400))
+    if (section === "experience") {
+      onChange({ ...data, experience: data.experience.filter((_, i) => i !== index) })
+    } else if (section === "projects") {
+      onChange({ ...data, projects: data.projects.filter((_, i) => i !== index) })
+    } else if (section === "education") {
+      onChange({ ...data, education: data.education.filter((_, i) => i !== index) })
+    } else if (section === "certifications") {
+      onChange({ ...data, certifications: data.certifications.filter((_, i) => i !== index) })
+    }
+    setPendingDelete(null)
+    setDeleting(false)
+  }
 
   const update = <K extends keyof ResumeData>(section: K, value: ResumeData[K]) => {
     onChange({ ...data, [section]: value })
@@ -34,8 +63,6 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
       try {
         await fn()
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "AI request failed"
-        toast.error(msg)
       } finally {
         setAiLoading((prev) => ({ ...prev, [section]: false }))
       }
@@ -54,7 +81,6 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
         current_summary: data.summary || null,
       })
       update("summary", result.summary)
-      toast.success("Summary improved")
     })
   }, [data, withAILoading, update])
 
@@ -69,7 +95,6 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
       const allSkills = Object.values(result.skills).flat()
       update("skills", allSkills)
       update("skillGroups", result.skills)
-      toast.success("Skills organized into groups")
     })
   }, [data, withAILoading, update])
 
@@ -77,7 +102,6 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
     await withAILoading("experience", async () => {
       const bullets = data.experience.map((e) => e.description).filter(Boolean)
       if (bullets.length === 0) {
-        toast.error("Add at least one experience entry first")
         return
       }
       const first = data.experience[0]
@@ -95,9 +119,7 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
           description: result.bullets[i] ?? e.description,
         }))
         update("experience", next)
-        toast.warning("Bullet count mismatch — some entries may not have been updated")
       }
-      toast.success("Experience improved")
     })
   }, [data, withAILoading, update])
 
@@ -105,7 +127,6 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
     await withAILoading("projects", async () => {
       const descriptions = data.projects.map((p) => p.description).filter(Boolean)
       if (descriptions.length === 0) {
-        toast.error("Add at least one project entry first")
         return
       }
       const first = data.projects[0]
@@ -124,9 +145,7 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
           description: result.projects[i] ?? p.description,
         }))
         update("projects", next)
-        toast.warning("Project count mismatch — some entries may not have been updated")
       }
-      toast.success("Projects improved")
     })
   }, [data, withAILoading, update])
 
@@ -206,6 +225,8 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
         <ExperienceEditor
           entries={data.experience}
           onChange={(v) => update("experience", v)}
+          onRemove={(i) => setPendingDelete({ section: "experience", index: i })}
+          deletingIndex={pendingDelete?.section === "experience" ? pendingDelete.index : -1}
         />
       </FormSection>
 
@@ -218,6 +239,8 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
         <ProjectsEditor
           entries={data.projects}
           onChange={(v) => update("projects", v)}
+          onRemove={(i) => setPendingDelete({ section: "projects", index: i })}
+          deletingIndex={pendingDelete?.section === "projects" ? pendingDelete.index : -1}
         />
       </FormSection>
 
@@ -228,6 +251,8 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
         <EducationEditor
           entries={data.education}
           onChange={(v) => update("education", v)}
+          onRemove={(i) => setPendingDelete({ section: "education", index: i })}
+          deletingIndex={pendingDelete?.section === "education" ? pendingDelete.index : -1}
         />
       </FormSection>
 
@@ -238,8 +263,30 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
         <CertificationsEditor
           entries={data.certifications}
           onChange={(v) => update("certifications", v)}
+          onRemove={(i) => setPendingDelete({ section: "certifications", index: i })}
+          deletingIndex={pendingDelete?.section === "certifications" ? pendingDelete.index : -1}
         />
       </FormSection>
+
+      <AlertDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => { if (!open) setPendingDelete(null) }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Entry</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this entry? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={confirmDelete} disabled={deleting}>
+              {deleting ? <><Loader2 className="size-4 animate-spin" /> Removing...</> : "Remove"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
@@ -258,9 +305,8 @@ function InputField({ label, value, onChange, placeholder }: { label: string; va
   )
 }
 
-function ExperienceEditor({ entries, onChange }: { entries: ExperienceEntry[]; onChange: (v: ExperienceEntry[]) => void }) {
+function ExperienceEditor({ entries, onChange, onRemove, deletingIndex }: { entries: ExperienceEntry[]; onChange: (v: ExperienceEntry[]) => void; onRemove: (i: number) => void; deletingIndex: number }) {
   const add = () => onChange([...entries, { company: "", role: "", startDate: "", endDate: "", description: "" }])
-  const remove = (i: number) => onChange(entries.filter((_, idx) => idx !== i))
   const updateEntry = (i: number, key: keyof ExperienceEntry, val: string) => {
     const next = [...entries]
     next[i] = { ...next[i], [key]: val }
@@ -270,10 +316,10 @@ function ExperienceEditor({ entries, onChange }: { entries: ExperienceEntry[]; o
   return (
     <div className="space-y-3">
       {entries.map((e, i) => (
-        <div key={i} className="rounded-lg border bg-background p-3 space-y-2">
+        <div key={i} className={`rounded-lg border bg-background p-3 space-y-2 ${i === deletingIndex ? "swipe-delete" : ""}`}>
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-foreground">#{i + 1}</span>
-            <button onClick={() => remove(i)} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 className="size-3.5" /></button>
+            <button onClick={() => onRemove(i)} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 className="size-3.5" /></button>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <input value={e.company} onChange={(ev) => updateEntry(i, "company", ev.target.value)} className="rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Company" />
@@ -291,9 +337,8 @@ function ExperienceEditor({ entries, onChange }: { entries: ExperienceEntry[]; o
   )
 }
 
-function ProjectsEditor({ entries, onChange }: { entries: ProjectEntry[]; onChange: (v: ProjectEntry[]) => void }) {
+function ProjectsEditor({ entries, onChange, onRemove, deletingIndex }: { entries: ProjectEntry[]; onChange: (v: ProjectEntry[]) => void; onRemove: (i: number) => void; deletingIndex: number }) {
   const add = () => onChange([...entries, { name: "", description: "" }])
-  const remove = (i: number) => onChange(entries.filter((_, idx) => idx !== i))
   const updateEntry = (i: number, key: keyof ProjectEntry, val: string) => {
     const next = [...entries]
     next[i] = { ...next[i], [key]: val }
@@ -303,10 +348,10 @@ function ProjectsEditor({ entries, onChange }: { entries: ProjectEntry[]; onChan
   return (
     <div className="space-y-3">
       {entries.map((p, i) => (
-        <div key={i} className="rounded-lg border bg-background p-3 space-y-2">
+        <div key={i} className={`rounded-lg border bg-background p-3 space-y-2 ${i === deletingIndex ? "swipe-delete" : ""}`}>
           <div className="flex items-center justify-between">
             <input value={p.name} onChange={(ev) => updateEntry(i, "name", ev.target.value)} className="flex-1 rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Project name" />
-            <button onClick={() => remove(i)} className="ml-2 text-muted-foreground hover:text-destructive transition-colors"><Trash2 className="size-3.5" /></button>
+            <button onClick={() => onRemove(i)} className="ml-2 text-muted-foreground hover:text-destructive transition-colors"><Trash2 className="size-3.5" /></button>
           </div>
           <textarea value={p.description} onChange={(ev) => updateEntry(i, "description", ev.target.value)} rows={2} className="w-full resize-none rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Project description..." />
         </div>
@@ -318,9 +363,8 @@ function ProjectsEditor({ entries, onChange }: { entries: ProjectEntry[]; onChan
   )
 }
 
-function EducationEditor({ entries, onChange }: { entries: EducationEntry[]; onChange: (v: EducationEntry[]) => void }) {
+function EducationEditor({ entries, onChange, onRemove, deletingIndex }: { entries: EducationEntry[]; onChange: (v: EducationEntry[]) => void; onRemove: (i: number) => void; deletingIndex: number }) {
   const add = () => onChange([...entries, { school: "", degree: "", field: "", startDate: "", endDate: "" }])
-  const remove = (i: number) => onChange(entries.filter((_, idx) => idx !== i))
   const updateEntry = (i: number, key: keyof EducationEntry, val: string) => {
     const next = [...entries]
     next[i] = { ...next[i], [key]: val }
@@ -330,10 +374,10 @@ function EducationEditor({ entries, onChange }: { entries: EducationEntry[]; onC
   return (
     <div className="space-y-3">
       {entries.map((e, i) => (
-        <div key={i} className="rounded-lg border bg-background p-3 space-y-2">
+        <div key={i} className={`rounded-lg border bg-background p-3 space-y-2 ${i === deletingIndex ? "swipe-delete" : ""}`}>
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-foreground">#{i + 1}</span>
-            <button onClick={() => remove(i)} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 className="size-3.5" /></button>
+            <button onClick={() => onRemove(i)} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 className="size-3.5" /></button>
           </div>
           <div className="grid grid-cols-2 gap-2">
             <input value={e.school} onChange={(ev) => updateEntry(i, "school", ev.target.value)} className="rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder="School" />
@@ -363,9 +407,8 @@ function SaveBtn({ section, saving, onSave }: { section: keyof ResumeData; savin
   )
 }
 
-function CertificationsEditor({ entries, onChange }: { entries: CertificationEntry[]; onChange: (v: CertificationEntry[]) => void }) {
+function CertificationsEditor({ entries, onChange, onRemove, deletingIndex }: { entries: CertificationEntry[]; onChange: (v: CertificationEntry[]) => void; onRemove: (i: number) => void; deletingIndex: number }) {
   const add = () => onChange([...entries, { name: "", issuer: "", date: "" }])
-  const remove = (i: number) => onChange(entries.filter((_, idx) => idx !== i))
   const updateEntry = (i: number, key: keyof CertificationEntry, val: string) => {
     const next = [...entries]
     next[i] = { ...next[i], [key]: val }
@@ -375,7 +418,7 @@ function CertificationsEditor({ entries, onChange }: { entries: CertificationEnt
   return (
     <div className="space-y-3">
       {entries.map((c, i) => (
-        <div key={i} className="flex items-start gap-2 rounded-lg border bg-background p-3">
+        <div key={i} className={`flex items-start gap-2 rounded-lg border bg-background p-3 ${i === deletingIndex ? "swipe-delete" : ""}`}>
           <div className="flex-1 space-y-2">
             <input value={c.name} onChange={(ev) => updateEntry(i, "name", ev.target.value)} className="w-full rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Certification name" />
             <div className="grid grid-cols-2 gap-2">
@@ -383,7 +426,7 @@ function CertificationsEditor({ entries, onChange }: { entries: CertificationEnt
               <input value={c.date} onChange={(ev) => updateEntry(i, "date", ev.target.value)} className="rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Date" />
             </div>
           </div>
-          <button onClick={() => remove(i)} className="mt-1 text-muted-foreground hover:text-destructive transition-colors"><Trash2 className="size-3.5" /></button>
+          <button onClick={() => onRemove(i)} className="mt-1 text-muted-foreground hover:text-destructive transition-colors"><Trash2 className="size-3.5" /></button>
         </div>
       ))}
       <button onClick={add} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-xs text-muted-foreground hover:border-foreground/30 hover:text-foreground transition-colors">

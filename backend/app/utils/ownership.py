@@ -2,7 +2,6 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 import uuid
-from app.modules.users import models as user_models
 
 
 async def assert_ownership(

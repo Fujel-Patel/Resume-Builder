@@ -174,7 +174,7 @@ export async function duplicateResumeApi(id: string): Promise<ResumeResponse> {
   })
 }
 
-export async function exportResumePdf(id: string): Promise<void> {
+export async function exportResume(id: string): Promise<void> {
   const token = getAccessToken()
   const res = await fetch(`${API_BASE}/resumes/${id}/export`, {
     method: "POST",
@@ -183,10 +183,11 @@ export async function exportResumePdf(id: string): Promise<void> {
   })
   if (!res.ok) throw new Error("Export failed")
   const blob = await res.blob()
+  const ext = blob.type.includes("wordprocessingml") ? "docx" : "pdf"
   const url = URL.createObjectURL(blob)
   const a = document.createElement("a")
   a.href = url
-  a.download = `resume-${id.slice(0, 8)}.pdf`
+  a.download = `resume-${id.slice(0, 8)}.${ext}`
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)

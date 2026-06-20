@@ -18,6 +18,7 @@ from app.modules.resumes import service as resume_service
 from app.modules.users import models as user_models
 from app.types.common import success
 from app.utils.auth import get_current_user
+from app.utils.docx_injector import inject_into_docx
 from app.utils.pdf_parser import extract_text, extract_text_from_docx
 
 router = APIRouter()
@@ -292,29 +293,55 @@ async def optimize_resume(
         raise _ai_error(str(e))
 
     # Step 2: Optimize parsed resume for the job description
-    optimize_prompt = (
-        f"{prompts.OPTIMIZE_RESUME_PROMPT}\n"
-        f"Job Description: {job_description}\n"
-        f"Parsed Resume: {json.dumps(parsed)}\n"
-    )
-    try:
-        raw_optimized = await ai_service.ai_complete(
-            str(current_user.id), optimize_prompt, db, max_tokens=4096
+    if job_description.strip():
+        optimize_prompt = (
+            f"{prompts.OPTIMIZE_RESUME_PROMPT}\n"
+            f"Job Description: {job_description}\n"
+            f"Parsed Resume: {json.dumps(parsed)}\n"
         )
-        optimized = _extract_json(raw_optimized)
-    except json.JSONDecodeError:
-        original_path.unlink(missing_ok=True)
-        raise _ai_error("AI returned invalid JSON during resume optimization")
-    except Exception as e:
-        original_path.unlink(missing_ok=True)
-        raise _ai_error(str(e))
+        try:
+            raw_optimized = await ai_service.ai_complete(
+                str(current_user.id), optimize_prompt, db, max_tokens=4096
+            )
+            optimized = _extract_json(raw_optimized)
+        except json.JSONDecodeError:
+            original_path.unlink(missing_ok=True)
+            raise _ai_error("AI returned invalid JSON during resume optimization")
+        except Exception as e:
+            original_path.unlink(missing_ok=True)
+            raise _ai_error(str(e))
 
-    # Extract visual style from original file for "default" template rendering
+        # Validate optimized: no extra keys, protected fields unchanged
+        extra_keys = set(optimized.keys()) - set(parsed.keys())
+        if extra_keys:
+            optimized = parsed  # fallback to unoptimized
+
+        protected = {"education", "certifications", "custom_sections"}
+        for key in protected:
+            if json.dumps(optimized.get(key)) != json.dumps(parsed.get(key)):
+                optimized = parsed
+                break
+
+        if optimized is not parsed:
+            pp = parsed.get("personal") or {}
+            op = optimized.get("personal") or {}
+            for field in ("first_name", "last_name", "email", "mobile", "address"):
+                if op.get(field) != pp.get(field):
+                    optimized = parsed
+                    break
+    else:
+        optimized = parsed
+
+    # Inject optimized content into original template DOCX
+    injected_path = user_upload_dir / f"{file_uuid}_injected.docx"
+    inject_into_docx(original_path, parsed, optimized, injected_path)
+
+    # Extract visual style for HTML preview
     from app.utils.style_extractor import extract_and_generate_template
 
     template_style = extract_and_generate_template(original_path, file_type)
 
-    # Create resume record with original file reference
+    # Create resume record with original file + injected file references
     try:
         title = optimized.get("personal", {}).get("job_title", "") or "Optimized Resume"
         content = resume_schemas.ResumeContent(**optimized)
@@ -324,9 +351,9 @@ async def optimize_resume(
             content=content,
         )
         resume = await resume_service.create_resume(db, current_user.id, resume_in)
-        # Set original file + parsed data + template_style fields directly on the ORM instance
         setattr(resume, "original_file_path", str(original_path))
         setattr(resume, "original_file_type", file_type)
+        setattr(resume, "injected_file_path", str(injected_path))
         if resume.data is not None:
             setattr(resume.data, "parsed_data", parsed)
             setattr(resume.data, "template_style", template_style)
@@ -334,6 +361,7 @@ async def optimize_resume(
         await db.commit()
     except Exception as e:
         original_path.unlink(missing_ok=True)
+        injected_path.unlink(missing_ok=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"code": "RESUME_CREATE_ERROR", "message": f"Failed to save resume: {e}"},

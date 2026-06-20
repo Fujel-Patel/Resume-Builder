@@ -5,13 +5,23 @@ import { useRouter } from "next/navigation"
 import { DashboardShell } from "@/components/layout/dashboard-shell"
 import { Button } from "@/components/ui/button"
 import { EnhancedCard } from "@/components/ui/enhanced-card"
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog"
 import { ResumeListItem } from "@/features/resume/resume-list-item"
-import { Plus, Search, Edit3, Copy, Download, Trash2, RefreshCw } from "lucide-react"
+import { Plus, Search, Edit3, Copy, Download, Trash2, RefreshCw, Loader2 } from "lucide-react"
 import {
   listResumesApi,
   deleteResumeApi,
   duplicateResumeApi,
-  exportResumePdf,
+  exportResume,
   type ResumeResponse,
 } from "@/lib/api/resumes"
 import { api } from "@/lib/api/client"
@@ -63,6 +73,10 @@ export function ResumePage() {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<"date" | "name" | "score">("date")
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
 
   const fetchData = useCallback(() => {
     setLoading(true)
@@ -108,13 +122,30 @@ export function ResumePage() {
     return result
   }, [resumes, search, statusFilter, sortBy])
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this resume?")) return
+  const handleDelete = (id: string) => {
+    setDeleteTarget(id)
+    setDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
     try {
-      await deleteResumeApi(id)
-      setResumes((prev) => prev.filter((r) => r.id !== id))
+      await deleteResumeApi(deleteTarget)
+      setDeletingIds((prev) => new Set(prev).add(deleteTarget))
+      await new Promise((r) => setTimeout(r, 400))
+      setResumes((prev) => prev.filter((r) => r.id !== deleteTarget))
     } catch {
       alert("Failed to delete resume")
+    } finally {
+      setDeleting(false)
+      setDeleteDialogOpen(false)
+      setDeleteTarget(null)
+      setDeletingIds((prev) => {
+        const next = new Set(prev)
+        next.delete(deleteTarget)
+        return next
+      })
     }
   }
 
@@ -129,7 +160,7 @@ export function ResumePage() {
 
   const handleDownload = async (id: string) => {
     try {
-      await exportResumePdf(id)
+      await exportResume(id)
     } catch {
       alert("Failed to export resume")
     }
@@ -213,7 +244,7 @@ export function ResumePage() {
         {filtered.length > 0 ? (
           <div className="space-y-2">
             {filtered.map((r) => (
-              <EnhancedCard key={r.id} hover className="flex items-center gap-4">
+              <EnhancedCard key={r.id} hover className={`flex items-center gap-4 ${deletingIds.has(r.id) ? "swipe-delete" : ""}`}>
                 <ResumeListItem
                   resume={r}
                   actions={
@@ -272,6 +303,23 @@ export function ResumePage() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Resume</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this resume? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={confirmDelete} disabled={deleting}>
+              {deleting ? <><Loader2 className="size-4 animate-spin" /> Deleting...</> : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardShell>
   )
 }

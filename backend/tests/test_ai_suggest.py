@@ -155,10 +155,11 @@ class TestGenerateResume:
 
 
 class TestOptimizeResume:
+    @patch("app.modules.ai.router.inject_into_docx")
     @patch("app.utils.style_extractor.extract_and_generate_template")
     @patch("app.modules.ai.service.ai_complete")
     @patch("app.modules.ai.router.extract_text")
-    def test_pdf(self, mock_extract, mock_ai, mock_style, client, mock_db):
+    def test_pdf(self, mock_extract, mock_ai, mock_style, mock_inject, client, mock_db):
         mock_extract.return_value = "John Doe - Experienced Python developer"
         mock_style.return_value = None
         mock_ai.side_effect = [
@@ -182,10 +183,11 @@ class TestOptimizeResume:
         assert "optimized" in data
         assert data["parsed"]["personal"]["first_name"] == "John"
 
+    @patch("app.modules.ai.router.inject_into_docx")
     @patch("app.utils.style_extractor.extract_and_generate_template")
     @patch("app.modules.ai.service.ai_complete")
     @patch("app.modules.ai.router.extract_text_from_docx")
-    def test_docx(self, mock_extract, mock_ai, mock_style, client, mock_db):
+    def test_docx(self, mock_extract, mock_ai, mock_style, mock_inject, client, mock_db):
         mock_extract.return_value = "Jane Doe - Developer"
         mock_style.return_value = None
         mock_ai.side_effect = [

@@ -15,7 +15,7 @@ import {
   X, Eye, RefreshCw, AlertCircle
 } from "lucide-react"
 import { optimizeResumeApi, type BackendResumeContent } from "@/lib/api/ai-suggest"
-import { updateResumeApi, exportResumePdf } from "@/lib/api/resumes"
+import { updateResumeApi } from "@/lib/api/resumes"
 import { api } from "@/lib/api/client"
 import type { ResumeTemplate, ResumeData } from "@/features/resume/types"
 
@@ -613,8 +613,13 @@ export function AiGeneratorPage() {
 
                   <div className="lg:col-span-2">
                     <div className="overflow-hidden rounded-lg border shadow-sm">
-                      <div className="bg-muted px-4 py-2 border-b">
+                      <div className="bg-muted px-4 py-2 border-b flex items-center justify-between">
                         <p className="text-xs font-medium text-muted-foreground">Preview — {TEMPLATES.find((t) => t.id === template)?.label}</p>
+                        {template === "default" && (
+                          <span className="rounded-md bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-[10px] text-amber-600 font-medium">
+                            Preview is approximate
+                          </span>
+                        )}
                       </div>
                       <div className="bg-[#0A0A0A] p-4" style={{ minHeight: 400 }}>
                         <div className="mx-auto max-w-[210mm] scale-[0.7] origin-top">

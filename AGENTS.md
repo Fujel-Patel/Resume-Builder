@@ -80,3 +80,27 @@ No Sentry, Helmet, NoSQL injection, or body-parsing middleware exist in code.
 - `SECRET_KEY` must be set in `backend/.env` — no default, app crashes without it.
 - JWT uses HS256, access=15min, refresh=7d (HttpOnly/Secure/SameSite=Strict cookie, rotated on refresh).
 - Refresh token SHA-256 hashed in DB.
+
+---
+
+## Session history
+
+### Template builder refactor (Jun 20 — same session continued)
+
+**Problem:** The pdf2docx → XML injection pipeline produced weird fonts, misaligned logos, and broken word splits. pdf2docx output was not a suitable canvas for text replacement (approximate layout, arbitrary run splits).
+
+**Solution:** Scrapped pdf2docx entirely. New approach: PDF → extract text → AI optimize → build fresh DOCX from reference template programmatically.
+
+| File | Role |
+|------|------|
+| `backend/app/utils/template_builder.py` | **New** — `build_base_nova_template()` + `make_resume_docx()`. Programmatic Base-Nova DOCX builder using python-docx. Karla font, brand color `#00FFF0`, section underlines, proper bullet lists, inline role+duration paragraphs. |
+| `backend/app/utils/docx_injector.py` | **Rewritten** — was 246 lines of XML-injection + pdf2docx. Now a 24-line wrapper calling `make_resume_docx()`. All fragile logic (Jaccard matching, proportional run splitting, `<w:t>` manipulation) removed. |
+| `backend/pyproject.toml` | Removed `pdf2docx` dependency. `python-docx` + `PyMuPDF` (fitz) remain. |
+
+**Notable decisions:**
+- Template built programmatically (not manually crafted `.docx` file) → version-controlled, maintainable
+- `inject_into_docx()` signature preserved → no router changes needed
+- Both PDF and DOCX uploads produce uniformly styled Base-Nova output
+- `style_extractor.py` / Jinja2 preview left untouched (separate concern)
+
+**Tests:** 43/43 passing. Run with `backend/.venv/bin/pytest backend`. `ruff check --fix` clean.

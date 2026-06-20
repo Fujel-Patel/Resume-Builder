@@ -3,7 +3,6 @@ import { Space_Grotesk, DM_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { ReduxProvider } from "@/providers/redux-provider";
-import { Toaster } from "@/components/ui/sonner";
 import { UnauthorizedOverlay } from "@/components/auth/unauthorized-overlay";
 
 const spaceGrotesk = Space_Grotesk({
@@ -32,7 +31,6 @@ export default function RootLayout({
         <ReduxProvider>
           <ThemeProvider>
             {children}
-            <Toaster />
             <UnauthorizedOverlay />
           </ThemeProvider>
         </ReduxProvider>

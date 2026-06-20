@@ -9,7 +9,6 @@ import { FileUpload } from "@/components/ui/file-upload"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ScoreGauge } from "@/features/resume/score-gauge"
-import { toast } from "sonner"
 import {
   Upload,
   FileText,
@@ -113,11 +112,9 @@ export function AtsScorePage() {
 
   const handleAnalyze = async () => {
     if (activeTab === "upload" && !file) {
-      toast.error("Upload a resume file first")
       return
     }
     if (activeTab === "paste" && !resumeText.trim()) {
-      toast.error("Paste your resume text first")
       return
     }
 
@@ -133,7 +130,6 @@ export function AtsScorePage() {
         result = await scoreResumeApi(resumeText, jobDesc || undefined)
       }
       setScanResult(result)
-      toast.success("ATS analysis complete")
       fetchHistory()
     } catch (err) {
       const msg = err instanceof Error ? err.message : "ATS scoring failed"
@@ -149,8 +145,7 @@ export function AtsScorePage() {
     try {
       const result = await getScanApi(id)
       setScanResult(result)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to load scan")
+    } catch {
     } finally {
       setAnalyzing(false)
     }

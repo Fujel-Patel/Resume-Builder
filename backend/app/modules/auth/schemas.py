@@ -1,5 +1,5 @@
 import re
-from datetime import datetime, UTC
+from datetime import datetime
 
 from typing import Optional
 
@@ -7,7 +7,6 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from .exceptions import WeakPasswordError, PasswordTooLongException
 
 from uuid import UUID
-from typing import Optional
 
 
 class UserBase(BaseModel):
