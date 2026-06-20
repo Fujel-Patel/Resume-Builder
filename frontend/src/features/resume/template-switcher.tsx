@@ -54,6 +54,7 @@ const SAMPLE_DATA: ResumeData = {
     { name: "OpenCV Project", description: "Open source CV parsing library with 2K+ stars." },
   ],
   certifications: [],
+  customSections: [],
 }
 
 const templates: { id: ResumeTemplate; label: string; description: string; tag?: string }[] = [

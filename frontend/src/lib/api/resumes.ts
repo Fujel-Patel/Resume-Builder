@@ -69,6 +69,10 @@ function toBackendAll(data: ResumeData): JsonDict {
       issuer: c.issuer,
       year: c.date,
     })),
+    custom_sections: data.customSections.map((s) => ({
+      label: s.label,
+      content: s.content,
+    })),
   }
 }
 
@@ -130,6 +134,13 @@ function toBackendSection(data: ResumeData, section: keyof ResumeData): JsonDict
           name: c.name,
           issuer: c.issuer,
           year: c.date,
+        })),
+      }
+    case "customSections":
+      return {
+        custom_sections: data.customSections.map((s) => ({
+          label: s.label,
+          content: s.content,
         })),
       }
   }
@@ -251,6 +262,10 @@ export function toFrontendResumeData(r: ResumeResponse): ResumeData {
       name: str(c.name),
       issuer: str(c.issuer),
       date: str(c.year),
+    })),
+    customSections: arr(d.custom_sections).map((s: JsonDict) => ({
+      label: str(s.label),
+      content: str(s.content),
     })),
   }
 }

@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from "@reduxjs/toolkit"
-import type { ResumeData, ResumeTemplate, ExperienceEntry, EducationEntry, ProjectEntry, CertificationEntry } from "@/features/resume/types"
+import type { ResumeData, ResumeTemplate, ExperienceEntry, EducationEntry, ProjectEntry, CertificationEntry, CustomSection } from "@/features/resume/types"
 
 type ResumeState = {
   data: ResumeData
@@ -17,6 +17,7 @@ const defaultResume: ResumeData = {
   education: [],
   projects: [],
   certifications: [],
+  customSections: [],
 }
 
 const initialState: ResumeState = {
@@ -83,6 +84,15 @@ const resumeSlice = createSlice({
     removeCertification(state, action: PayloadAction<number>) {
       state.data.certifications.splice(action.payload, 1)
     },
+    addCustomSection(state, action: PayloadAction<CustomSection>) {
+      state.data.customSections.push(action.payload)
+    },
+    updateCustomSection(state, action: PayloadAction<{ index: number; section: CustomSection }>) {
+      state.data.customSections[action.payload.index] = action.payload.section
+    },
+    removeCustomSection(state, action: PayloadAction<number>) {
+      state.data.customSections.splice(action.payload, 1)
+    },
     setTemplate(state, action: PayloadAction<ResumeTemplate>) {
       state.template = action.payload
     },
@@ -124,6 +134,9 @@ export const {
   addCertification,
   updateCertification,
   removeCertification,
+  addCustomSection,
+  updateCustomSection,
+  removeCustomSection,
   setTemplate,
   setData,
   saveResume,

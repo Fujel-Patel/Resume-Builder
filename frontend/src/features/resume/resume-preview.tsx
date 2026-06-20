@@ -126,6 +126,23 @@ function CertificationsBlock({ certifications }: { certifications: ResumeData["c
   )
 }
 
+function CustomSectionsBlock({ sections, labelComponent }: { sections: NonNullable<ResumeData["customSections"]>; labelComponent?: (label: string) => React.ReactNode }) {
+  return (
+    <>
+      {sections.map((s, i) => (
+        <div key={i} className={i > 0 ? "mt-4" : ""}>
+          {labelComponent ? labelComponent(s.label) : (
+            <div className="border-b border-gray-300 pb-0.5 mb-1.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-gray-700">{s.label}</span>
+            </div>
+          )}
+          <p className="text-[11px] leading-relaxed text-gray-700 whitespace-pre-line">{s.content}</p>
+        </div>
+      ))}
+    </>
+  )
+}
+
 function SkillsSection({ data }: { data: ResumeData }) {
   if (data.skillGroups && Object.keys(data.skillGroups).length > 0) {
     return <SkillsGrouped skillGroups={data.skillGroups} />
@@ -271,6 +288,10 @@ function ClassicTemplate({ data }: { data: ResumeData }) {
             <CertificationsBlock certifications={data.certifications} />
           </div>
         )}
+
+        {data.customSections && data.customSections.length > 0 && (
+          <CustomSectionsBlock sections={data.customSections} />
+        )}
       </div>
     </div>
   )
@@ -389,6 +410,15 @@ function ModernTemplate({ data }: { data: ResumeData }) {
             ))}
           </div>
         )}
+
+        {data.customSections && data.customSections.length > 0 && (
+          <CustomSectionsBlock
+            sections={data.customSections}
+            labelComponent={(label) => (
+              <h2 className="text-xs font-bold uppercase tracking-wider text-[#1a3a5c] border-b border-[#1a3a5c] pb-1 mb-2">{label}</h2>
+            )}
+          />
+        )}
       </div>
     </div>
   )
@@ -450,6 +480,15 @@ function MinimalTemplate({ data }: { data: ResumeData }) {
             <p className="text-[9px] font-bold uppercase tracking-[2px] text-gray-400 mb-2">Certifications</p>
             <CertificationsBlock certifications={data.certifications} />
           </div>
+        )}
+
+        {data.customSections && data.customSections.length > 0 && (
+          <CustomSectionsBlock
+            sections={data.customSections}
+            labelComponent={(label) => (
+              <p className="text-[9px] font-bold uppercase tracking-[2px] text-gray-400 mb-2">{label}</p>
+            )}
+          />
         )}
       </div>
     </div>
@@ -579,6 +618,15 @@ function CreativeTemplate({ data }: { data: ResumeData }) {
               </div>
             ))}
           </div>
+        )}
+
+        {data.customSections && data.customSections.length > 0 && (
+          <CustomSectionsBlock
+            sections={data.customSections}
+            labelComponent={(label) => (
+              <h2 className="text-[11px] font-bold text-[#2d2d3f] border-b-2 border-[#2d2d3f] pb-1 mb-2 uppercase tracking-wider">{label}</h2>
+            )}
+          />
         )}
       </div>
     </div>

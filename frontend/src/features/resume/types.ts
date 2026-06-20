@@ -21,6 +21,12 @@ export type ResumeData = {
   education: EducationEntry[]
   projects: ProjectEntry[]
   certifications: CertificationEntry[]
+  customSections: CustomSection[]
+}
+
+export type CustomSection = {
+  label: string
+  content: string
 }
 
 export type ExperienceEntry = {

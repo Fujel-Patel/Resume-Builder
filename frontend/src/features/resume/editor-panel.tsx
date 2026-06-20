@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { FormSection } from "@/features/resume/form-section"
 import { TagInput } from "@/features/resume/tag-input"
 import { Button } from "@/components/ui/button"
@@ -22,7 +22,7 @@ import {
   suggestProjectsApi,
   suggestJobTitleApi,
 } from "@/lib/api/ai-suggest"
-import type { ResumeData, ExperienceEntry, EducationEntry, ProjectEntry, CertificationEntry } from "@/features/resume/types"
+import type { ResumeData, ExperienceEntry, EducationEntry, ProjectEntry, CertificationEntry, CustomSection } from "@/features/resume/types"
 
 type EditorPanelProps = {
   data: ResumeData
@@ -35,8 +35,16 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
   const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({})
   const [pendingDelete, setPendingDelete] = useState<{ section: string; index: number } | null>(null)
   const [deleting, setDeleting] = useState(false)
-  const [showJobDesc, setShowJobDesc] = useState(false)
-  const [jobDescription, setJobDescription] = useState("")
+  const [showJobDesc, setShowJobDesc] = useState(() => localStorage.getItem("resume_jd_show") === "true")
+  const [jobDescription, setJobDescription] = useState(() => localStorage.getItem("resume_jd_text") || "")
+
+  useEffect(() => {
+    localStorage.setItem("resume_jd_show", String(showJobDesc))
+  }, [showJobDesc])
+
+  useEffect(() => {
+    localStorage.setItem("resume_jd_text", jobDescription)
+  }, [jobDescription])
 
   const confirmDelete = async () => {
     if (!pendingDelete) return
@@ -51,6 +59,8 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
       onChange({ ...data, education: data.education.filter((_, i) => i !== index) })
     } else if (section === "certifications") {
       onChange({ ...data, certifications: data.certifications.filter((_, i) => i !== index) })
+    } else if (section === "customSections") {
+      onChange({ ...data, customSections: data.customSections.filter((_, i) => i !== index) })
     }
     setPendingDelete(null)
     setDeleting(false)
@@ -341,6 +351,18 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
         />
       </FormSection>
 
+      <FormSection
+        title="Custom Sections"
+        actions={<SaveBtn section="customSections" saving={saving} onSave={onSave} />}
+      >
+        <CustomSectionsEditor
+          entries={data.customSections}
+          onChange={(v) => update("customSections", v)}
+          onRemove={(i) => setPendingDelete({ section: "customSections", index: i })}
+          deletingIndex={pendingDelete?.section === "customSections" ? pendingDelete.index : -1}
+        />
+      </FormSection>
+
       <AlertDialog
         open={pendingDelete !== null}
         onOpenChange={(open) => { if (!open) setPendingDelete(null) }}
@@ -465,6 +487,33 @@ function EducationEditor({ entries, onChange, onRemove, deletingIndex }: { entri
       ))}
       <button onClick={add} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-xs text-muted-foreground hover:border-foreground/30 hover:text-foreground transition-colors">
         <Plus className="size-3.5" /> Add Education
+      </button>
+    </div>
+  )
+}
+
+function CustomSectionsEditor({ entries, onChange, onRemove, deletingIndex }: { entries: CustomSection[]; onChange: (v: CustomSection[]) => void; onRemove: (i: number) => void; deletingIndex: number }) {
+  const add = () => onChange([...entries, { label: "", content: "" }])
+  const updateEntry = (i: number, key: keyof CustomSection, val: string) => {
+    const next = [...entries]
+    next[i] = { ...next[i], [key]: val }
+    onChange(next)
+  }
+
+  return (
+    <div className="space-y-3">
+      {entries.map((s, i) => (
+        <div key={i} className={`rounded-lg border bg-background p-3 space-y-2 ${i === deletingIndex ? "swipe-delete" : ""}`}>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-foreground">#{i + 1}</span>
+            <button onClick={() => onRemove(i)} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 className="size-3.5" /></button>
+          </div>
+          <input value={s.label} onChange={(ev) => updateEntry(i, "label", ev.target.value)} className="w-full rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Section label (e.g. Languages, Awards)" />
+          <textarea value={s.content} onChange={(ev) => updateEntry(i, "content", ev.target.value)} className="w-full rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none" placeholder="Content (one per line)" rows={3} />
+        </div>
+      ))}
+      <button onClick={add} className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border py-2 text-xs text-muted-foreground hover:border-foreground/30 hover:text-foreground transition-colors">
+        <Plus className="size-3.5" /> Add Custom Section
       </button>
     </div>
   )

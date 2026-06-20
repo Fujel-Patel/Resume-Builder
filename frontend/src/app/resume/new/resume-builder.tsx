@@ -30,6 +30,7 @@ const defaultResume: ResumeData = {
   certifications: [
     { name: "UX Design Professional Certificate", issuer: "Google", date: "2021" },
   ],
+  customSections: [],
 }
 
 export function ResumeBuilder() {
@@ -74,6 +75,7 @@ export function ResumeBuilder() {
             education: saved.education.length > 0 ? saved.education : defaultResume.education,
             projects: saved.projects.length > 0 ? saved.projects : defaultResume.projects,
             certifications: saved.certifications.length > 0 ? saved.certifications : defaultResume.certifications,
+            customSections: saved.customSections.length > 0 ? saved.customSections : defaultResume.customSections,
           })
           setResumeId(r.id)
         })

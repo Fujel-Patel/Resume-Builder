@@ -90,6 +90,7 @@ function toFrontend(d: BackendResumeContent | null): ResumeData | null {
       issuer: c.issuer || "",
       date: c.year || "",
     })),
+    customSections: [],
   }
 }
 
