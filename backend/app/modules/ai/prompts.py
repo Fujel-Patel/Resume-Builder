@@ -44,20 +44,29 @@ If a category has no skills, omit it from the JSON.
 
 # Experience improvement prompt
 EXPERIENCE_PROMPT = """
-Improve these experience bullet points for the given job role, company,
-and duration. Use strong action verbs, add quantifiable impact where logical,
-and align with the job description keywords. Each bullet must be concise and
-impactful — maximum 1-2 lines per bullet.
-Return ONLY a JSON array of improved bullet strings.
+Polish these experience bullet points. Keep the original meaning and facts
+intact — do not invent new responsibilities or exaggerate. Use stronger
+action verbs and add quantifiable impact only where the original implies it.
+
+If a Job Description is provided, lightly align language with its keywords
+and requirements without changing the core content. If no Job Description
+is provided, just improve clarity and impact of the existing text.
+
+Each bullet: concise, 1-2 lines max. Return ONLY a JSON array of strings.
 """
 
 # Projects improvement prompt
 PROJECTS_PROMPT = """
-Improve these project descriptions for the given project name and tech stack.
-Use strong action verbs, highlight impact and results, and align with the
-job description keywords. Each description must be concise — maximum 1-2 lines
-per project. Return ONLY a JSON array of strings, one per project description.
-Example: ["Improved description 1", "Improved description 2"]
+Polish these project descriptions. Keep the original scope and facts intact —
+do not invent new features or exaggerate. Use stronger action verbs and
+highlight real impact and results.
+
+If a Job Description is provided, lightly align language with its keywords
+and requirements without changing the core description. If no Job Description
+is provided, just improve clarity and impact of the existing text.
+
+Each description: concise, 1-2 lines max. Return ONLY a JSON array of strings.
+Example: ["Polished description 1", "Polished description 2"]
 """
 
 # Resume parse prompt — extract structured data from raw resume text
