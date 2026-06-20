@@ -5,27 +5,41 @@ These prompts are intended to be passed directly to the LLM provider services.
 
 # Professional summary prompt
 SUMMARY_PROMPT = """
-You are a professional resume writer. Given the user's job title, skills,
-experience, and target job description, write a compelling professional
-summary that is 3-4 lines maximum. Keep it extremely concise. If an existing
-summary is provided, improve upon it rather than writing from scratch.
-Be specific, use active voice, and include relevant keywords.
+You are a professional resume writer. Generate or improve a professional
+summary (3-4 lines max). Keep it extremely concise, use active voice.
+
+If a Job Description is provided (non-empty), extract key skills, requirements,
+and keywords from it. Then match those with the user's actual experience to
+write a tailored summary that positions the candidate as an ideal fit.
+Reference specific technologies and responsibilities from the JD that align
+with what the user has actually done.
+
+If no Job Description is provided (empty), improve the existing summary using
+the user's job title and experience. Focus on making it more impactful without
+pulling in external context.
+
+If an existing summary is given, improve upon it rather than writing from scratch.
 Return ONLY the summary text, no extra commentary.
 """
 
 # Skills suggestion prompt
 SKILLS_PROMPT = """
-Given this job description and the user's current skills (a flat list),
-categorize every skill into one of these groups and return them grouped.
+You are a resume skills expert. Given a job description and the user's
+current skills, do the following:
 
-Use these exact category keys: "frontend", "backend", "database", "devops",
-"ai_tools", "design", "soft_skills", "other".
+1. Extract EVERY technical skill, tool, language, and technology mentioned
+   in the job description (languages, frameworks, libraries, tools, platforms).
+2. Keep ALL of the user's existing skills (never remove any).
+3. Combine both sets, remove duplicates, and categorize into these groups.
+
+Use these exact category keys:
+"languages", "frontend", "backend", "database", "devops", "ai_tools", "other"
 
 Return ONLY a JSON object with category keys and array values:
-{"frontend": ["React", "Next.js", "Tailwind CSS"], "backend": ["FastAPI", "Node.js"], ...}
+{"languages": ["Python", "JavaScript", "TypeScript"], "frontend": ["React", "Next.js", "Tailwind CSS"], ...}
 
-Categorize each skill into the most appropriate group. Do NOT flatten — preserve
-the grouping structure. If a category has no skills, omit it.
+Every skill must go into exactly one group. Include ALL skills — do not skip any.
+If a category has no skills, omit it from the JSON.
 """
 
 # Experience improvement prompt
@@ -89,6 +103,16 @@ RULES:
 - Use keywords from job description naturally
 - Keep language professional and concise
 - Skills: add relevant ones from JD, never remove existing ones
+"""
+
+# Job title suggestion prompt
+JOB_TITLE_PROMPT = """
+You are a resume optimization expert. Based on the job description below,
+suggest ONE concise job title that best matches the target role.
+Return ONLY the exact job title string — no dashes, no description,
+no tech stack, no company name, no extra words, no punctuation after the title.
+Example correct output: "Python Full-Stack Developer Intern"
+Example wrong output: "Python Full-Stack Developer Intern – React, FastAPI & VPS Deployment"
 """
 
 # ATS scoring prompt

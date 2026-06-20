@@ -4,7 +4,7 @@ import { useState, useCallback } from "react"
 import { FormSection } from "@/features/resume/form-section"
 import { TagInput } from "@/features/resume/tag-input"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash2, Save, Loader2 } from "lucide-react"
+import { Plus, Trash2, Save, Loader2, Sparkles } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -20,6 +20,7 @@ import {
   suggestSkillsApi,
   suggestExperienceApi,
   suggestProjectsApi,
+  suggestJobTitleApi,
 } from "@/lib/api/ai-suggest"
 import type { ResumeData, ExperienceEntry, EducationEntry, ProjectEntry, CertificationEntry } from "@/features/resume/types"
 
@@ -34,6 +35,8 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
   const [aiLoading, setAiLoading] = useState<Record<string, boolean>>({})
   const [pendingDelete, setPendingDelete] = useState<{ section: string; index: number } | null>(null)
   const [deleting, setDeleting] = useState(false)
+  const [showJobDesc, setShowJobDesc] = useState(false)
+  const [jobDescription, setJobDescription] = useState("")
 
   const confirmDelete = async () => {
     if (!pendingDelete) return
@@ -77,17 +80,17 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
         job_title: data.personal.title || "",
         skills: data.skills.length > 0 ? data.skills : [""],
         experience: experience.length > 0 ? experience : [""],
-        job_description: "",
+        job_description: jobDescription || "",
         current_summary: data.summary || null,
       })
       update("summary", result.summary)
     })
-  }, [data, withAILoading, update])
+  }, [data, jobDescription, withAILoading, update])
 
   const handleSuggestSkills = useCallback(async () => {
     await withAILoading("skills", async () => {
       const result = await suggestSkillsApi({
-        job_description: "",
+        job_description: jobDescription || "",
         current_skills: data.skills.length > 0
           ? { other: data.skills }
           : { other: [] },
@@ -96,7 +99,7 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
       update("skills", allSkills)
       update("skillGroups", result.skills)
     })
-  }, [data, withAILoading, update])
+  }, [data, jobDescription, withAILoading, update])
 
   const handleImproveExperience = useCallback(async () => {
     await withAILoading("experience", async () => {
@@ -109,6 +112,7 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
         experience_bullets: bullets,
         job_role: first.role || "",
         company: first.company || null,
+        job_description: jobDescription || null,
       })
       if (result.bullets.length === data.experience.length) {
         const next = data.experience.map((e, i) => ({ ...e, description: result.bullets[i] }))
@@ -121,7 +125,7 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
         update("experience", next)
       }
     })
-  }, [data, withAILoading, update])
+  }, [data, jobDescription, withAILoading, update])
 
   const handleImproveProjects = useCallback(async () => {
     await withAILoading("projects", async () => {
@@ -135,6 +139,7 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
         project_descriptions: descriptions,
         project_name: first.name || null,
         tech_stack: techNames ?? null,
+        job_description: jobDescription || null,
       })
       if (result.projects.length === data.projects.length) {
         const next = data.projects.map((p, i) => ({ ...p, description: result.projects[i] }))
@@ -147,17 +152,74 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
         update("projects", next)
       }
     })
-  }, [data, withAILoading, update])
+  }, [data, jobDescription, withAILoading, update])
+
+  const handleSuggestJobTitle = useCallback(async () => {
+    if (!jobDescription.trim()) return
+    await withAILoading("jobTitle", async () => {
+      const result = await suggestJobTitleApi({
+        job_description: jobDescription,
+        current_title: data.personal.title || null,
+      })
+      update("personal", { ...data.personal, title: result.title })
+    })
+  }, [data, jobDescription, withAILoading, update])
 
   return (
     <div className="space-y-3">
+      <div className="rounded-card border bg-card">
+        <label className="flex cursor-pointer select-none items-center gap-2 px-4 py-3">
+          <input
+            type="checkbox"
+            checked={showJobDesc}
+            onChange={(e) => setShowJobDesc(e.target.checked)}
+            className="rounded border-border text-brand focus:ring-brand/30"
+          />
+          <span className="text-sm font-medium text-foreground">
+            Use Job Description <span className="text-xs text-muted-foreground">(for AI optimization)</span>
+          </span>
+        </label>
+        {showJobDesc && (
+          <div className="px-4 pb-4">
+            <textarea
+              value={jobDescription}
+              onChange={(e) => setJobDescription(e.target.value)}
+              rows={4}
+              className="w-full resize-none rounded-lg border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="Paste the job description here to get AI suggestions tailored to the role..."
+            />
+          </div>
+        )}
+      </div>
+
       <FormSection
         title="Personal"
         defaultOpen
         actions={<SaveBtn section="personal" saving={saving} onSave={onSave} />}
       >
         <InputField label="Full Name" value={data.personal.name} onChange={(v) => update("personal", { ...data.personal, name: v })} placeholder="John Doe" />
-        <InputField label="Job Title" value={data.personal.title} onChange={(v) => update("personal", { ...data.personal, title: v })} placeholder="Senior Product Designer" />
+        <div>
+          <label className="mb-1 block text-xs font-medium text-foreground">Job Title</label>
+          <div className="flex gap-1.5">
+            <input
+              value={data.personal.title}
+              onChange={(e) => update("personal", { ...data.personal, title: e.target.value })}
+              className="flex-1 rounded-lg border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              placeholder="Senior Product Designer"
+            />
+            {showJobDesc && jobDescription.trim() && (
+              <button
+                type="button"
+                onClick={handleSuggestJobTitle}
+                disabled={!!aiLoading.jobTitle}
+                className="flex shrink-0 items-center justify-center rounded-lg border border-border px-2.5 text-muted-foreground hover:text-brand hover:border-brand/30 transition-colors disabled:opacity-50"
+                aria-label="AI suggest job title"
+              >
+                {aiLoading.jobTitle ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+              </button>
+            )}
+          </div>
+        </div>
         <InputField label="Email" value={data.personal.email} onChange={(v) => update("personal", { ...data.personal, email: v })} placeholder="john@example.com" />
         <InputField label="Phone" value={data.personal.phone} onChange={(v) => update("personal", { ...data.personal, phone: v })} placeholder="+1 (555) 123-4567" />
         <InputField label="Location" value={data.personal.location} onChange={(v) => update("personal", { ...data.personal, location: v })} placeholder="San Francisco, CA" />
@@ -205,12 +267,23 @@ export function EditorPanel({ data, onChange, onSave, saving }: EditorPanelProps
         {data.skillGroups && Object.keys(data.skillGroups).length > 0 && (
           <div className="space-y-1.5 rounded-lg border bg-muted/30 p-3">
             <p className="text-xs font-medium text-muted-foreground">Grouped Preview</p>
-            {Object.entries(data.skillGroups).map(([group, skills]) => (
-              <div key={group} className="text-xs">
-                <span className="font-semibold text-foreground">{group.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}: </span>
-                <span className="text-muted-foreground">{skills.join(", ")}</span>
-              </div>
-            ))}
+            {Object.entries(data.skillGroups).map(([group, skills]) => {
+              const label: Record<string, string> = {
+                languages: "Languages",
+                frontend: "Frontend",
+                backend: "Backend",
+                database: "Database",
+                devops: "DevOps & Tools",
+                ai_tools: "AI Tools",
+                other: "Other",
+              }
+              return (
+                <div key={group} className="text-xs">
+                  <span className="font-semibold text-foreground">{label[group] || group.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}: </span>
+                  <span className="text-muted-foreground">{skills.join(", ")}</span>
+                </div>
+              )
+            })}
           </div>
         )}
         <p className="text-xs text-muted-foreground">Edit skills above, or use AI to organize into groups</p>

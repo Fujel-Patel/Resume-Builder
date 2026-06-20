@@ -131,6 +131,21 @@ export type OptimizeResumeResponse = {
   resume_id: string
 }
 
+export type SuggestJobTitleRequest = {
+  job_description: string
+  current_title?: string | null
+}
+
+export type SuggestJobTitleResponse = {
+  title: string
+}
+
+export async function suggestJobTitleApi(
+  data: SuggestJobTitleRequest,
+): Promise<SuggestJobTitleResponse> {
+  return api.post<SuggestJobTitleResponse>("/ai/suggest/job-title", data)
+}
+
 export async function optimizeResumeApi(
   file: File,
   jobDescription: string,

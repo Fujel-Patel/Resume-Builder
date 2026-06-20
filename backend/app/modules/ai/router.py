@@ -58,6 +58,15 @@ def _ai_error(msg: str) -> HTTPException:
     )
 
 
+async def _safe_ai_complete(user_id: str, prompt: str, db: AsyncSession, max_tokens: int = 1024) -> str:
+    try:
+        return await ai_service.ai_complete(user_id, prompt, db, max_tokens)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise _ai_error(str(e))
+
+
 # ---------------------------------------------------------------------------
 # POST /ai/suggest/summary
 # ---------------------------------------------------------------------------
@@ -73,15 +82,15 @@ async def suggest_summary(
         f"Job Title: {req.job_title}",
         f"Skills: {', '.join(req.skills)}",
         f"Experience: {', '.join(req.experience)}",
-        f"Job Description: {req.job_description}",
     ]
+    if req.job_description:
+        parts.append(f"Job Description: {req.job_description}")
+    else:
+        parts.append("Job Description: (not provided)")
     if req.current_summary:
         parts.append(f"Current Summary: {req.current_summary}")
     prompt = "\n".join(parts)
-    try:
-        result = await ai_service.ai_complete(str(current_user.id), prompt, db)
-    except Exception as e:
-        raise _ai_error(str(e))
+    result = await _safe_ai_complete(str(current_user.id), prompt, db)
     return success({"summary": result})
 
 
@@ -102,14 +111,15 @@ async def suggest_skills(
         f"{prompts.SKILLS_PROMPT}\n"
         f"Job Description: {req.job_description}\n"
         f"Current Skills:\n{skills_text}\n"
+        "IMPORTANT: Extract ALL skills mentioned in the job description above "
+        "and add them to the appropriate groups. Keep all current skills. "
+        "Do NOT skip any skill from the JD.\n"
     )
+    raw = await _safe_ai_complete(str(current_user.id), prompt, db)
     try:
-        raw = await ai_service.ai_complete(str(current_user.id), prompt, db)
         skills = _extract_json(raw)
     except json.JSONDecodeError:
         raise _ai_error("AI returned invalid JSON for skills list")
-    except Exception as e:
-        raise _ai_error(str(e))
     return success({"skills": skills})
 
 
@@ -135,15 +145,13 @@ async def improve_experience(
         parts.append(f"Job Description: {req.job_description}")
     parts.append(f"Bullets: {json.dumps(req.experience_bullets)}")
     prompt = "\n".join(parts)
+    raw = await _safe_ai_complete(str(current_user.id), prompt, db)
     try:
-        raw = await ai_service.ai_complete(str(current_user.id), prompt, db)
         bullets = _extract_json(raw)
-        if not isinstance(bullets, list):
-            bullets = [str(bullets)]
     except json.JSONDecodeError:
         raise _ai_error("AI returned invalid JSON for experience bullets")
-    except Exception as e:
-        raise _ai_error(str(e))
+    if not isinstance(bullets, list):
+        bullets = [str(bullets)]
     return success({"bullets": bullets})
 
 
@@ -168,18 +176,40 @@ async def improve_projects(
         parts.append(f"Job Description: {req.job_description}")
     parts.append(f"Project Descriptions: {json.dumps(req.project_descriptions)}")
     prompt = "\n".join(parts)
+    raw = await _safe_ai_complete(str(current_user.id), prompt, db)
     try:
-        raw = await ai_service.ai_complete(str(current_user.id), prompt, db)
         improved = _extract_json(raw)
-        if isinstance(improved, dict):
-            improved = list(improved.values())[0]
-        if not isinstance(improved, list):
-            improved = [str(improved)]
     except json.JSONDecodeError:
         raise _ai_error("AI returned invalid JSON for project descriptions")
-    except Exception as e:
-        raise _ai_error(str(e))
+    if isinstance(improved, dict):
+        improved = list(improved.values())[0]
+    if not isinstance(improved, list):
+        improved = [str(improved)]
     return success({"projects": improved})
+
+
+# ---------------------------------------------------------------------------
+# POST /ai/suggest/job-title
+# ---------------------------------------------------------------------------
+
+
+@router.post("/suggest/job-title")
+async def suggest_job_title(
+    req: ai_schemas.JobTitleRequest,
+    current_user: user_models.User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    parts = [prompts.JOB_TITLE_PROMPT, f"Job Description: {req.job_description}"]
+    if req.current_title:
+        parts.append(f"Current Title: {req.current_title}")
+    prompt = "\n".join(parts)
+    raw = (await _safe_ai_complete(str(current_user.id), prompt, db)).strip()
+    import re as _re
+    for sep in (" – ", " — ", " - ", " –", "—", " –– ", " | ", " |", ", "):
+        if sep in raw:
+            raw = raw.split(sep)[0].strip()
+    raw = _re.sub(r"\s+\(.*?\)", "", raw).strip()
+    return success({"title": raw})
 
 
 # ---------------------------------------------------------------------------
@@ -198,13 +228,11 @@ async def generate_resume(
         f"Job Description: {req.job_description}\n"
         f"Existing Data: {json.dumps(req.existing_data)}\n"
     )
+    raw = await _safe_ai_complete(str(current_user.id), prompt, db)
     try:
-        raw = await ai_service.ai_complete(str(current_user.id), prompt, db)
         generated = _extract_json(raw)
     except json.JSONDecodeError:
         raise _ai_error("AI returned invalid JSON for resume generation")
-    except Exception as e:
-        raise _ai_error(str(e))
     return success({"resume": generated})
 
 

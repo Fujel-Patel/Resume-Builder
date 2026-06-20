@@ -55,6 +55,13 @@ class ProjectsRequest(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
 
+class JobTitleRequest(BaseModel):
+    job_description: str
+    current_title: Optional[str] = None
+
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+
 class GenerateResumeRequest(BaseModel):
     job_description: str
     existing_data: Dict[str, Any]  # raw resume JSON data structure
