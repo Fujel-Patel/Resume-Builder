@@ -65,6 +65,14 @@ next-env.d.ts
 # Vercel
 .vercel
 
+# User uploads (generated content, not source)
+uploads/
+backend/uploads/
+
+# Tooling
+.opencode/
+.claude/settings.local.json
+
 # Misc
 *.pem
 *.key
