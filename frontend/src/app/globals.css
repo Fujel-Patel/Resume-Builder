@@ -130,3 +130,115 @@
     line-height: 1.15 !important;
   }
 }
+
+/* Resume Builder Field Styles */
+.field-input {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: hsl(var(--foreground));
+  outline: none;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.field-input::placeholder {
+  color: hsl(var(--muted-foreground));
+}
+
+.field-input:focus {
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.15);
+}
+
+.field-textarea {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--background));
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: hsl(var(--foreground));
+  outline: none;
+  resize: vertical;
+  min-height: 5rem;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  font-family: inherit;
+}
+
+.field-textarea::placeholder {
+  color: hsl(var(--muted-foreground));
+}
+
+.field-textarea:focus {
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.15);
+}
+
+/* Print Styles */
+@media print {
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .resume-page {
+    box-shadow: none !important;
+    page-break-inside: avoid;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: none !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  .print-only > div {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  main {
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  .print-preview {
+    display: block !important;
+    position: relative !important;
+    width: 210mm !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Break inside utilities */
+.break-inside-avoid {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}

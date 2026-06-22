@@ -14,7 +14,7 @@ export function Navbar({ title }: NavbarProps) {
   const { open } = useSidebar()
 
   return (
-    <header className="flex h-14 items-center justify-between border-b bg-background px-4 lg:px-6">
+    <header className="no-print flex h-14 items-center justify-between border-b bg-background px-4 lg:px-6">
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" onClick={open} className="lg:hidden" aria-label="Open sidebar">
           <Menu className="size-4" />

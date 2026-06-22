@@ -40,14 +40,14 @@ export function Sidebar() {
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          className="no-print fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={close}
         />
       )}
 
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r bg-sidebar transition-transform duration-200 lg:static lg:translate-x-0",
+          "no-print fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r bg-sidebar transition-transform duration-200 lg:static lg:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
