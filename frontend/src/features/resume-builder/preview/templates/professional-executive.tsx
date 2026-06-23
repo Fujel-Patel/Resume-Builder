@@ -17,8 +17,9 @@ const C = {
 type Props = { resume: ResumeData }
 
 export function ProfessionalExecutiveTemplate({ resume }: Props) {
-  const { content } = resume
+  const { content, sections } = resume
   const { contact, summary, experience, education, skills, languages, certifications, projects } = content
+  const visibleTypes = new Set(sections.filter(s => s.visible).map(s => s.type))
 
   return (
     <div
@@ -99,7 +100,7 @@ export function ProfessionalExecutiveTemplate({ resume }: Props) {
 
       <Divider />
 
-      {summary && (
+      {summary && visibleTypes.has("summary") && (
         <Section heading="Summary">
           <p
             style={{
@@ -114,7 +115,7 @@ export function ProfessionalExecutiveTemplate({ resume }: Props) {
         </Section>
       )}
 
-      {experience.length > 0 && (
+      {experience.length > 0 && visibleTypes.has("experience") && (
         <Section heading="Experience">
           {experience.map((exp, i) => (
             <div
@@ -156,7 +157,7 @@ export function ProfessionalExecutiveTemplate({ resume }: Props) {
         </Section>
       )}
 
-      {education.length > 0 && (
+      {education.length > 0 && visibleTypes.has("education") && (
         <Section heading="Education">
           {education.map((edu, i) => (
             <div
@@ -188,7 +189,7 @@ export function ProfessionalExecutiveTemplate({ resume }: Props) {
         </Section>
       )}
 
-      {skills.length > 0 && (
+      {skills.length > 0 && visibleTypes.has("skills") && (
         <Section heading="Skills">
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 24 }}>
             {skills.map((group) => (
@@ -209,7 +210,7 @@ export function ProfessionalExecutiveTemplate({ resume }: Props) {
         </Section>
       )}
 
-      {languages.length > 0 && (
+      {languages.length > 0 && visibleTypes.has("languages") && (
         <Section heading="Languages">
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
             {languages.map((lang) => (
@@ -222,7 +223,7 @@ export function ProfessionalExecutiveTemplate({ resume }: Props) {
         </Section>
       )}
 
-      {certifications.length > 0 && (
+      {certifications.length > 0 && visibleTypes.has("certifications") && (
         <Section heading="Certificates">
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
             {certifications.map((cert) => (
@@ -240,7 +241,7 @@ export function ProfessionalExecutiveTemplate({ resume }: Props) {
         </Section>
       )}
 
-      {projects.length > 0 && (
+      {projects.length > 0 && visibleTypes.has("projects") && (
         <Section heading="Projects">
           {projects.map((proj, i) => (
             <div key={proj.id} style={{ marginBottom: i < projects.length - 1 ? 16 : 0 }}>

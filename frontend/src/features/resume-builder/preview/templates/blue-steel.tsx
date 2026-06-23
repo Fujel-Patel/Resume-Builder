@@ -16,8 +16,9 @@ const C = {
 type Props = { resume: ResumeData }
 
 export function BlueSteelTemplate({ resume }: Props) {
-  const { content } = resume
+  const { content, sections } = resume
   const { contact, summary, experience, education, skills, languages, interests } = content
+  const visibleTypes = new Set(sections.filter(s => s.visible).map(s => s.type))
 
   const initials = (contact.fullName || "")
     .split(" ")
@@ -138,29 +139,29 @@ export function BlueSteelTemplate({ resume }: Props) {
       {/* White card wrapper */}
       <div style={{ padding: "20px 32px 32px" }}>
         {/* Summary */}
-        {summary && (
-          <div
-            style={{
-              backgroundColor: C.cardBg,
-              padding: 20,
-              marginBottom: 16,
-            }}
-          >
-            <p
+          {summary && visibleTypes.has("summary") && (
+            <div
               style={{
-                fontSize: 13,
-                lineHeight: 1.7,
-                color: C.text,
-                margin: 0,
+                backgroundColor: C.cardBg,
+                padding: 20,
+                marginBottom: 16,
               }}
             >
-              {summary}
-            </p>
-          </div>
-        )}
+              <p
+                style={{
+                  fontSize: 13,
+                  lineHeight: 1.7,
+                  color: C.text,
+                  margin: 0,
+                }}
+              >
+                {summary}
+              </p>
+            </div>
+          )}
 
         {/* Work Experience */}
-        {experience.length > 0 && (
+        {experience.length > 0 && visibleTypes.has("experience") && (
           <div
             style={{
               backgroundColor: C.cardBg,
@@ -225,7 +226,7 @@ export function BlueSteelTemplate({ resume }: Props) {
         )}
 
         {/* Education */}
-        {education.length > 0 && (
+        {education.length > 0 && visibleTypes.has("education") && (
           <div
             style={{
               backgroundColor: C.cardBg,
@@ -267,7 +268,7 @@ export function BlueSteelTemplate({ resume }: Props) {
         {/* Two-column bottom section */}
         <div style={{ display: "flex", gap: 16 }}>
           {/* Left: Skills */}
-          {skills.length > 0 && (
+          {skills.length > 0 && visibleTypes.has("skills") && (
             <div
               style={{
                 flex: 1,
@@ -314,7 +315,7 @@ export function BlueSteelTemplate({ resume }: Props) {
 
           {/* Right: Languages + Strengths */}
           <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 16 }}>
-            {languages.length > 0 && (
+            {languages.length > 0 && visibleTypes.has("languages") && (
               <div
                 style={{
                   backgroundColor: C.cardBg,
@@ -351,7 +352,7 @@ export function BlueSteelTemplate({ resume }: Props) {
               </div>
             )}
 
-            {interests.length > 0 && (
+            {interests.length > 0 && visibleTypes.has("interests") && (
               <div
                 style={{
                   backgroundColor: C.cardBg,

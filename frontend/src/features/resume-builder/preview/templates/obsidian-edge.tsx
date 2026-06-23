@@ -25,8 +25,9 @@ const SECTION_ICONS: Record<string, string> = {
 }
 
 export function ObsidianEdgeTemplate({ resume }: Props) {
-  const { content } = resume
+  const { content, sections } = resume
   const { contact, summary, experience, education, skills, languages, certifications, projects } = content
+  const visibleTypes = new Set(sections.filter(s => s.visible).map(s => s.type))
 
   return (
     <div
@@ -124,7 +125,7 @@ export function ObsidianEdgeTemplate({ resume }: Props) {
           gap: 20,
         }}
       >
-        {summary && (
+        {summary && visibleTypes.has("summary") && (
           <Section icon={SECTION_ICONS.summary} title="Summary">
             <p style={{ fontSize: 14, lineHeight: 1.7, color: C.body, margin: 0 }}>
               {summary}
@@ -132,7 +133,7 @@ export function ObsidianEdgeTemplate({ resume }: Props) {
           </Section>
         )}
 
-        {experience.length > 0 && (
+        {experience.length > 0 && visibleTypes.has("experience") && (
           <Section icon={SECTION_ICONS.experience} title="Professional Experience">
             {experience.map((exp, i) => (
               <div
@@ -187,7 +188,7 @@ export function ObsidianEdgeTemplate({ resume }: Props) {
           </Section>
         )}
 
-        {education.length > 0 && (
+        {education.length > 0 && visibleTypes.has("education") && (
           <Section icon={SECTION_ICONS.education} title="Education">
             {education.map((edu, i) => (
               <div
@@ -221,7 +222,7 @@ export function ObsidianEdgeTemplate({ resume }: Props) {
           </Section>
         )}
 
-        {skills.length > 0 && (
+        {skills.length > 0 && visibleTypes.has("skills") && (
           <Section icon={SECTION_ICONS.skills} title="Skills">
             <div
               style={{
@@ -256,7 +257,7 @@ export function ObsidianEdgeTemplate({ resume }: Props) {
           </Section>
         )}
 
-        {languages.length > 0 && (
+        {languages.length > 0 && visibleTypes.has("languages") && (
           <Section icon={SECTION_ICONS.languages} title="Languages">
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
               {languages.map((lang) => (
@@ -273,7 +274,7 @@ export function ObsidianEdgeTemplate({ resume }: Props) {
           </Section>
         )}
 
-        {certifications.length > 0 && (
+        {certifications.length > 0 && visibleTypes.has("certifications") && (
           <Section icon={SECTION_ICONS.certifications} title="Certificates">
             <div
               style={{
@@ -305,7 +306,7 @@ export function ObsidianEdgeTemplate({ resume }: Props) {
           </Section>
         )}
 
-        {projects.length > 0 && (
+        {projects.length > 0 && visibleTypes.has("projects") && (
           <Section icon={SECTION_ICONS.projects} title="Projects">
             {projects.map((proj, i) => (
               <div

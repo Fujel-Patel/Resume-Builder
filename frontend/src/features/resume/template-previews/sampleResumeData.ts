@@ -32,6 +32,7 @@ export const sampleResumeData: ResumeData = {
     },
     summary:
       "Results-driven Software Engineer with 6+ years of experience building scalable web applications and microservices. Proficient in modern JavaScript frameworks, cloud infrastructure, and agile methodologies. Passionate about crafting clean, maintainable code and delivering intuitive user experiences that drive business impact.",
+    jobDescription: "",
     experience: [
       {
         id: "exp_1",

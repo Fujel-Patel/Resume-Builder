@@ -1,5 +1,6 @@
 "use client"
 
+import { memo } from "react"
 import { MapPin, Phone, Mail, Globe } from "lucide-react"
 import type { ResumeData } from "@/types/resume"
 
@@ -14,9 +15,19 @@ const C = {
 
 type Props = { resume: ResumeData }
 
-export function NeonGreenTemplate({ resume }: Props) {
-  const { content } = resume
-  const { contact, summary, experience, education, skills, languages, certifications, projects } = content
+function resumePropsEqual(a: Props, b: Props): boolean {
+  const ac = a.resume, bc = b.resume
+  return (
+    JSON.stringify(ac.content) === JSON.stringify(bc.content) &&
+    JSON.stringify(ac.sections) === JSON.stringify(bc.sections) &&
+    JSON.stringify(ac.theme) === JSON.stringify(bc.theme)
+  )
+}
+
+export const NeonGreenTemplate = memo(function NeonGreenTemplate({ resume }: Props) {
+  const { content, sections } = resume
+  const { contact, summary, experience, education, skills, languages, certifications } = content
+  const visibleTypes = new Set(sections.filter(s => s.visible).map(s => s.type))
 
   const initials = (contact.fullName || "")
     .split(" ")
@@ -28,10 +39,10 @@ export function NeonGreenTemplate({ resume }: Props) {
   const allSkills = skills.flatMap((g) => g.skills)
 
   const contactItems: { icon: React.ReactNode; value: string | undefined }[] = [
-    { icon: <MapPin className="size-3 shrink-0" style={{ color: C.accent }} />, value: contact.location },
-    { icon: <Phone className="size-3 shrink-0" style={{ color: C.accent }} />, value: contact.phone },
-    { icon: <Mail className="size-3 shrink-0" style={{ color: C.accent }} />, value: contact.email },
-    { icon: <Globe className="size-3 shrink-0" style={{ color: C.accent }} />, value: contact.github || contact.website },
+    { icon: <MapPin className="size-3.5 shrink-0" style={{ color: C.accent }} />, value: contact.location },
+    { icon: <Phone className="size-3.5 shrink-0" style={{ color: C.accent }} />, value: contact.phone },
+    { icon: <Mail className="size-3.5 shrink-0" style={{ color: C.accent }} />, value: contact.email },
+    { icon: <Globe className="size-3.5 shrink-0" style={{ color: C.accent }} />, value: contact.github || contact.website },
   ]
 
   const leftCol = [contactItems[0], contactItems[1]]
@@ -46,7 +57,7 @@ export function NeonGreenTemplate({ resume }: Props) {
         color: C.text,
       }}
     >
-      {/* Header */}
+      {/* ===== HEADER ===== */}
       <div
         style={{
           padding: "36px 40px 28px",
@@ -87,7 +98,7 @@ export function NeonGreenTemplate({ resume }: Props) {
               display: "grid",
               gridTemplateColumns: "1fr 1fr",
               gap: "6px 32px",
-              marginTop: 16,
+              marginTop: 14,
               fontSize: 12,
               color: C.secondary,
             }}
@@ -117,7 +128,7 @@ export function NeonGreenTemplate({ resume }: Props) {
           </div>
         </div>
 
-        {/* Square photo initials */}
+        {/* Profile image / initials */}
         {initials && (
           <div
             style={{
@@ -141,11 +152,11 @@ export function NeonGreenTemplate({ resume }: Props) {
         )}
       </div>
 
-      {/* Content */}
+      {/* ===== CONTENT ===== */}
       <div style={{ padding: "0 40px 36px" }}>
         {/* Summary */}
-        {summary && (
-          <div style={{ marginBottom: 28 }}>
+        {summary && visibleTypes.has("summary") && (
+          <div style={{ marginBottom: 24 }}>
             <p
               style={{
                 fontSize: 12,
@@ -159,16 +170,16 @@ export function NeonGreenTemplate({ resume }: Props) {
           </div>
         )}
 
-        {/* Experience */}
-        {experience.length > 0 && (
-          <div style={{ marginBottom: 28 }}>
+        {/* ===== PROFESSIONAL EXPERIENCE ===== */}
+        {experience.length > 0 && visibleTypes.has("experience") && (
+          <div style={{ marginBottom: 24 }}>
             <SectionHeading title="Professional Experience" />
             {experience.map((exp, i) => (
               <div
                 key={exp.id}
                 className="avoid-break"
                 style={{
-                  marginBottom: i < experience.length - 1 ? 18 : 0,
+                  marginBottom: i < experience.length - 1 ? 16 : 0,
                 }}
               >
                 <div
@@ -178,7 +189,7 @@ export function NeonGreenTemplate({ resume }: Props) {
                     alignItems: "flex-start",
                   }}
                 >
-                  <div style={{ flex: 1 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
                     <p
                       style={{
                         fontSize: 13,
@@ -194,7 +205,7 @@ export function NeonGreenTemplate({ resume }: Props) {
                         fontSize: 12,
                         fontStyle: "italic",
                         color: C.secondary,
-                        margin: "1px 0 0 0",
+                        margin: "2px 0 0 0",
                       }}
                     >
                       {exp.company}
@@ -208,15 +219,18 @@ export function NeonGreenTemplate({ resume }: Props) {
                       lineHeight: 1.5,
                       whiteSpace: "nowrap",
                       marginLeft: 12,
+                      flexShrink: 0,
                     }}
                   >
-                    {exp.location && <div>{exp.location}</div>}
                     {(exp.startDate || exp.endDate) && (
                       <div>
                         {exp.startDate}
                         {exp.startDate && " – "}
                         {exp.current ? "Present" : exp.endDate}
                       </div>
+                    )}
+                    {exp.location && (
+                      <div style={{ color: C.secondary }}>{exp.location}</div>
                     )}
                   </div>
                 </div>
@@ -242,9 +256,9 @@ export function NeonGreenTemplate({ resume }: Props) {
           </div>
         )}
 
-        {/* Education */}
-        {education.length > 0 && (
-          <div style={{ marginBottom: 28 }}>
+        {/* ===== EDUCATION ===== */}
+        {education.length > 0 && visibleTypes.has("education") && (
+          <div style={{ marginBottom: 24 }}>
             <SectionHeading title="Education" />
             {education.map((edu, i) => (
               <div
@@ -274,7 +288,7 @@ export function NeonGreenTemplate({ resume }: Props) {
                       fontSize: 12,
                       fontStyle: "italic",
                       color: C.secondary,
-                      margin: "1px 0 0 0",
+                      margin: "2px 0 0 0",
                     }}
                   >
                     {edu.institution}
@@ -285,8 +299,10 @@ export function NeonGreenTemplate({ resume }: Props) {
                     textAlign: "right",
                     fontSize: 11,
                     color: C.muted,
+                    lineHeight: 1.5,
                     whiteSpace: "nowrap",
                     marginLeft: 12,
+                    flexShrink: 0,
                   }}
                 >
                   {(edu.startDate || edu.endDate) && (
@@ -296,15 +312,18 @@ export function NeonGreenTemplate({ resume }: Props) {
                       {edu.current ? "Present" : edu.endDate}
                     </div>
                   )}
+                  {"location" in edu && (edu as Record<string, string>).location && (
+                    <div style={{ color: C.secondary }}>{(edu as Record<string, string>).location}</div>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         )}
 
-        {/* Skills */}
-        {allSkills.length > 0 && (
-          <div style={{ marginBottom: 28 }}>
+        {/* ===== SKILLS ===== */}
+        {allSkills.length > 0 && visibleTypes.has("skills") && (
+          <div style={{ marginBottom: 24 }}>
             <SectionHeading title="Skills" />
             <p
               style={{
@@ -319,11 +338,11 @@ export function NeonGreenTemplate({ resume }: Props) {
           </div>
         )}
 
-        {/* Two-column bottom: Languages + Certifications/Projects */}
-        {(languages.length > 0 || certifications.length > 0 || projects.length > 0) && (
+        {/* ===== BOTTOM TWO-COLUMN: Languages + Certifications ===== */}
+        {((languages.length > 0 && visibleTypes.has("languages")) || (certifications.length > 0 && visibleTypes.has("certifications"))) && (
           <div style={{ display: "flex", gap: 40 }}>
             {/* Left: Languages */}
-            {languages.length > 0 && (
+            {languages.length > 0 && visibleTypes.has("languages") && (
               <div style={{ flex: 1, minWidth: 0 }}>
                 <SectionHeading title="Languages" />
                 <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -347,58 +366,34 @@ export function NeonGreenTemplate({ resume }: Props) {
               </div>
             )}
 
-            {/* Right: Certifications + Projects */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              {certifications.length > 0 && (
-                <div style={{ marginBottom: 20 }}>
-                  <SectionHeading title="Certifications" />
-                  <ul
-                    style={{
-                      margin: 0,
-                      paddingLeft: 14,
-                      fontSize: 11,
-                      color: C.secondary,
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    {certifications.map((cert) => {
-                      const parts = [cert.name]
-                      if (cert.issuer) parts.push(cert.issuer)
-                      if (cert.date) parts.push(`(${cert.date})`)
-                      return <li key={cert.id}>{parts.join(" — ")}</li>
-                    })}
-                  </ul>
-                </div>
-              )}
-
-              {projects.length > 0 && (
-                <div>
-                  <SectionHeading title="Projects" />
-                  <ul
-                    style={{
-                      margin: 0,
-                      paddingLeft: 14,
-                      fontSize: 11,
-                      color: C.secondary,
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    {projects.map((proj) => (
-                      <li key={proj.id}>
-                        <span style={{ fontWeight: 600, color: C.text }}>{proj.name}</span>
-                        {proj.bullets.length > 0 && <span>: {proj.bullets[0]}</span>}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
+            {/* Right: Certifications */}
+            {certifications.length > 0 && visibleTypes.has("certifications") && (
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <SectionHeading title="Certificates" />
+                <ul
+                  style={{
+                    margin: 0,
+                    paddingLeft: 14,
+                    fontSize: 11,
+                    color: C.secondary,
+                    lineHeight: 1.6,
+                  }}
+                >
+                  {certifications.map((cert) => {
+                    const parts = [cert.name]
+                    if (cert.issuer) parts.push(cert.issuer)
+                    if (cert.date) parts.push(`(${cert.date})`)
+                    return <li key={cert.id}>{parts.join(" — ")}</li>
+                  })}
+                </ul>
+              </div>
+            )}
           </div>
         )}
       </div>
     </div>
   )
-}
+}, resumePropsEqual)
 
 function SectionHeading({ title }: { title: string }) {
   return (
@@ -420,7 +415,6 @@ function SectionHeading({ title }: { title: string }) {
           height: 2,
           backgroundColor: C.accent,
           marginTop: 5,
-          width: 32,
         }}
       />
     </div>

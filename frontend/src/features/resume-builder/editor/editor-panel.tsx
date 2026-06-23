@@ -10,8 +10,8 @@ import { Plus, FileText } from "lucide-react"
 import { useState } from "react"
 
 export function EditorPanel() {
-  const resume = useResumeStore((s) => s.resume)
-  const updateResumeMeta = useResumeStore((s) => s.updateResumeMeta)
+  const jobDescription = useResumeStore((s) => s.resume.content.jobDescription)
+  const setJobDescription = useResumeStore((s) => s.setJobDescription)
   const addCustomSectionType = useResumeStore((s) => s.addCustomSectionType)
   const toggleSectionVisibility = useResumeStore((s) => s.toggleSectionVisibility)
   const [customTitle, setCustomTitle] = useState("")
@@ -25,40 +25,19 @@ export function EditorPanel() {
 
   return (
     <div className="space-y-3">
-      {/* Resume Meta */}
+      {/* Job Description */}
       <div className="rounded-xl border bg-card shadow-sm p-4 space-y-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-foreground mb-1">
           <FileText className="size-4" />
-          Resume Details
+          Job Description
         </div>
-        <div className="flex flex-col gap-2">
-          <input
-            value={resume.name}
-            onChange={(e) => updateResumeMeta({ name: e.target.value })}
-            placeholder="Resume Name"
-            className="field-input text-sm font-medium"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-medium text-muted-foreground">Target Role</label>
-            <input
-              value={resume.targetRole}
-              onChange={(e) => updateResumeMeta({ targetRole: e.target.value })}
-              placeholder="e.g. Senior Product Designer"
-              className="field-input text-xs"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-medium text-muted-foreground">Target Industry</label>
-            <input
-              value={resume.targetIndustry}
-              onChange={(e) => updateResumeMeta({ targetIndustry: e.target.value })}
-              placeholder="e.g. Technology"
-              className="field-input text-xs"
-            />
-          </div>
-        </div>
+        <textarea
+          value={jobDescription}
+          onChange={(e) => setJobDescription(e.target.value)}
+          placeholder="Paste the full job description here to help AI tailor your resume..."
+          className="field-input text-xs min-h-[200px] resize-y"
+          rows={8}
+        />
       </div>
 
       {/* Contact (always first, no DnD) */}

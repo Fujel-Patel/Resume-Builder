@@ -95,6 +95,7 @@ export const customSectionItemSchema = z.object({
 export const resumeSectionsSchema = z.object({
   contact: contactSchema,
   summary: z.string().max(1000).optional().default(""),
+  jobDescription: z.string().max(5000).optional().default(""),
   experience: z.array(experienceItemSchema).optional().default([]),
   education: z.array(educationItemSchema).optional().default([]),
   skills: z.array(skillGroupSchema).optional().default([]),

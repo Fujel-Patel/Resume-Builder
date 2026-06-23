@@ -1,5 +1,6 @@
 "use client"
 
+import { memo } from "react"
 import type { ResumeData } from "@/types/resume"
 import { templateMap } from "./templates"
 import { NovaTemplate } from "./templates/nova-template"
@@ -10,7 +11,20 @@ type PreviewCanvasProps = {
   showPageShadow?: boolean
 }
 
-export function PreviewCanvas({
+function previewPropsEqual(a: PreviewCanvasProps, b: PreviewCanvasProps) {
+  return a.scale === b.scale && a.showPageShadow === b.showPageShadow && resumeContentEqual(a.resume, b.resume)
+}
+
+function resumeContentEqual(a: ResumeData, b: ResumeData): boolean {
+  if (a.templateId !== b.templateId) return false
+  return (
+    JSON.stringify(a.content) === JSON.stringify(b.content) &&
+    JSON.stringify(a.sections) === JSON.stringify(b.sections) &&
+    JSON.stringify(a.theme) === JSON.stringify(b.theme)
+  )
+}
+
+export const PreviewCanvas = memo(function PreviewCanvas({
   resume,
   scale = 0.7,
   showPageShadow = true,
@@ -52,4 +66,4 @@ export function PreviewCanvas({
       </div>
     </>
   )
-}
+}, previewPropsEqual)

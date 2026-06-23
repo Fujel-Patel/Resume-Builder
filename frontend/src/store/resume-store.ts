@@ -1,5 +1,22 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
+
+const debouncedStorage = (() => {
+  let timeout: ReturnType<typeof setTimeout>
+  return {
+    getItem: (key: string) => {
+      const value = localStorage.getItem(key)
+      return value ? JSON.parse(value) : null
+    },
+    setItem: (key: string, value: unknown) => {
+      clearTimeout(timeout)
+      timeout = setTimeout(() => {
+        localStorage.setItem(key, JSON.stringify(value))
+      }, 300)
+    },
+    removeItem: (key: string) => localStorage.removeItem(key),
+  }
+})()
 import type {
   ResumeData,
   ResumeSections,
@@ -23,6 +40,7 @@ const genId = () => `resume_${++counter}_${Date.now()}`
 const emptySections: ResumeSections = {
   contact: { ...emptyContact },
   summary: "",
+  jobDescription: "",
   experience: [],
   education: [],
   skills: [],
@@ -59,6 +77,7 @@ type ResumeStore = {
 
   updateContact: (contact: Partial<ResumeSections["contact"]>) => void
   setSummary: (summary: string) => void
+  setJobDescription: (jobDescription: string) => void
 
   addExperience: () => void
   updateExperience: (id: string, data: Partial<ExperienceItem>) => void
@@ -123,7 +142,7 @@ type ResumeStore = {
 
 export const useResumeStore = create<ResumeStore>()(
   persist(
-    (set, _get) => ({
+    (set) => ({
       resume: createDefaultResume(),
       isDirty: false,
       isSaving: false,
@@ -151,6 +170,16 @@ export const useResumeStore = create<ResumeStore>()(
           resume: {
             ...state.resume,
             content: { ...state.resume.content, summary },
+            updatedAt: new Date().toISOString(),
+          },
+          isDirty: true,
+        })),
+
+      setJobDescription: (jobDescription) =>
+        set((state) => ({
+          resume: {
+            ...state.resume,
+            content: { ...state.resume.content, jobDescription },
             updatedAt: new Date().toISOString(),
           },
           isDirty: true,
@@ -813,6 +842,7 @@ export const useResumeStore = create<ResumeStore>()(
     {
       name: "resume-store",
       partialize: (state) => ({ resume: state.resume }),
+      storage: debouncedStorage,
     }
   )
 )

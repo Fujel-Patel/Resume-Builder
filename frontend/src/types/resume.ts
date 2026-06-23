@@ -115,6 +115,7 @@ export type CustomSectionItem = {
 export type ResumeSections = {
   contact: ContactInfo
   summary: string
+  jobDescription: string
   experience: ExperienceItem[]
   education: EducationItem[]
   skills: SkillGroup[]

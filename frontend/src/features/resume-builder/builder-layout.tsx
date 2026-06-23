@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useDeferredValue } from "react"
 import { EditorPanel } from "./editor/editor-panel"
 import { PreviewCanvas } from "./preview/preview-canvas"
 import { ThemeEditor } from "./editor/theme-editor"
@@ -12,6 +12,7 @@ import { exportResumeAsPdf } from "@/lib/api/pdf-export"
 
 export function BuilderLayout() {
   const resume = useResumeStore((s) => s.resume)
+  const deferredResume = useDeferredValue(resume)
   const [mobileTab, setMobileTab] = useState<"editor" | "preview">("editor")
   const [showTheme, setShowTheme] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
@@ -96,7 +97,7 @@ export function BuilderLayout() {
 
         {/* Preview panel */}
         <div className={`print-only w-full lg:w-[55%] overflow-y-auto bg-muted/30 ${mobileTab === "editor" ? "hidden lg:block" : ""}`}>
-          <PreviewCanvas resume={resume} scale={0.6} />
+          <PreviewCanvas resume={deferredResume} scale={0.6} />
         </div>
       </div>
     </div>
