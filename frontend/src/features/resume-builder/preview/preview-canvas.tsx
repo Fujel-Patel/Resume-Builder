@@ -1,6 +1,7 @@
 "use client"
 
 import type { ResumeData } from "@/types/resume"
+import { templateMap } from "./templates"
 import { NovaTemplate } from "./templates/nova-template"
 
 type PreviewCanvasProps = {
@@ -14,6 +15,8 @@ export function PreviewCanvas({
   scale = 0.7,
   showPageShadow = true,
 }: PreviewCanvasProps) {
+  const TemplateComponent = templateMap[resume.templateId] || NovaTemplate
+
   return (
     <>
       {/* Screen preview — scaled down */}
@@ -27,7 +30,6 @@ export function PreviewCanvas({
               ? "0 2px 20px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.05)"
               : "none",
             borderRadius: "2px",
-            overflow: "hidden",
             backgroundColor: "#ffffff",
           }}
         >
@@ -38,7 +40,7 @@ export function PreviewCanvas({
               width: "210mm",
             }}
           >
-            <NovaTemplate resume={resume} />
+            <TemplateComponent resume={resume} />
           </div>
         </div>
       </div>
@@ -46,7 +48,7 @@ export function PreviewCanvas({
       {/* Print-only version — full A4 size, hidden on screen */}
       <div className="print-preview hidden print:block print:bg-white print:overflow-visible"
         style={{ width: "210mm", margin: "0 auto" }}>
-        <NovaTemplate resume={resume} />
+        <TemplateComponent resume={resume} />
       </div>
     </>
   )

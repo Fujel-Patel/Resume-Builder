@@ -201,7 +201,6 @@
 
   .resume-page {
     box-shadow: none !important;
-    page-break-inside: avoid;
   }
 
   .no-print {
@@ -239,6 +238,16 @@
 
 /* Break inside utilities */
 .break-inside-avoid {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.page-break {
+  break-after: page;
+  page-break-after: always;
+}
+
+.avoid-break {
   break-inside: avoid;
   page-break-inside: avoid;
 }

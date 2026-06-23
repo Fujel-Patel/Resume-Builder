@@ -61,7 +61,8 @@ const templates: { id: ResumeTemplate; label: string; description: string; tag?:
   { id: "classic", label: "Classic", description: "Traditional serif layout with centered header" },
   { id: "modern", label: "Modern", description: "Dark navy header with skill tags" },
   { id: "minimal", label: "Minimal", description: "Clean lightweight design with muted tones" },
-  { id: "creative", label: "Creative", description: "Two-column layout with dark sidebar", tag: "New" },
+  { id: "creative", label: "Creative", description: "Two-column layout with dark sidebar" },
+  { id: "professional-executive", label: "Professional Executive", description: "Corporate navy design with structured sections", tag: "New" },
 ]
 
 export function TemplatePicker({ active, onChange }: TemplatePickerProps) {

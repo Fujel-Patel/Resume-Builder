@@ -30,19 +30,19 @@ export function NovaTemplate({ resume }: NovaTemplateProps) {
   return (
     <ResumePage className="print:shadow-none">
       <div style={pageStyle}>
-        <div className="flex gap-6" style={{ minHeight: "250mm" }}>
+        <div className="flex gap-6">
           {/* Sidebar */}
           <aside className="w-[30%] shrink-0">
-            <div className="space-y-5">
+            <div className="space-y-3">
               {/* Contact / Header in Sidebar */}
               <div>
                 <h1 className="text-[22px] font-bold leading-tight text-gray-900 mb-0.5">
                   {contact.fullName || "Your Name"}
                 </h1>
-                <p className="text-[13px] text-gray-500 mb-3">
+                <p className="text-[13px] text-gray-500 mb-2">
                   {contact.title || "Job Title"}
                 </p>
-                <div className="space-y-1.5 text-[10px] text-gray-600">
+                <div className="space-y-1 text-[10px] text-gray-600">
                   {contact.email && (
                     <p className="flex items-center gap-1.5">
                       <span className="text-gray-400 shrink-0">&#9993;</span>
@@ -88,7 +88,7 @@ export function NovaTemplate({ resume }: NovaTemplateProps) {
                   <ResumeSectionTitle style="underline">
                     Skills
                   </ResumeSectionTitle>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {skills.map((group) => (
                       <div key={group.id}>
                         {group.name && (
@@ -118,7 +118,7 @@ export function NovaTemplate({ resume }: NovaTemplateProps) {
                   <ResumeSectionTitle style="underline">
                     Languages
                   </ResumeSectionTitle>
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {languages.map((lang) => (
                       <div key={lang.id} className="flex items-center justify-between text-[10px]">
                         <span className="text-gray-700">{lang.name}</span>
@@ -154,7 +154,7 @@ export function NovaTemplate({ resume }: NovaTemplateProps) {
                   <ResumeSectionTitle style="underline">
                     References
                   </ResumeSectionTitle>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {references.map((ref) => (
                       <div key={ref.id} className="text-[10px]">
                         <p className="font-semibold text-gray-800">{ref.name}</p>
@@ -175,7 +175,7 @@ export function NovaTemplate({ resume }: NovaTemplateProps) {
             {/* Timeline line */}
             <div className="absolute left-0 top-0 bottom-0 w-px bg-gray-200" />
 
-            <div className="space-y-5 pl-5">
+            <div className="space-y-3 pl-5">
               {/* Summary */}
               {summary && mainSections.some((s) => s.type === "summary") && (
                 <section className="relative" aria-label="Professional Summary">
@@ -196,7 +196,7 @@ export function NovaTemplate({ resume }: NovaTemplateProps) {
                   <ResumeSectionTitle style="underline">
                     Experience
                   </ResumeSectionTitle>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     {experience.map((exp) => (
                       <div key={exp.id} className="relative break-inside-avoid">
                         <div className="flex items-start justify-between gap-2">
@@ -242,7 +242,7 @@ export function NovaTemplate({ resume }: NovaTemplateProps) {
                   <ResumeSectionTitle style="underline">
                     Education
                   </ResumeSectionTitle>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {education.map((edu) => (
                       <div key={edu.id} className="break-inside-avoid">
                         <div className="flex items-start justify-between gap-2">
@@ -281,7 +281,7 @@ export function NovaTemplate({ resume }: NovaTemplateProps) {
                   <ResumeSectionTitle style="underline">
                     Certifications
                   </ResumeSectionTitle>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     {certifications.map((cert) => (
                       <div key={cert.id} className="flex items-start justify-between gap-2 text-[11px]">
                         <div>
@@ -308,7 +308,7 @@ export function NovaTemplate({ resume }: NovaTemplateProps) {
                   <ResumeSectionTitle style="underline">
                     Projects
                   </ResumeSectionTitle>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5">
                     {projects.map((proj) => (
                       <div key={proj.id} className="break-inside-avoid">
                         <div className="flex items-start justify-between gap-2">
@@ -349,7 +349,7 @@ export function NovaTemplate({ resume }: NovaTemplateProps) {
                   <ResumeSectionTitle style="underline">
                     Awards
                   </ResumeSectionTitle>
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     {awards.map((award) => (
                       <div key={award.id} className="break-inside-avoid">
                         <div className="flex items-start justify-between gap-2">

@@ -1,5 +1,5 @@
 import type { TemplateConfig, TemplateSectionConfig } from "@/types/template"
-import { novaTemplateConfig } from "@/types/template"
+import { novaTemplateConfig, obsidianEdgeTemplateConfig, blueSteelTemplateConfig, neonGreenTemplateConfig } from "@/types/template"
 
 const registry = new Map<string, TemplateConfig>()
 
@@ -29,3 +29,6 @@ export function getTemplateSection(
 }
 
 registerTemplate(novaTemplateConfig)
+registerTemplate(obsidianEdgeTemplateConfig)
+registerTemplate(blueSteelTemplateConfig)
+registerTemplate(neonGreenTemplateConfig)

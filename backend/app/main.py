@@ -29,6 +29,12 @@ async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
+    # Cleanup Playwright browser on shutdown
+    try:
+        from app.services.pdf_service import shutdown_browser
+        await shutdown_browser()
+    except ImportError:
+        pass  # playwright not installed
 
 
 app = FastAPI(

@@ -39,6 +39,7 @@ dependencies = [
     "httpx>=0.27.2",                        # Async HTTP client (used by tests & external calls)
     "python-multipart>=0.0.9",            # Form data / file uploads
     "python-docx>=1.2.0",                  # DOCX file parsing
+    "playwright>=1.48.0",                  # Headless browser for PDF generation
 ]
 
 # ---------------------------------------------------------------

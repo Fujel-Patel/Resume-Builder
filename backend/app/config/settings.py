@@ -54,5 +54,8 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_KEY: str = ""
     STORAGE_BUCKET: str = "resume-uploads"
 
+    # PDF export via Playwright
+    PDF_EXPORT_TIMEOUT_MS: int = 30000
+
 
 settings = Settings()

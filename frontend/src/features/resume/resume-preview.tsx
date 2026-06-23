@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { FileText } from "lucide-react"
 import type { ResumeData, ResumeTemplate } from "./types"
+import { ProfessionalExecutiveTemplate } from "./templates/professional-executive/template"
 
 type ResumePreviewProps = {
   data: ResumeData
@@ -18,6 +19,8 @@ export function ResumePreview({ data, template, previewHtml }: ResumePreviewProp
       return <MinimalTemplate data={data} />
     case "creative":
       return <CreativeTemplate data={data} />
+    case "professional-executive":
+      return <ProfessionalExecutiveTemplate data={data} />
     case "default":
       return <DefaultTemplate data={data} previewHtml={previewHtml} />
     default:

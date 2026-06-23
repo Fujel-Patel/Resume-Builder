@@ -4,17 +4,33 @@ import { useState } from "react"
 import { EditorPanel } from "./editor/editor-panel"
 import { PreviewCanvas } from "./preview/preview-canvas"
 import { ThemeEditor } from "./editor/theme-editor"
+import { TemplateSelector } from "./editor/template-selector"
 import { useResumeStore } from "@/store/resume-store"
 import { Button } from "@/components/ui/button"
-import { Download, Eye, PenLine, Palette, Settings } from "lucide-react"
+import { Download, Eye, Loader2, PenLine, Palette, Settings } from "lucide-react"
+import { exportResumeAsPdf } from "@/lib/api/pdf-export"
 
 export function BuilderLayout() {
   const resume = useResumeStore((s) => s.resume)
   const [mobileTab, setMobileTab] = useState<"editor" | "preview">("editor")
   const [showTheme, setShowTheme] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
 
-  const handleExport = () => {
-    window.print()
+  const handleExport = async () => {
+    const resumeId = resume.id
+    if (!resumeId) {
+      console.warn("No resume ID — cannot export")
+      return
+    }
+    setIsExporting(true)
+    try {
+      await exportResumeAsPdf(resumeId, resume.templateId)
+    } catch (err) {
+      console.error("PDF export failed:", err)
+      // TODO: show toast notification
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   return (
@@ -25,6 +41,7 @@ export function BuilderLayout() {
           <h2 className="text-sm font-semibold text-foreground">{resume.name || "Resume Builder"}</h2>
         </div>
         <div className="flex items-center gap-2">
+          <TemplateSelector />
           <Button
             variant="outline"
             size="sm"
@@ -33,8 +50,9 @@ export function BuilderLayout() {
             <Palette className="size-3.5" />
             Theme
           </Button>
-          <Button variant="brand" size="sm" onClick={handleExport}>
-            <Download className="size-3.5" /> Export PDF
+          <Button variant="brand" size="sm" onClick={handleExport} disabled={isExporting}>
+            {isExporting ? <Loader2 className="size-3.5 animate-spin" /> : <Download className="size-3.5" />}
+            {isExporting ? "Exporting…" : "Export PDF"}
           </Button>
         </div>
       </div>

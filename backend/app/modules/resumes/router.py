@@ -1,15 +1,19 @@
 """Resumes router — PRD endpoints, always 404 (never 403) for ownership."""
 
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, Response, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.database import get_db
+from app.config.settings import settings
 from app.modules.resumes import schemas, service
 from app.modules.users import models as user_models
 from app.types.common import success
 from app.utils.auth import get_current_user
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -123,6 +127,57 @@ async def export_resume(
         )
 
     filename = f"resume_{resume_id}.pdf"
+    return _cors_response(
+        Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        ),
+        request,
+    )
+
+
+# POST /resumes/{id}/export/pdf — Playwright-generated A4 PDF
+@router.post("/{resume_id}/export/pdf")
+async def export_resume_pdf(
+    request: Request,
+    resume_id: uuid.UUID,
+    current_user: user_models.User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    template_id: str = Query(None, description="Override template ID (from frontend selection)"),
+):
+    resume = await service.get_resume(db, resume_id, current_user.id)
+
+    # Use frontend-provided template_id if given, otherwise fall back to DB
+    effective_template = template_id or str(resume.template_id)
+
+    try:
+        from app.services.html_renderer import render_resume_to_html
+        from app.services.pdf_service import generate_pdf
+
+        resume_dict = _resume_to_dict(resume)
+        html = render_resume_to_html(resume_dict, effective_template)
+        pdf_bytes = await generate_pdf(html, timeout_ms=settings.PDF_EXPORT_TIMEOUT_MS)
+    except ImportError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "PDF_SERVICE_UNAVAILABLE", "message": f"PDF export service not available: {e}"},
+        )
+    except Exception as e:
+        logger.exception("PDF export failed for resume %s", resume_id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "PDF_GENERATION_ERROR", "message": f"Failed to generate PDF: {e}"},
+        )
+
+    # Build filename: Firstname_Lastname_TemplateId.pdf
+    data = resume.data
+    personal = data.personal if data else {}
+    first = (personal.get("first_name") or "").strip().replace(" ", "_")
+    last = (personal.get("last_name") or "").strip().replace(" ", "_")
+    tid = str(resume.template_id).replace("-", " ").title().replace(" ", "_")
+    filename = f"{first}_{last}_{tid}.pdf" if first or last else f"resume_{resume_id}.pdf"
+
     return _cors_response(
         Response(
             content=pdf_bytes,
