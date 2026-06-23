@@ -8,18 +8,19 @@ SUMMARY_PROMPT = """
 You are a professional resume writer. Generate or improve a professional
 summary (3-4 lines max). Keep it extremely concise, use active voice.
 
-If a Job Description is provided (non-empty), extract key skills, requirements,
-and keywords from it. Then match those with the user's actual experience to
-write a tailored summary that positions the candidate as an ideal fit.
-Reference specific technologies and responsibilities from the JD that align
-with what the user has actually done.
+JD-FOCUSED MODE (when Job Description is non-empty):
+- Extract every key skill, tool, requirement, and keyword from the JD.
+- Weave those keywords naturally into the summary, but only reference
+  technologies and responsibilities that align with the user's actual experience.
+- Position the candidate as the ideal match by mirroring JD language.
+- Do NOT invent experience the user doesn't have.
 
-If no Job Description is provided (empty), improve the existing summary using
-the user's job title and experience. Focus on making it more impactful without
-pulling in external context.
+NO-JD MODE (when Job Description is empty or "(not provided)"):
+- Improve the existing summary using only the user's job title and experience.
+- Focus on impact, clarity, and active voice. Do not add external context.
 
-If an existing summary is given, improve upon it rather than writing from scratch.
-Return ONLY the summary text, no extra commentary.
+If a current summary exists, improve it rather than writing from scratch.
+Return ONLY the summary text — no quotes, no labels, no extra commentary.
 """
 
 # Skills suggestion prompt
@@ -27,8 +28,9 @@ SKILLS_PROMPT = """
 You are a resume skills expert. Given a job description and the user's
 current skills, do the following:
 
-1. Extract EVERY technical skill, tool, language, and technology mentioned
-   in the job description (languages, frameworks, libraries, tools, platforms).
+1. Extract EVERY technical skill, tool, language, framework, library,
+   platform, and technology mentioned in the job description. Be exhaustive
+   — do not miss any, including niche or implied tools.
 2. Keep ALL of the user's existing skills (never remove any).
 3. Combine both sets, remove duplicates, and categorize into these groups.
 
@@ -40,33 +42,59 @@ Return ONLY a JSON object with category keys and array values:
 
 Every skill must go into exactly one group. Include ALL skills — do not skip any.
 If a category has no skills, omit it from the JSON.
+
+IMPORTANT: Prioritize skills from the job description. The output must
+be tailored so the candidate appears well-matched for the target role.
 """
 
 # Experience improvement prompt
 EXPERIENCE_PROMPT = """
-Polish these experience bullet points. Keep the original meaning and facts
-intact — do not invent new responsibilities or exaggerate. Use stronger
-action verbs and add quantifiable impact only where the original implies it.
+You are a professional resume writer improving experience bullet points.
 
-If a Job Description is provided, lightly align language with its keywords
-and requirements without changing the core content. If no Job Description
-is provided, just improve clarity and impact of the existing text.
+RULES:
+- Keep the original meaning and facts intact — do NOT invent responsibilities,
+  metrics, or achievements that aren't implied by the original text.
+- Use stronger action verbs (led, built, optimized, implemented, delivered).
+- Add quantifiable impact ONLY where the original text implies measurable
+  results (e.g., "improved performance" → "improved performance by 40%" is OK
+  only if the original suggests a measurable improvement).
+- Each bullet: concise, 1-2 lines max.
 
-Each bullet: concise, 1-2 lines max. Return ONLY a JSON array of strings.
+JD-ALIGNMENT MODE (when Job Description is provided):
+- Scan the JD for keywords, required skills, and action verbs.
+- Blend those keywords naturally into the bullet points where they genuinely
+  match the original responsibility. Do NOT force keywords that don't fit.
+- Prioritize alignment with the target role's core requirements.
+
+NO-JD MODE (when no Job Description is provided):
+- Just improve clarity, impact, and action verbs of the existing text.
+
+Return ONLY a flat JSON array of strings. The array must have EXACTLY the
+same number of elements as the input. Example: ["Led team of 5 engineers...", "Built REST API..."]
 """
 
 # Projects improvement prompt
 PROJECTS_PROMPT = """
-Polish these project descriptions. Keep the original scope and facts intact —
-do not invent new features or exaggerate. Use stronger action verbs and
-highlight real impact and results.
+You are a professional resume writer improving project descriptions.
 
-If a Job Description is provided, lightly align language with its keywords
-and requirements without changing the core description. If no Job Description
-is provided, just improve clarity and impact of the existing text.
+RULES:
+- Keep the original scope and facts intact — do NOT invent features,
+  technologies, or outcomes that aren't in the original text.
+- Use stronger action verbs (built, designed, implemented, deployed, optimized).
+- Highlight real impact, results, and scale (users, performance, revenue)
+  ONLY where the original implies measurable outcomes.
+- Each description: concise, 1-2 lines max.
 
-Each description: concise, 1-2 lines max. Return ONLY a JSON array of strings.
-Example: ["Polished description 1", "Polished description 2"]
+JD-ALIGNMENT MODE (when Job Description is provided):
+- Scan the JD for relevant tech stack, keywords, and domain expertise.
+- Blend matching keywords naturally into the project descriptions.
+- Emphasize transferable skills and technologies that the target role values.
+
+NO-JD MODE (when no Job Description is provided):
+- Just improve clarity, impact, and technical language of existing descriptions.
+
+Return ONLY a flat JSON array of strings. The array must have EXACTLY the
+same number of elements as the input. Example: ["Built React dashboard serving 10K users...", "Optimized API latency by 60%..."]
 """
 
 # Resume parse prompt — extract structured data from raw resume text

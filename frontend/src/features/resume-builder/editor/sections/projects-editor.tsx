@@ -1,8 +1,10 @@
 "use client"
 
+import { useState, useCallback } from "react"
 import { useResumeStore } from "@/store/resume-store"
 import { SectionHeader } from "./section-header"
 import { Plus, Trash2, X } from "lucide-react"
+import { suggestProjectsApi } from "@/lib/api/ai-suggest"
 
 type ProjectsEditorProps = {
   sectionId: string
@@ -18,12 +20,42 @@ export function ProjectsEditor({
   dragHandleProps,
 }: ProjectsEditorProps) {
   const projects = useResumeStore((s) => s.resume.content.projects)
+  const jobDescription = useResumeStore((s) => s.resume.content.jobDescription)
+  const skills = useResumeStore((s) => s.resume.content.skills)
   const addProject = useResumeStore((s) => s.addProject)
   const updateProject = useResumeStore((s) => s.updateProject)
   const removeProject = useResumeStore((s) => s.removeProject)
   const addBullet = useResumeStore((s) => s.addBullet)
   const updateBullet = useResumeStore((s) => s.updateBullet)
   const removeBullet = useResumeStore((s) => s.removeBullet)
+  const [aiLoading, setAiLoading] = useState(false)
+
+  const handleImproveProjects = useCallback(async () => {
+    const allBullets = projects.flatMap((p) => p.bullets).filter(Boolean)
+    if (allBullets.length === 0) return
+    setAiLoading(true)
+    try {
+      const first = projects[0]
+      const techNames = skills.flatMap((g) => g.skills)
+      const result = await suggestProjectsApi({
+        project_descriptions: allBullets,
+        project_name: first.name || null,
+        tech_stack: techNames.length > 0 ? techNames : null,
+        job_description: jobDescription || null,
+      })
+      if (result.projects.length === allBullets.length) {
+        let bi = 0
+        for (const proj of projects) {
+          const projBullets = result.projects.slice(bi, bi + proj.bullets.length)
+          updateProject(proj.id, { bullets: projBullets })
+          bi += proj.bullets.length
+        }
+      }
+    } catch {
+    } finally {
+      setAiLoading(false)
+    }
+  }, [projects, jobDescription, skills, updateProject])
 
   return (
     <SectionHeader
@@ -31,6 +63,8 @@ export function ProjectsEditor({
       visible={visible}
       onToggleVisibility={onToggleVisibility}
       dragHandleProps={dragHandleProps}
+      onAISuggest={handleImproveProjects}
+      aiLoading={aiLoading}
     >
       <div className="space-y-3">
         {projects.map((proj) => (

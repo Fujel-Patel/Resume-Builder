@@ -1,7 +1,9 @@
 "use client"
 
+import { useState, useCallback } from "react"
 import { useResumeStore } from "@/store/resume-store"
 import { SectionHeader } from "./section-header"
+import { suggestSummaryApi } from "@/lib/api/ai-suggest"
 
 type SummaryEditorProps = {
   sectionId: string
@@ -18,6 +20,27 @@ export function SummaryEditor({
 }: SummaryEditorProps) {
   const summary = useResumeStore((s) => s.resume.content.summary)
   const setSummary = useResumeStore((s) => s.setSummary)
+  const content = useResumeStore((s) => s.resume.content)
+  const [aiLoading, setAiLoading] = useState(false)
+
+  const handleImproveSummary = useCallback(async () => {
+    setAiLoading(true)
+    try {
+      const experience = content.experience.map((e) => e.bullets.join("\n")).filter(Boolean)
+      const allSkills = content.skills.flatMap((g) => g.skills)
+      const result = await suggestSummaryApi({
+        job_title: content.contact.title || "",
+        skills: allSkills.length > 0 ? allSkills : [""],
+        experience: experience.length > 0 ? experience : [""],
+        job_description: content.jobDescription || "",
+        current_summary: summary || null,
+      })
+      setSummary(result.summary)
+    } catch {
+    } finally {
+      setAiLoading(false)
+    }
+  }, [content, summary, setSummary])
 
   return (
     <SectionHeader
@@ -25,6 +48,8 @@ export function SummaryEditor({
       visible={visible}
       onToggleVisibility={onToggleVisibility}
       dragHandleProps={dragHandleProps}
+      onAISuggest={handleImproveSummary}
+      aiLoading={aiLoading}
     >
       <div className="flex flex-col gap-1">
         <label className="text-xs font-medium text-foreground">

@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useCallback } from "react"
 import { useResumeStore } from "@/store/resume-store"
 import { SectionHeader } from "./section-header"
 import { Plus, Trash2, X } from "lucide-react"
+import { suggestSkillsApi } from "@/lib/api/ai-suggest"
 
 type SkillsEditorProps = {
   sectionId: string
@@ -19,11 +20,42 @@ export function SkillsEditor({
   dragHandleProps,
 }: SkillsEditorProps) {
   const skills = useResumeStore((s) => s.resume.content.skills)
+  const jobDescription = useResumeStore((s) => s.resume.content.jobDescription)
   const addSkillGroup = useResumeStore((s) => s.addSkillGroup)
   const updateSkillGroup = useResumeStore((s) => s.updateSkillGroup)
   const removeSkillGroup = useResumeStore((s) => s.removeSkillGroup)
   const addSkillToGroup = useResumeStore((s) => s.addSkillToGroup)
   const removeSkillFromGroup = useResumeStore((s) => s.removeSkillFromGroup)
+  const setSkills = useResumeStore((s) => s.setSkills)
+  const [aiLoading, setAiLoading] = useState(false)
+
+  const handleSuggestSkills = useCallback(async () => {
+    setAiLoading(true)
+    try {
+      const currentSkills: Record<string, string[]> = {}
+      for (const g of skills) {
+        const key = g.name.toLowerCase().replace(/\s+/g, "_") || "other"
+        currentSkills[key] = g.skills
+      }
+      const result = await suggestSkillsApi({
+        job_description: jobDescription || "",
+        current_skills: Object.keys(currentSkills).length > 0 ? currentSkills : { other: [] },
+      })
+      const newGroups: { name: string; skills: string[] }[] = Object.entries(result.skills).map(([key, skillList]) => ({
+        name: key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+        skills: skillList,
+      }))
+      setSkills(
+        newGroups.map((g) => ({
+          id: `skill_${Date.now()}_${Math.random().toString(36).slice(2)}`,
+          ...g,
+        }))
+      )
+    } catch {
+    } finally {
+      setAiLoading(false)
+    }
+  }, [skills, jobDescription, setSkills])
 
   const [newSkillInput, setNewSkillInput] = useState<Record<string, string>>({})
 
@@ -48,6 +80,8 @@ export function SkillsEditor({
       visible={visible}
       onToggleVisibility={onToggleVisibility}
       dragHandleProps={dragHandleProps}
+      onAISuggest={handleSuggestSkills}
+      aiLoading={aiLoading}
     >
       <div className="space-y-3">
         {skills.map((group, index) => (

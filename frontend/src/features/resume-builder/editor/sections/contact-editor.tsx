@@ -1,7 +1,9 @@
 "use client"
 
+import { useState, useCallback } from "react"
 import { useResumeStore } from "@/store/resume-store"
 import { SectionHeader } from "./section-header"
+import { suggestJobTitleApi } from "@/lib/api/ai-suggest"
 
 type ContactEditorProps = {
   sectionId: string
@@ -17,7 +19,24 @@ export function ContactEditor({
   dragHandleProps,
 }: ContactEditorProps) {
   const contact = useResumeStore((s) => s.resume.content.contact)
+  const jobDescription = useResumeStore((s) => s.resume.content.jobDescription)
   const updateContact = useResumeStore((s) => s.updateContact)
+  const [aiLoading, setAiLoading] = useState(false)
+
+  const handleSuggestJobTitle = useCallback(async () => {
+    if (!jobDescription.trim()) return
+    setAiLoading(true)
+    try {
+      const result = await suggestJobTitleApi({
+        job_description: jobDescription,
+        current_title: contact.title || null,
+      })
+      updateContact({ title: result.title })
+    } catch {
+    } finally {
+      setAiLoading(false)
+    }
+  }, [jobDescription, contact.title, updateContact])
 
   return (
     <SectionHeader
@@ -26,6 +45,8 @@ export function ContactEditor({
       onToggleVisibility={onToggleVisibility}
       dragHandleProps={dragHandleProps}
       defaultOpen
+      onAISuggest={handleSuggestJobTitle}
+      aiLoading={aiLoading}
     >
       <FieldRow>
         <FieldGroup label="Full Name" required>

@@ -1,6 +1,6 @@
 "use client"
 
-import { GripVertical, Eye, EyeOff, ChevronDown, ChevronRight, Trash2 } from "lucide-react"
+import { GripVertical, Eye, EyeOff, ChevronDown, ChevronRight, Trash2, Sparkles, Loader2 } from "lucide-react"
 import { useState, type ReactNode } from "react"
 import { cn } from "@/lib/utils"
 
@@ -11,6 +11,8 @@ type SectionHeaderProps = {
   onRemove?: () => void
   dragHandleProps?: Record<string, unknown>
   defaultOpen?: boolean
+  onAISuggest?: () => void
+  aiLoading?: boolean
   children: ReactNode
 }
 
@@ -21,6 +23,8 @@ export function SectionHeader({
   onRemove,
   dragHandleProps,
   defaultOpen = true,
+  onAISuggest,
+  aiLoading,
   children,
 }: SectionHeaderProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen)
@@ -61,6 +65,18 @@ export function SectionHeader({
         </button>
 
         <div className="flex items-center gap-1">
+          {onAISuggest && (
+            <button
+              type="button"
+              onClick={() => { if (!aiLoading) onAISuggest() }}
+              disabled={aiLoading}
+              className="p-1 text-muted-foreground hover:text-brand transition-colors rounded-md hover:bg-brand/10"
+              title="AI suggest"
+            >
+              {aiLoading ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />}
+            </button>
+          )}
+
           <button
             type="button"
             onClick={onToggleVisibility}

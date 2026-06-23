@@ -1,8 +1,10 @@
 "use client"
 
+import { useState, useCallback } from "react"
 import { useResumeStore } from "@/store/resume-store"
 import { SectionHeader } from "./section-header"
 import { Plus, Trash2, X } from "lucide-react"
+import { suggestExperienceApi } from "@/lib/api/ai-suggest"
 
 type ExperienceEditorProps = {
   sectionId: string
@@ -18,12 +20,40 @@ export function ExperienceEditor({
   dragHandleProps,
 }: ExperienceEditorProps) {
   const experiences = useResumeStore((s) => s.resume.content.experience)
+  const jobDescription = useResumeStore((s) => s.resume.content.jobDescription)
   const addExperience = useResumeStore((s) => s.addExperience)
   const updateExperience = useResumeStore((s) => s.updateExperience)
   const removeExperience = useResumeStore((s) => s.removeExperience)
   const addBullet = useResumeStore((s) => s.addBullet)
   const updateBullet = useResumeStore((s) => s.updateBullet)
   const removeBullet = useResumeStore((s) => s.removeBullet)
+  const [aiLoading, setAiLoading] = useState(false)
+
+  const handleImproveExperience = useCallback(async () => {
+    const allBullets = experiences.flatMap((e) => e.bullets).filter(Boolean)
+    if (allBullets.length === 0) return
+    setAiLoading(true)
+    try {
+      const first = experiences[0]
+      const result = await suggestExperienceApi({
+        experience_bullets: allBullets,
+        job_role: first.role || "",
+        company: first.company || null,
+        job_description: jobDescription || null,
+      })
+      if (result.bullets.length === allBullets.length) {
+        let bi = 0
+        for (const exp of experiences) {
+          const expBullets = result.bullets.slice(bi, bi + exp.bullets.length)
+          updateExperience(exp.id, { bullets: expBullets })
+          bi += exp.bullets.length
+        }
+      }
+    } catch {
+    } finally {
+      setAiLoading(false)
+    }
+  }, [experiences, jobDescription, updateExperience])
 
   return (
     <SectionHeader
@@ -31,6 +61,8 @@ export function ExperienceEditor({
       visible={visible}
       onToggleVisibility={onToggleVisibility}
       dragHandleProps={dragHandleProps}
+      onAISuggest={handleImproveExperience}
+      aiLoading={aiLoading}
     >
       <div className="space-y-3">
         {experiences.map((exp, index) => (

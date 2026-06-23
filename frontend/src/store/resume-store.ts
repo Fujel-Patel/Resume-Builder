@@ -88,6 +88,7 @@ type ResumeStore = {
   updateEducation: (id: string, data: Partial<EducationItem>) => void
   removeEducation: (id: string) => void
 
+  setSkills: (skills: SkillGroup[]) => void
   addSkillGroup: () => void
   updateSkillGroup: (id: string, data: Partial<SkillGroup>) => void
   removeSkillGroup: (id: string) => void
@@ -306,8 +307,18 @@ export const useResumeStore = create<ResumeStore>()(
           isDirty: true,
         })),
 
-      addSkillGroup: () =>
-        set((state) => ({
+  setSkills: (skills: SkillGroup[]) =>
+    set((state) => ({
+      resume: {
+        ...state.resume,
+        content: { ...state.resume.content, skills },
+        updatedAt: new Date().toISOString(),
+      },
+      isDirty: true,
+    })),
+
+  addSkillGroup: () =>
+    set((state) => ({
           resume: {
             ...state.resume,
             content: {
