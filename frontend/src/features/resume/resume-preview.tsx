@@ -1,17 +1,14 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
-import { FileText } from "lucide-react"
 import type { ResumeData, ResumeTemplate } from "./types"
 import { ProfessionalExecutiveTemplate } from "./templates/professional-executive/template"
 
 type ResumePreviewProps = {
   data: ResumeData
   template: ResumeTemplate
-  previewHtml?: string | null
 }
 
-export function ResumePreview({ data, template, previewHtml }: ResumePreviewProps) {
+export function ResumePreview({ data, template }: ResumePreviewProps) {
   switch (template) {
     case "modern":
       return <ModernTemplate data={data} />
@@ -21,8 +18,6 @@ export function ResumePreview({ data, template, previewHtml }: ResumePreviewProp
       return <CreativeTemplate data={data} />
     case "professional-executive":
       return <ProfessionalExecutiveTemplate data={data} />
-    case "default":
-      return <DefaultTemplate data={data} previewHtml={previewHtml} />
     default:
       return <ClassicTemplate data={data} />
   }
@@ -154,76 +149,6 @@ function SkillsSection({ data }: { data: ResumeData }) {
     return <SkillsFlat skills={data.skills} />
   }
   return null
-}
-
-// ---------------------------------------------------------------------------
-// DEFAULT — renders backend-extracted style in an iframe, falls back to Classic
-// ---------------------------------------------------------------------------
-function DefaultTemplate({ data, previewHtml }: { data: ResumeData; previewHtml?: string | null }) {
-  const iframeRef = useRef<HTMLIFrameElement>(null)
-  const [loaded, setLoaded] = useState(false)
-  const [error, setError] = useState(false)
-
-  useEffect(() => {
-    if (!previewHtml || !iframeRef.current) return
-    setLoaded(false)
-    setError(false)
-    const iframe = iframeRef.current
-    const timer = setTimeout(() => {
-      try {
-        const doc = iframe.contentDocument || iframe.contentWindow?.document
-        if (doc) {
-          doc.open()
-          doc.write(previewHtml)
-          doc.close()
-          setLoaded(true)
-        }
-      } catch {
-        setError(true)
-      }
-    }, 50)
-    return () => clearTimeout(timer)
-  }, [previewHtml])
-
-  if (previewHtml && !error) {
-    return (
-      <div className="w-full bg-white text-black" style={{ minHeight: 600 }}>
-        {!loaded && (
-          <div className="flex items-center justify-center p-12 text-gray-400">
-            <p className="text-xs">Loading preview...</p>
-          </div>
-        )}
-        <iframe
-          ref={iframeRef}
-          title="Resume preview"
-          className="w-full border-0"
-          style={{
-            minHeight: 600,
-            opacity: loaded ? 1 : 0,
-            transition: "opacity 0.3s",
-          }}
-          sandbox="allow-same-origin"
-        />
-      </div>
-    )
-  }
-
-  return (
-    <div className="w-full bg-white text-black" style={{ minHeight: 600 }}>
-      <div className="flex flex-col items-center justify-center p-12 text-center text-gray-400">
-        <FileText className="size-12 mb-3 opacity-30" />
-        <p className="text-sm font-medium text-gray-500">Original Format Preserved</p>
-        <p className="mt-1 text-xs text-gray-400 max-w-xs">
-          Your uploaded document&apos;s original layout, fonts, and styling will be
-          preserved in the exported file.
-        </p>
-        <div className="mt-6 w-full border-t pt-6">
-          <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-3">Preview (classic fallback)</p>
-          <ClassicTemplate data={data} />
-        </div>
-      </div>
-    </div>
-  )
 }
 
 // ---------------------------------------------------------------------------

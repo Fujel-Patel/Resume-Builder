@@ -7,7 +7,7 @@ All follow the OpenAI Chat Completion API format.
 
 from typing import Optional
 
-import httpx
+from app.utils.http_client import get_client
 
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
@@ -28,23 +28,9 @@ async def complete(
     base_url: Optional[str] = None,
     max_tokens: int = 1024,
     model: str = "gpt-4o-mini",
+    json_mode: bool = False,
     **kwargs,
 ) -> str:
-    """Call an OpenAI-compatible chat completions endpoint.
-
-    Parameters
-    ----------
-    prompt: str
-        The user prompt.
-    api_key: str
-        API key for the service.
-    base_url: Optional[str]
-        Base URL (e.g. ``https://openrouter.ai/api/v1``).
-    max_tokens: int
-        Maximum tokens to generate.
-    model: str
-        Model name (default ``gpt-4o-mini``).
-    """
     if not base_url:
         raise ValueError("OpenAI-compatible provider requires a base_url")
 
@@ -58,15 +44,17 @@ async def complete(
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": max_tokens,
     }
-    async with httpx.AsyncClient(timeout=300) as client:
-        response = await client.post(url, headers=headers, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        choices = data.get("choices", [])
-        if choices:
-            message = choices[0].get("message", {})
-            return message.get("content", "")
-        return ""
+    if json_mode:
+        payload["response_format"] = {"type": "json_object"}
+    client = get_client()
+    response = await client.post(url, headers=headers, json=payload)
+    response.raise_for_status()
+    data = response.json()
+    choices = data.get("choices", [])
+    if choices:
+        message = choices[0].get("message", {})
+        return message.get("content", "")
+    return ""
 
 
 async def list_models(
@@ -74,20 +62,16 @@ async def list_models(
     api_key: str,
     base_url: Optional[str] = None,
 ) -> list[dict]:
-    """List available models from an OpenAI-compatible endpoint.
-
-    Returns a list of ``{id, name}`` dicts.
-    """
     if not base_url:
         return []
 
     url = f"{base_url.rstrip('/')}/models"
     headers = {"Authorization": f"Bearer {api_key}"}
 
-    async with httpx.AsyncClient(timeout=15) as client:
-        response = await client.get(url, headers=headers)
-        response.raise_for_status()
-        data = response.json()
+    client = get_client()
+    response = await client.get(url, headers=headers)
+    response.raise_for_status()
+    data = response.json()
 
     raw = data.get("data", [])
     return [{"id": m["id"], "name": m.get("id", m["id"])} for m in raw]

@@ -55,7 +55,7 @@ class TestScoreResume:
 
 class TestScoreUpload:
     @patch("app.modules.ats.service.ai_service.ai_complete")
-    @patch("app.modules.ats.router.extract_text")
+    @patch("app.modules.ats.router.extract_text_from_bytes")
     def test_pdf(self, mock_extract, mock_ai, client, mock_db):
         mock_extract.return_value = "Extracted PDF text - Python developer"
         mock_ai.return_value = (
@@ -75,7 +75,7 @@ class TestScoreUpload:
         assert data["overall_score"] == 90
 
     @patch("app.modules.ats.service.ai_service.ai_complete")
-    @patch("app.modules.ats.router.extract_text_from_docx")
+    @patch("app.modules.ats.router.extract_text_from_bytes")
     def test_docx(self, mock_extract, mock_ai, client, mock_db):
         mock_extract.return_value = "Extracted DOCX text"
         mock_ai.return_value = (
@@ -103,7 +103,7 @@ class TestScoreUpload:
         resp = client.post(f"{BASE}/score-upload")
         assert resp.status_code == 400
 
-    @patch("app.modules.ats.router.extract_text")
+    @patch("app.modules.ats.router.extract_text_from_bytes")
     def test_empty_extracted_text(self, mock_extract, client):
         mock_extract.return_value = ""
         resp = client.post(

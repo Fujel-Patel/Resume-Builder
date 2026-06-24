@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, useCallback, useRef } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { DashboardShell } from "@/components/layout/dashboard-shell"
 import { Button } from "@/components/ui/button"
 import { EnhancedCard } from "@/components/ui/enhanced-card"
@@ -14,7 +14,8 @@ import {
   RotateCcw, ArrowLeft, ChevronRight, Target, Search,
   X, Eye, RefreshCw, AlertCircle
 } from "lucide-react"
-import { optimizeResumeApi, type BackendResumeContent } from "@/lib/api/ai-suggest"
+import { type BackendResumeContent } from "@/lib/api/ai-suggest"
+import { optimizeResumeStream } from "@/lib/api/ai-stream"
 import { updateResumeApi } from "@/lib/api/resumes"
 import { api } from "@/lib/api/client"
 import type { ResumeTemplate, ResumeData } from "@/features/resume/types"
@@ -28,19 +29,12 @@ const STEPS = [
 
 const tips: Record<number, string> = {
   1: "Paste a detailed job description and upload your resume. Both are needed for the best keyword matching results.",
-  2: "Our AI is analyzing your resume against the job description. This takes about 30 seconds.",
+  2: "Our AI is analyzing your resume against the job description. Optimization may take 10–30 seconds.",
   3: "Review the changes side-by-side. Green highlights show optimized content added by AI.",
   4: "Download your optimized resume in your preferred format. Your original is always preserved.",
 }
 
-const PROCESS_PHASES = [
-  "Uploading resume...",
-  "Parsing resume structure...",
-  "Optimizing against job description...",
-]
-
 const TEMPLATES: { id: ResumeTemplate; label: string; desc: string }[] = [
-  { id: "default", label: "Default", desc: "Preserves original uploaded format" },
   { id: "classic", label: "Classic", desc: "Traditional serif layout" },
   { id: "modern", label: "Modern", desc: "Dark navy header, clean sans" },
   { id: "minimal", label: "Minimal", desc: "Light, airy, compact" },
@@ -48,11 +42,11 @@ const TEMPLATES: { id: ResumeTemplate; label: string; desc: string }[] = [
 ]
 
 function toFrontend(d: BackendResumeContent | null): ResumeData | null {
-  if (!d) return null
-  const p = d.personal
+  if (!d || typeof d !== "object") return null
+  const p = (d.personal || {}) as Record<string, string>
   return {
     personal: {
-      name: `${p.first_name} ${p.last_name}`.trim() || "",
+      name: `${p.first_name || ""} ${p.last_name || ""}`.trim() || "",
       title: p.job_title || "",
       email: p.email || "",
       phone: p.mobile || "",
@@ -117,7 +111,25 @@ function CompareSection({ label, children }: { label: string; children: React.Re
 
 export function AiGeneratorPage() {
   const router = useRouter()
-  const [step, setStep] = useState(1)
+  const searchParams = useSearchParams()
+  const [ready, setReady] = useState(false)
+  const [step, setStepState] = useState(1)
+  const [maxCompleted, setMaxCompleted] = useState(1)
+  const stepRef = useRef(step)
+
+  const goToStep = useCallback((s: number) => {
+    if (s >= 1 && s <= 4) {
+      setStepState(s)
+      stepRef.current = s
+    }
+  }, [])
+
+  const advanceStep = useCallback((s: number) => {
+    setMaxCompleted((prev) => Math.max(prev, s))
+    setStepState(s)
+    stepRef.current = s
+  }, [])
+
   const [jobDesc, setJobDesc] = useState("")
   const [file, setFile] = useState<File | null>(null)
   const [progress, setProgress] = useState(0)
@@ -126,51 +138,93 @@ export function AiGeneratorPage() {
   const [parsedData, setParsedData] = useState<BackendResumeContent | null>(null)
   const [optimizedData, setOptimizedData] = useState<BackendResumeContent | null>(null)
   const [resumeId, setResumeId] = useState<string | null>(null)
-  const [template, setTemplate] = useState<ResumeTemplate>("default")
+  const [template, setTemplate] = useState<ResumeTemplate>("modern")
   const [saving, setSaving] = useState(false)
   const [downloading, setDownloading] = useState(false)
-  const [phase, setPhase] = useState("")
-  const [previewHtml, setPreviewHtml] = useState<string | null>(null)
+  const [stageLabel, setStageLabel] = useState("")
+  const [elapsed, setElapsed] = useState(0)
+  const abortRef = useRef<AbortController | null>(null)
+  const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const startProcessing = useCallback(async () => {
     if (!file) return
     setProcessing(true)
     setError(null)
     setProgress(0)
-    setPhase(PROCESS_PHASES[0])
+    setStageLabel("Starting...")
+    setElapsed(0)
 
-    const interval = setInterval(() => {
-      setProgress((p) => {
-        if (p >= 95) {
-          clearInterval(interval)
-          return 95
-        }
-        return p + Math.floor(Math.random() * 8) + 2
-      })
-    }, 500)
-
-    setTimeout(() => setPhase(PROCESS_PHASES[1]), 2000)
-    setTimeout(() => setPhase(PROCESS_PHASES[2]), 4000)
-
-    try {
-      const result = await optimizeResumeApi(file, jobDesc)
-      setParsedData(result.parsed)
-      setOptimizedData(result.optimized)
-      setResumeId(result.resume_id)
-      clearInterval(interval)
-      setProgress(100)
-      setTimeout(() => {
-        setProcessing(false)
-        setStep(3)
-      }, 600)
-    } catch (err: unknown) {
-      clearInterval(interval)
-      const msg = err instanceof Error ? err.message : "Failed to optimize resume"
-      setError(msg)
-      setProcessing(false)
-      setProgress(0)
+    if (elapsedTimerRef.current) {
+      clearInterval(elapsedTimerRef.current)
+      elapsedTimerRef.current = null
     }
-  }, [file, jobDesc])
+
+    const controller = new AbortController()
+    abortRef.current = controller
+
+    await optimizeResumeStream(file, jobDesc, {
+      onProgress: (p) => {
+        setProgress(p.progress)
+        setStageLabel(p.stage_label)
+
+        if (p.stage === "optimizing") {
+          if (!elapsedTimerRef.current) {
+            setElapsed(0)
+            elapsedTimerRef.current = setInterval(() => {
+              setElapsed((e) => e + 1)
+            }, 1000)
+          }
+        } else {
+          if (elapsedTimerRef.current) {
+            clearInterval(elapsedTimerRef.current)
+            elapsedTimerRef.current = null
+          }
+          setElapsed(0)
+        }
+      },
+      onCompleted: (parsed, optimized, id) => {
+        setParsedData(parsed)
+        setOptimizedData(optimized)
+        setResumeId(id)
+        setProgress(100)
+        setStageLabel("Done!")
+        setProcessing(false)
+        advanceStep(3)
+        router.replace("/ai-generator?step=3", { scroll: false })
+      },
+      onError: (code, message) => {
+        setError(message)
+        setProcessing(false)
+        setProgress(0)
+        setStageLabel("")
+        setElapsed(0)
+      },
+    }, controller.signal)
+  }, [file, jobDesc, advanceStep, router])
+
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort()
+      if (elapsedTimerRef.current) {
+        clearInterval(elapsedTimerRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    const s = Number(searchParams.get("step"))
+    if (s >= 1 && s <= 4) {
+      if (!ready) {
+        setStepState(s)
+        stepRef.current = s
+        setMaxCompleted(Math.max(1, Math.min(s, 4)))
+      } else if (s !== stepRef.current) {
+        goToStep(s)
+      }
+    }
+    setReady(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   useEffect(() => {
     if (step === 2 && !processing && !parsedData && !error) {
@@ -178,50 +232,25 @@ export function AiGeneratorPage() {
     }
   }, [step, processing, parsedData, error, startProcessing])
 
-  useEffect(() => {
-    if (step === 4 && resumeId && template === "default") {
-      let cancelled = false
-      let retries = 0
-      const maxRetries = 2
-
-      const fetchPreview = () => {
-        api.fetchHtml(`/resumes/${resumeId}/preview-html?template=default`)
-          .then((html) => {
-            if (!cancelled && html && html.trim().length > 0) {
-              setPreviewHtml(html)
-            } else if (!cancelled) {
-              setPreviewHtml(null)
-            }
-          })
-          .catch(() => {
-            if (!cancelled) {
-              retries++
-              if (retries <= maxRetries) {
-                setTimeout(fetchPreview, 500 * retries)
-              } else {
-                setPreviewHtml(null)
-              }
-            }
-          })
-      }
-      fetchPreview()
-      return () => { cancelled = true }
-    } else if (step !== 4) {
-      setPreviewHtml(null)
-    }
-  }, [step, resumeId, template])
-
   const canContinue = () => {
     if (step === 1) return jobDesc.trim().length > 50 && file !== null
     return true
   }
 
   const nextStep = () => {
-    if (step < 4 && step !== 2) setStep(step + 1)
+    if (step < 4 && step !== 2) {
+      const next = step + 1
+      advanceStep(next)
+      router.replace(`/ai-generator?step=${next}`, { scroll: false })
+    }
   }
 
   const prevStep = () => {
-    if (step > 1 && step !== 2) setStep(step - 1)
+    if (step > 1 && step !== 2) {
+      const prev = step - 1
+      goToStep(prev)
+      router.replace(`/ai-generator?step=${prev}`, { scroll: false })
+    }
   }
 
   const handleAcceptChanges = async () => {
@@ -232,7 +261,8 @@ export function AiGeneratorPage() {
         template_id: template,
         content: optimizedData as unknown as Record<string, unknown>,
       })
-      setStep(4)
+      advanceStep(4)
+      router.replace("/ai-generator?step=4", { scroll: false })
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to save resume"
       setError(msg)
@@ -247,6 +277,7 @@ export function AiGeneratorPage() {
     setError(null)
     try {
       const blob = await api.download(`/resumes/${resumeId}/export?template=${template}`)
+      if (blob.size === 0) throw new Error("Downloaded file is empty")
       const ext = blob.type.includes("wordprocessingml") ? "docx" : "pdf"
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
@@ -255,7 +286,7 @@ export function AiGeneratorPage() {
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      setTimeout(() => URL.revokeObjectURL(url), 10_000)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to download resume"
       setError(msg)
@@ -265,7 +296,13 @@ export function AiGeneratorPage() {
   }
 
   const handleStartOver = () => {
-    setStep(1)
+    abortRef.current?.abort()
+    if (elapsedTimerRef.current) {
+      clearInterval(elapsedTimerRef.current)
+      elapsedTimerRef.current = null
+    }
+    setMaxCompleted(1)
+    goToStep(1)
     setJobDesc("")
     setFile(null)
     setProgress(0)
@@ -274,13 +311,25 @@ export function AiGeneratorPage() {
     setParsedData(null)
     setOptimizedData(null)
     setResumeId(null)
-    setTemplate("default")
+    setTemplate("modern")
     setSaving(false)
-    setPhase("")
+    setStageLabel("")
+    setElapsed(0)
+    router.replace("/ai-generator?step=1", { scroll: false })
   }
 
   const parsedFrontend = toFrontend(parsedData)
   const optimizedFrontend = toFrontend(optimizedData)
+
+  if (!ready) {
+    return (
+      <DashboardShell title="AI Resume Generator">
+        <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
+          <div className="size-6 animate-spin rounded-full border-2 border-brand border-t-transparent" />
+        </div>
+      </DashboardShell>
+    )
+  }
 
   return (
     <DashboardShell title="AI Resume Generator">
@@ -288,29 +337,44 @@ export function AiGeneratorPage() {
         <div className="border-b bg-card px-4 py-3 lg:px-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 lg:gap-4">
-              {STEPS.map((s, i) => (
-                <div key={s.id} className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <div className={cn(
-                      "flex size-7 items-center justify-center rounded-full text-[11px] font-medium transition-all",
-                      s.id === step && "bg-brand text-black",
-                      s.id < step && "bg-emerald-500/20 text-emerald-500",
-                      s.id > step && "bg-muted text-muted-foreground"
-                    )}>
-                      {s.id < step ? <Check className="size-3.5" /> : s.id}
-                    </div>
-                    <span className={cn(
-                      "hidden lg:inline text-xs",
-                      s.id === step ? "text-foreground font-medium" : "text-muted-foreground"
-                    )}>
-                      {s.label}
-                    </span>
+              {STEPS.map((s, i) => {
+                const isNavigable = s.id <= maxCompleted
+                return (
+                  <div key={s.id} className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={!isNavigable || s.id === step || (s.id === 2 && processing)}
+                      onClick={() => {
+                        goToStep(s.id)
+                        router.replace(`/ai-generator?step=${s.id}`, { scroll: false })
+                      }}
+                      className={cn(
+                        "flex items-center gap-1.5",
+                        isNavigable && s.id !== step && "cursor-pointer hover:opacity-80",
+                        !isNavigable && "cursor-default"
+                      )}
+                    >
+                      <div className={cn(
+                        "flex size-7 items-center justify-center rounded-full text-[11px] font-medium transition-all",
+                        s.id === step && "bg-brand text-black",
+                        s.id < step && "bg-emerald-500/20 text-emerald-500",
+                        s.id > step && "bg-muted text-muted-foreground"
+                      )}>
+                        {s.id < step ? <Check className="size-3.5" /> : s.id}
+                      </div>
+                      <span className={cn(
+                        "hidden lg:inline text-xs",
+                        s.id === step ? "text-foreground font-medium" : "text-muted-foreground"
+                      )}>
+                        {s.label}
+                      </span>
+                    </button>
+                    {i < STEPS.length - 1 && (
+                      <ChevronRight className="size-3 text-muted-foreground/40 hidden lg:block" />
+                    )}
                   </div>
-                  {i < STEPS.length - 1 && (
-                    <ChevronRight className="size-3 text-muted-foreground/40 hidden lg:block" />
-                  )}
-                </div>
-              ))}
+                )
+              })}
             </div>
             {step === 4 && (
               <Button variant="ghost" size="sm" onClick={handleStartOver}>
@@ -420,7 +484,9 @@ export function AiGeneratorPage() {
                       </div>
                     </div>
                     <h2 className="mt-6 text-lg font-semibold text-foreground">AI is processing your resume</h2>
-                    <p className="mt-1 text-sm text-muted-foreground">{phase}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {elapsed > 0 ? `${stageLabel} (${elapsed}s)` : stageLabel}
+                    </p>
                     <div className="mt-6 w-full max-w-xs">
                       <div className="flex items-center justify-between mb-1.5">
                         <span className="text-xs text-muted-foreground">Progress</span>
@@ -599,7 +665,7 @@ export function AiGeneratorPage() {
                     <div className="space-y-2 pt-2">
                       <Button variant="brand" className="w-full" onClick={handleDownloadPdf} disabled={!resumeId || downloading}>
                         <Download className="size-4" />
-                        {downloading ? "Downloading..." : template === "default" ? "Download (Original Format)" : "Download PDF"}
+                        {downloading ? "Downloading..." : "Download PDF"}
                       </Button>
                       <Button variant="outline" className="w-full" onClick={() => resumeId && router.push(`/resume/new?id=${resumeId}`)} disabled={!resumeId}>
                         <Eye className="size-4" />
@@ -616,15 +682,10 @@ export function AiGeneratorPage() {
                     <div className="overflow-hidden rounded-lg border shadow-sm">
                       <div className="bg-muted px-4 py-2 border-b flex items-center justify-between">
                         <p className="text-xs font-medium text-muted-foreground">Preview — {TEMPLATES.find((t) => t.id === template)?.label}</p>
-                        {template === "default" && (
-                          <span className="rounded-md bg-amber-500/10 border border-amber-500/30 px-2 py-0.5 text-[10px] text-amber-600 font-medium">
-                            Preview is approximate
-                          </span>
-                        )}
                       </div>
                       <div className="bg-[#0A0A0A] p-4" style={{ minHeight: 400 }}>
                         <div className="mx-auto max-w-[210mm] scale-[0.7] origin-top">
-                          <ResumePreview data={optimizedFrontend} template={template} previewHtml={previewHtml} />
+                          <ResumePreview data={optimizedFrontend} template={template} />
                         </div>
                       </div>
                     </div>
@@ -658,7 +719,7 @@ export function AiGeneratorPage() {
           </aside>
         </div>
 
-        {step !== 2 && step !== 4 && (
+        {step !== 2 && (
           <div className="flex items-center justify-between border-t bg-card px-4 py-3 lg:px-6">
             <Button
               variant="ghost"
@@ -669,15 +730,17 @@ export function AiGeneratorPage() {
               <ArrowLeft className="size-3.5" />
               Back
             </Button>
-            <Button
-              variant="brand"
-              size="sm"
-              onClick={step === 3 ? handleAcceptChanges : nextStep}
-              disabled={!canContinue() || saving}
-            >
-              {step === 3 ? (saving ? "Saving..." : "Accept Changes") : "Continue"}
-              {step !== 3 && <ArrowRight className="size-3.5" />}
-            </Button>
+            {step !== 4 && (
+              <Button
+                variant="brand"
+                size="sm"
+                onClick={step === 3 ? handleAcceptChanges : nextStep}
+                disabled={!canContinue() || saving}
+              >
+                {step === 3 ? (saving ? "Saving..." : "Accept Changes") : "Continue"}
+                {step !== 3 && <ArrowRight className="size-3.5" />}
+              </Button>
+            )}
           </div>
         )}
       </div>

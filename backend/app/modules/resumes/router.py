@@ -88,7 +88,7 @@ async def delete_resume(
     return success({"message": "Resume deleted"})
 
 
-# POST /resumes/{id}/export — PDF (Jinja2) or DOCX (injected template)
+# POST /resumes/{id}/export — PDF (Jinja2)
 @router.post("/{resume_id}/export")
 async def export_resume(
     request: Request,
@@ -100,23 +100,10 @@ async def export_resume(
     resume = await service.get_resume(db, resume_id, current_user.id)
 
     effective_template = template or str(resume.template_id)
-    if effective_template == "default":
-        resume.template_id = "default"
 
-    from app.modules.resumes.export import render_resume_to_pdf, get_injected_docx_bytes
+    from app.modules.resumes.export import render_resume_to_pdf
 
-    # If "default" template with an injected DOCX, serve it directly
-    if effective_template == "default":
-        injected = get_injected_docx_bytes(resume)
-        if injected is not None:
-            return _cors_response(
-                Response(
-                    content=injected,
-                    media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    headers={"Content-Disposition": f'attachment; filename="resume_{resume_id}.docx"'},
-                ),
-                request,
-            )
+    resume.template_id = effective_template  # type: ignore[assignment]
 
     try:
         pdf_bytes = render_resume_to_pdf(resume)
@@ -200,10 +187,10 @@ async def preview_html(
     resume = await service.get_resume(db, resume_id, current_user.id)
 
     effective_template = template or str(resume.template_id)
-    if effective_template == "default":
-        resume.template_id = "default"
 
     from app.modules.resumes.export import render_resume_to_html
+
+    resume.template_id = effective_template  # type: ignore[assignment]
 
     try:
         html_content = render_resume_to_html(resume)

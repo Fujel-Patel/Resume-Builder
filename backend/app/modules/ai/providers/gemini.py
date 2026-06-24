@@ -6,9 +6,9 @@ Uses the Gemini `generateContent` endpoint. Accepts an API key via query paramet
 
 from typing import Optional
 
-import httpx
+from app.utils.http_client import get_client
 
-# Default endpoint (public API) – model can be part of the URL
+
 DEFAULT_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent"
 GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta"
 
@@ -20,51 +20,34 @@ async def complete(
     base_url: Optional[str] = None,
     max_tokens: int = 1024,
     model: str = "gemini-2.0-flash",
+    json_mode: bool = False,
     **kwargs,
 ) -> str:
-    """Call Gemini's generateContent API.
-
-    Parameters
-    ----------
-    prompt: str
-        The prompt text.
-    api_key: str
-        Google API key.
-    base_url: Optional[str]
-        If provided, replaces the default endpoint. Expected to include the model name.
-    max_tokens: int
-        Maximum output tokens.
-    model: str
-        Model identifier (default flash). Ignored if `base_url` already contains a model.
-    **kwargs: Any
-        Ignored – kept for unified signature.
-    """
-    # Resolve endpoint
     if base_url:
         url = base_url
     else:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
-    # Gemini expects the API key as a query parameter `key`
     params = {"key": api_key}
 
     payload = {
         "contents": [{"role": "user", "parts": [{"text": prompt}]}],
         "generationConfig": {"maxOutputTokens": max_tokens},
     }
+    if json_mode:
+        payload["generationConfig"]["response_mime_type"] = "application/json"
 
-    async with httpx.AsyncClient(timeout=300) as client:
-        response = await client.post(url, params=params, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        # Extract the text from candidates[0].content.parts[0].text
-        candidates = data.get("candidates", [])
-        if candidates:
-            content = candidates[0].get("content", {})
-            parts = content.get("parts", [])
-            if parts:
-                return parts[0].get("text", "")
-        return ""
+    client = get_client()
+    response = await client.post(url, params=params, json=payload)
+    response.raise_for_status()
+    data = response.json()
+    candidates = data.get("candidates", [])
+    if candidates:
+        content = candidates[0].get("content", {})
+        parts = content.get("parts", [])
+        if parts:
+            return parts[0].get("text", "")
+    return ""
 
 
 async def list_models(
@@ -72,17 +55,13 @@ async def list_models(
     api_key: str,
     base_url: Optional[str] = None,
 ) -> list[dict]:
-    """List available Gemini models that support ``generateContent``.
-
-    Returns a list of ``{id, name}`` dicts.
-    """
     url = f"{base_url or GEMINI_API_BASE}/models"
     params = {"key": api_key}
 
-    async with httpx.AsyncClient(timeout=15) as client:
-        response = await client.get(url, params=params)
-        response.raise_for_status()
-        data = response.json()
+    client = get_client()
+    response = await client.get(url, params=params)
+    response.raise_for_status()
+    data = response.json()
 
     models = []
     for m in data.get("models", []):

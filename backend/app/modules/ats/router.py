@@ -11,7 +11,7 @@ from app.modules.ats import service as ats_service
 from app.modules.users import models as user_models
 from app.types.common import success
 from app.utils.auth import get_current_user
-from app.utils.pdf_parser import extract_text, extract_text_from_docx
+from app.utils.pdf_parser import extract_text_from_bytes
 
 router = APIRouter()
 
@@ -91,21 +91,8 @@ async def score_ats_upload(
             detail={"code": "INVALID_REQUEST", "message": "File size exceeds 5MB limit"},
         )
 
-    import tempfile
-    from pathlib import Path
-
-    ext = ".pdf" if file.content_type == "application/pdf" else ".docx"
-    with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
-        tmp.write(content)
-        tmp_path = Path(tmp.name)
-
-    try:
-        if ext == ".pdf":
-            resume_text = extract_text(tmp_path)
-        else:
-            resume_text = extract_text_from_docx(tmp_path)
-    finally:
-        tmp_path.unlink(missing_ok=True)
+    ext = "pdf" if file.content_type == "application/pdf" else "docx"
+    resume_text = extract_text_from_bytes(content, ext)
 
     if not resume_text.strip():
         raise HTTPException(

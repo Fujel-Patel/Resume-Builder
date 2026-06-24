@@ -1,3 +1,4 @@
+import json
 import uuid
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -155,17 +156,14 @@ class TestGenerateResume:
 
 
 class TestOptimizeResume:
-    @patch("app.modules.ai.router.inject_into_docx")
-    @patch("app.utils.style_extractor.extract_and_generate_template")
     @patch("app.modules.ai.service.ai_complete")
-    @patch("app.modules.ai.router.extract_text")
-    def test_pdf(self, mock_extract, mock_ai, mock_style, mock_inject, client, mock_db):
+    @patch("app.modules.ai.router.extract_text_from_bytes")
+    def test_pdf(self, mock_extract, mock_ai, client, mock_db):
         mock_extract.return_value = "John Doe - Experienced Python developer"
-        mock_style.return_value = None
-        mock_ai.side_effect = [
-            '{"personal": {"first_name": "John"}, "summary": "Experienced", "skills": ["Python"], "experience": [], "projects": [], "education": [], "certifications": []}',
-            '{"personal": {"first_name": "John"}, "summary": "Experienced Python developer with 5 years", "skills": ["Python", "FastAPI"], "experience": [], "projects": [], "education": [], "certifications": []}',
-        ]
+        mock_ai.return_value = json.dumps({
+            "parsed": {"personal": {"first_name": "John"}, "summary": "Experienced", "skills": ["Python"], "experience": [], "projects": [], "education": [], "certifications": []},
+            "optimized": {"personal": {"first_name": "John"}, "summary": "Experienced Python developer with 5 years", "skills": ["Python", "FastAPI"], "experience": [], "projects": [], "education": [], "certifications": []},
+        })
 
         mock_resume = MagicMock()
         mock_resume.id = uuid.UUID("00000000-0000-0000-0000-000000000001")
@@ -183,17 +181,14 @@ class TestOptimizeResume:
         assert "optimized" in data
         assert data["parsed"]["personal"]["first_name"] == "John"
 
-    @patch("app.modules.ai.router.inject_into_docx")
-    @patch("app.utils.style_extractor.extract_and_generate_template")
     @patch("app.modules.ai.service.ai_complete")
-    @patch("app.modules.ai.router.extract_text_from_docx")
-    def test_docx(self, mock_extract, mock_ai, mock_style, mock_inject, client, mock_db):
+    @patch("app.modules.ai.router.extract_text_from_bytes")
+    def test_docx(self, mock_extract, mock_ai, client, mock_db):
         mock_extract.return_value = "Jane Doe - Developer"
-        mock_style.return_value = None
-        mock_ai.side_effect = [
-            '{"personal": {"first_name": "Jane"}, "summary": "Dev", "skills": ["React"], "experience": [], "projects": [], "education": [], "certifications": []}',
-            '{"personal": {"first_name": "Jane"}, "summary": "Optimized dev", "skills": ["React", "Next.js"], "experience": [], "projects": [], "education": [], "certifications": []}',
-        ]
+        mock_ai.return_value = json.dumps({
+            "parsed": {"personal": {"first_name": "Jane"}, "summary": "Dev", "skills": ["React"], "experience": [], "projects": [], "education": [], "certifications": []},
+            "optimized": {"personal": {"first_name": "Jane"}, "summary": "Optimized dev", "skills": ["React", "Next.js"], "experience": [], "projects": [], "education": [], "certifications": []},
+        })
 
         mock_resume = MagicMock()
         mock_resume.id = uuid.UUID("00000000-0000-0000-0000-000000000002")
@@ -219,7 +214,7 @@ class TestOptimizeResume:
         )
         assert resp.status_code == 400
 
-    @patch("app.modules.ai.router.extract_text")
+    @patch("app.modules.ai.router.extract_text_from_bytes")
     def test_empty_extracted_text(self, mock_extract, client):
         mock_extract.return_value = ""
         resp = client.post(
@@ -228,3 +223,101 @@ class TestOptimizeResume:
             data={"job_description": "test"},
         )
         assert resp.status_code == 422
+
+
+class TestOptimizeResumeStream:
+    @patch("app.modules.ai.service.ai_complete")
+    @patch("app.modules.ai.router.extract_text_from_bytes")
+    def test_stream_success(self, mock_extract, mock_ai, client, mock_db):
+        mock_extract.return_value = "John Doe - Experienced Python developer"
+        mock_ai.return_value = json.dumps({
+            "parsed": {"personal": {"first_name": "John"}, "summary": "Experienced", "skills": ["Python"], "experience": [], "projects": [], "education": [], "certifications": []},
+            "optimized": {"personal": {"first_name": "John"}, "summary": "Optimized Python developer", "skills": ["Python", "FastAPI"], "experience": [], "projects": [], "education": [], "certifications": []},
+        })
+
+        mock_resume = MagicMock()
+        mock_resume.id = uuid.UUID("00000000-0000-0000-0000-000000000001")
+        mock_resume.data = MagicMock()
+        mock_db.execute = AsyncMock(return_value=mock_result(scalar_value=mock_resume))
+
+        resp = client.post(
+            f"{BASE}/optimize-resume/stream",
+            data={"job_description": "Python developer role"},
+            files={"file": ("resume.pdf", b"%PDF-1.4 fake pdf content", "application/pdf")},
+        )
+        assert resp.status_code == 200
+        assert "text/event-stream" in resp.headers["content-type"]
+
+        events = []
+        for line in resp.text.strip().split("\n\n"):
+            if line.strip():
+                events.append(line)
+
+        stage_events = [e for e in events if e.startswith("event: progress")]
+        assert len(stage_events) >= 5  # upload, extracting, optimizing, validating, saving
+
+        # Find the completed event (separate event: completed)
+        complete_events = [e for e in events if e.startswith("event: completed")]
+        assert len(complete_events) == 1
+        last = json.loads(complete_events[0].split("data: ", 1)[1])
+        assert "parsed" in last
+        assert "optimized" in last
+        assert "resume_id" in last
+
+    def test_stream_no_file(self, client):
+        resp = client.post(
+            f"{BASE}/optimize-resume/stream",
+            data={"job_description": "test"},
+        )
+        assert resp.status_code == 400
+
+    def test_stream_invalid_file_type(self, client):
+        resp = client.post(
+            f"{BASE}/optimize-resume/stream",
+            files={"file": ("resume.txt", b"text content", "text/plain")},
+            data={"job_description": "test"},
+        )
+        assert resp.status_code == 400
+
+    @patch("app.modules.ai.router.extract_text_from_bytes")
+    def test_stream_empty_text_yields_error_event(self, mock_extract, client):
+        mock_extract.return_value = ""
+        resp = client.post(
+            f"{BASE}/optimize-resume/stream",
+            files={"file": ("resume.pdf", b"%PDF-1.4", "application/pdf")},
+            data={"job_description": "test"},
+        )
+        assert resp.status_code == 200
+        assert "text/event-stream" in resp.headers["content-type"]
+        assert "event: error" in resp.text
+        assert "PARSE_ERROR" in resp.text
+
+    @patch("app.modules.ai.service.ai_complete")
+    @patch("app.modules.ai.router.extract_text_from_bytes")
+    def test_stream_invalid_json_yields_error_event(self, mock_extract, mock_ai, client, mock_db):
+        mock_extract.return_value = "John Doe - Developer"
+        mock_ai.return_value = "this is not json at all"
+        resp = client.post(
+            f"{BASE}/optimize-resume/stream",
+            files={"file": ("resume.pdf", b"%PDF-1.4 fake", "application/pdf")},
+            data={"job_description": "test"},
+        )
+        assert resp.status_code == 200
+        assert "text/event-stream" in resp.headers["content-type"]
+        assert "event: error" in resp.text
+        assert "AI_PROVIDER_ERROR" in resp.text
+
+    @patch("app.modules.ai.service.ai_complete")
+    @patch("app.modules.ai.router.extract_text_from_bytes")
+    def test_stream_ai_failure_yields_error_event(self, mock_extract, mock_ai, client, mock_db):
+        mock_extract.return_value = "John Doe - Developer"
+        mock_ai.side_effect = Exception("Provider timeout")
+        resp = client.post(
+            f"{BASE}/optimize-resume/stream",
+            files={"file": ("resume.pdf", b"%PDF-1.4 fake", "application/pdf")},
+            data={"job_description": "test"},
+        )
+        assert resp.status_code == 200
+        assert "text/event-stream" in resp.headers["content-type"]
+        assert "event: error" in resp.text
+        assert "AI_PROVIDER_ERROR" in resp.text

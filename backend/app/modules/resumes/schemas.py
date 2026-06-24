@@ -74,12 +74,12 @@ class ResumeContent(BaseModel):
 # Request schemas
 # ---------------------------------------------------------------------------
 
-TEMPLATE_IDS = {"classic", "modern", "minimal", "creative", "default"}
+TEMPLATE_IDS = {"classic", "modern", "minimal", "creative"}
 
 
 class ResumeCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
-    template_id: str = Field(..., description="classic | modern | minimal | creative")
+    template_id: str = Field(..., description="classic | modern | minimal | creative | professional-executive")
     content: Optional[ResumeContent] = None
 
     model_config = ConfigDict(str_strip_whitespace=True)

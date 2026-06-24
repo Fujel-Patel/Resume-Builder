@@ -126,13 +126,16 @@ async def score_resume(
     prompt = "\n".join(prompt_parts)
 
     # Call AI – this returns a raw string (likely JSON)
-    raw_result = await ai_service.ai_complete(str(user_id), prompt, db)
+    raw_result = await ai_service.ai_complete(str(user_id), prompt, db, json_mode=True)
 
-    # Parse JSON – raise a clear error if the format is wrong
+    # Parse JSON – try direct parse first (JSON mode), fall back to fence-stripping
     try:
-        result_dict = _extract_json(raw_result)
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"Failed to parse ATS AI response as JSON: {exc}")
+        result_dict = json.loads(raw_result)
+    except json.JSONDecodeError:
+        try:
+            result_dict = _extract_json(raw_result)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"Failed to parse ATS AI response as JSON: {exc}")
 
     # Validate required keys (overall_score, section_scores, missing_keywords, suggestions)
     required_keys = {

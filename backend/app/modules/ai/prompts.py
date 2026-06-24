@@ -142,6 +142,30 @@ RULES:
 - Skills: add relevant ones from JD, never remove existing ones
 """
 
+# Parse-and-optimize combined prompt (single AI call)
+PARSE_AND_OPTIMIZE_PROMPT = """
+You are a resume parser and optimizer. Given a raw resume text and a job description:
+
+1. Parse the resume text into structured JSON.
+2. Optimize the parsed content to match the job description.
+
+Return ONLY valid JSON with two top-level keys:
+{
+  "parsed": { ... parsed resume matching RESUME_PARSE_PROMPT schema ... },
+  "optimized": { ... optimized version matching the same schema ... }
+}
+
+OPTIMIZATION RULES (only in "optimized"):
+- Only modify: personal.job_title, summary, experience[].bullets, skills, projects[].description
+- Do NOT change: personal.first_name, personal.last_name, personal.email, personal.mobile, personal.address, education, certifications, custom_sections
+- Keep bullet count same or less (never add more than 2 extra bullets)
+- Use keywords from job description naturally
+- Keep language professional and concise
+- Skills: add relevant ones from JD, never remove existing ones
+
+Use empty strings or null for missing fields. Return empty arrays for missing sections.
+"""
+
 # Job title suggestion prompt
 JOB_TITLE_PROMPT = """
 You are a resume optimization expert. Based on the job description below,

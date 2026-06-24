@@ -1,13 +1,11 @@
-"""Resume export — serves injected DOCX or renders Jinja2 → PDF."""
+"""Resume export — renders Jinja2 → PDF."""
 
 from pathlib import Path
-from typing import Dict, Optional
 
 from jinja2 import Environment, FileSystemLoader
 from weasyprint import HTML
 
 from app.modules.resumes.models import Resume
-from app.utils.style_extractor import style_to_template_jinja
 
 TEMPLATE_DIR = Path(__file__).parent / "templates"
 
@@ -40,28 +38,9 @@ def _build_context(resume: Resume) -> dict:
     }
 
 
-def get_injected_docx_bytes(resume: Resume) -> bytes | None:
-    """Read the injected DOCX file from disk, if it exists."""
-    path = getattr(resume, "injected_file_path", None)
-    if not path:
-        return None
-    p = Path(str(path))
-    return p.read_bytes() if p.is_file() else None
-
-
 def render_resume_to_html(resume: Resume) -> str:
     template_id = resume.template_id
     context = _build_context(resume)
-
-    if template_id == "default":
-        ts: Optional[Dict] = None
-        if resume.data is not None:
-            ts = getattr(resume.data, "template_style", None)
-        if ts:
-            jinja_html = style_to_template_jinja(ts)
-            return _env.from_string(jinja_html).render(**context)
-        template = _env.get_template("default.html")
-        return template.render(**context)
 
     if template_id not in ("classic", "modern", "minimal", "creative"):
         template_id = "modern"
@@ -71,11 +50,7 @@ def render_resume_to_html(resume: Resume) -> str:
 
 
 def render_resume_to_pdf(resume: Resume) -> bytes:
-    """Return injected DOCX bytes (for default template) or render Jinja2 → PDF."""
-    if resume.template_id == "default":
-        injected = get_injected_docx_bytes(resume)
-        if injected is not None:
-            return injected
-
+    """Render Jinja2 template → PDF."""
     html_content = render_resume_to_html(resume)
-    return HTML(string=html_content, base_url="about:blank").write_pdf()
+    pdf = HTML(string=html_content, base_url="about:blank").write_pdf()
+    return pdf if pdf is not None else b""

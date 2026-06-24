@@ -14,6 +14,7 @@ from app.config.database import Base, engine
 from app.config.settings import settings
 from app.middleware.auth import AuthMiddleware
 from app.middleware.error_handler import ErrorHandlerMiddleware, validation_exception_handler
+from app.utils.http_client import close_client as close_http_client
 from app.modules.ai.router import router as ai_router
 from app.modules.ai_providers.router import router as ai_providers_router
 from app.modules.ats.router import router as ats_router
@@ -35,6 +36,9 @@ async def lifespan(app: FastAPI):
         await shutdown_browser()
     except ImportError:
         pass  # playwright not installed
+
+    # Close shared HTTP client (connection pool)
+    await close_http_client()
 
 
 app = FastAPI(

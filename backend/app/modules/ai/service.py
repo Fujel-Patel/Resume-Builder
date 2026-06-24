@@ -12,11 +12,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.modules.ai.models import AIProvider
 
-# Import provider implementations
 from app.modules.ai.providers import anthropic, gemini, openai_compatible
 from app.utils.encryption import decrypt
+from app.utils.metrics import AIRequestMetrics, Timer, log_ai_metrics
 
-# Mapping of provider identifiers to callable functions
 PROVIDER_MAP = {
     "anthropic": anthropic.complete,
     "gemini": gemini.complete,
@@ -27,7 +26,6 @@ PROVIDER_MAP = {
     "custom": openai_compatible.complete,
 }
 
-# Mapping of provider identifiers to list_models functions
 LIST_MODELS_MAP = {
     "gemini": gemini.list_models,
     "nvidia-nim": openai_compatible.list_models,
@@ -39,15 +37,9 @@ LIST_MODELS_MAP = {
 
 
 def _validate_base_url(base_url: str) -> str:
-    """Validate and sanitize a base_url for external AI providers.
-
-    Only http/https schemes are allowed and localhost / private IPs are blocked.
-    This prevents SSRF attacks where an attacker could supply internal service URLs.
-    """
     parsed = urlparse(base_url)
     if parsed.scheme not in ("http", "https"):
         raise ValueError("base_url must use http or https scheme")
-    # Disallow localhost and common cloud metadata hosts
     blocked_hosts = (
         "localhost",
         "127.0.0.1",
@@ -63,12 +55,6 @@ def _validate_base_url(base_url: str) -> str:
 
 
 async def get_default_provider(user_id: str, db: AsyncSession) -> AIProvider:
-    """Return the default AIProvider for the user.
-
-    If none is marked as default, return the first provider for the user.
-    Raises HTTPException(404) if the user has no providers configured.
-    """
-    # Try default first
     stmt = select(AIProvider).where(
         AIProvider.user_id == user_id, AIProvider.is_default.is_(True)
     )
@@ -76,7 +62,6 @@ async def get_default_provider(user_id: str, db: AsyncSession) -> AIProvider:
     provider = result.scalars().first()
     if provider:
         return provider
-    # Fallback to any provider
     stmt = select(AIProvider).where(AIProvider.user_id == user_id)
     result = await db.execute(stmt)
     provider = result.scalars().first()
@@ -91,7 +76,6 @@ async def get_default_provider(user_id: str, db: AsyncSession) -> AIProvider:
 async def get_provider_by_name(
     user_id: str, provider_name: str, db: AsyncSession
 ) -> Optional[AIProvider]:
-    """Fetch a specific provider by name for the given user."""
     stmt = select(AIProvider).where(
         AIProvider.user_id == user_id, AIProvider.provider_name == provider_name
     )
@@ -100,18 +84,13 @@ async def get_provider_by_name(
 
 
 async def ai_complete(
-    user_id: str, prompt: str, db: AsyncSession, max_tokens: int = 1024
+    user_id: str, prompt: str, db: AsyncSession, max_tokens: int = 1024, json_mode: bool = False, endpoint: str = ""
 ) -> str:
-    """Route a prompt to the user's default AI provider.
-
-    Decrypts the stored API key, selects the appropriate provider function,
-    validates the base_url to prevent SSRF, and returns the generated text.
-    """
+    total_timer = Timer()
     provider = await get_default_provider(user_id, db)
     api_key = decrypt(provider.api_key_encrypted)
-    base_url = provider.base_url  # May be None for providers that don't need it
+    base_url = provider.base_url
 
-    # Validate base_url if provided (prevent SSRF)
     if base_url:
         base_url = _validate_base_url(base_url)
 
@@ -120,29 +99,54 @@ async def ai_complete(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Unsupported AI provider"
         )
-    return await fn(
-        prompt=prompt,
-        api_key=api_key,
-        base_url=base_url,
-        model=provider.model or "gpt-4o-mini",
-        max_tokens=max_tokens,
+
+    ai_timer = Timer()
+    try:
+        content = await fn(
+            prompt=prompt,
+            api_key=api_key,
+            base_url=base_url,
+            model=provider.model or "gpt-4o-mini",
+            max_tokens=max_tokens,
+            json_mode=json_mode,
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        metrics = AIRequestMetrics(
+            provider=provider.provider_name,
+            model=provider.model or "",
+            ai_latency_ms=ai_timer.elapsed_ms(),
+            total_duration_ms=total_timer.elapsed_ms(),
+            endpoint=endpoint,
+            success=False,
+            error=str(e),
+        )
+        log_ai_metrics(metrics)
+        raise
+
+    ai_latency = ai_timer.elapsed_ms()
+    total = total_timer.elapsed_ms()
+
+    metrics = AIRequestMetrics(
+        provider=provider.provider_name,
+        model=provider.model or "",
+        ai_latency_ms=ai_latency,
+        total_duration_ms=total,
+        endpoint=endpoint,
+        success=True,
     )
+    log_ai_metrics(metrics)
+
+    return content
 
 
 async def verify_api_key(
     provider_name: str, api_key: str, base_url: Optional[str] = None
 ) -> tuple[bool, str, list[dict]]:
-    """Validate an API key and return available models.
-
-    For providers with a ``list_models`` endpoint, uses that to verify
-    (no model name needed). Falls back to a chat completion test otherwise.
-
-    Returns ``(True, "", models)`` on success, ``(False, error_msg, [])`` on failure.
-    """
     if base_url:
         base_url = _validate_base_url(base_url)
 
-    # Prefer models-list verification (works without a model name)
     list_fn = LIST_MODELS_MAP.get(provider_name)
     if list_fn:
         try:
@@ -160,7 +164,6 @@ async def verify_api_key(
         except Exception as exc:
             return False, str(exc), []
 
-    # Fallback to chat completion test (Anthropic)
     fn = PROVIDER_MAP.get(provider_name)
     if not fn:
         raise HTTPException(
@@ -192,10 +195,6 @@ async def verify_api_key(
 async def list_provider_models(
     provider_name: str, api_key: str, base_url: Optional[str] = None
 ) -> list[dict]:
-    """List available models for a given provider.
-
-    Returns a list of ``{id, name}`` dicts, or ``[]`` on error.
-    """
     fn = LIST_MODELS_MAP.get(provider_name)
     if not fn:
         return []

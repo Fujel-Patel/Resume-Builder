@@ -1,4 +1,4 @@
-export type ResumeTemplate = "classic" | "modern" | "minimal" | "creative" | "default" | "professional-executive" | "obsidian-edge" | "blue-steel" | "neon-green"
+export type ResumeTemplate = "classic" | "modern" | "minimal" | "creative" | "professional-executive" | "obsidian-edge" | "blue-steel" | "neon-green"
 
 export type ResumeData = {
   personal: {

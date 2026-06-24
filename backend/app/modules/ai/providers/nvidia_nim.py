@@ -18,6 +18,7 @@ async def complete(
     base_url: Optional[str] = None,
     max_tokens: int = 1024,
     model: str = "gpt-4o-mini",
+    json_mode: bool = False,
     **kwargs,
 ) -> str:
     """Call an NVIDIA NIM (OpenAI‑compatible) endpoint.
@@ -35,6 +36,8 @@ async def complete(
         Maximum tokens to generate.
     model: str
         Model name to request (default ``gpt-4o-mini`` – can be overridden).
+    json_mode: bool
+        If True, request structured JSON output via ``response_format``.
     **kwargs: Any
         Ignored – kept for a uniform signature.
     """
@@ -51,6 +54,8 @@ async def complete(
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": max_tokens,
     }
+    if json_mode:
+        payload["response_format"] = {"type": "json_object"}
     async with httpx.AsyncClient(timeout=120) as client:
         response = await client.post(url, headers=headers, json=payload)
         response.raise_for_status()

@@ -38,6 +38,36 @@ def _sanitize_extension(ext: str) -> str:
     return safe or "png"
 
 
+def extract_text_from_bytes(content: bytes, ext: str = "pdf") -> str:
+    """Extract plain text from a PDF or DOCX binary blob.
+
+    Parameters
+    ----------
+    content: bytes
+        Raw file content.
+    ext: str
+        File extension — ``"pdf"`` or ``"docx"``.
+
+    Returns
+    -------
+    str
+        The concatenated text of all pages / paragraphs.
+    """
+    if ext == "docx":
+        from docx import Document
+        import io
+
+        doc = Document(io.BytesIO(content))
+        return "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+    # Default to PDF
+    doc = fitz.open(stream=content, filetype="pdf")
+    try:
+        page_texts = [page.get_text() for page in doc]
+        return "\n".join(page_texts)
+    finally:
+        doc.close()
+
+
 def extract_text(pdf_path: str | Path) -> str:
     """Extract plain text from a PDF.
 

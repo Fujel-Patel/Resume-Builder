@@ -22,7 +22,7 @@ class Resume(Base):
         index=True,
     )
     title = Column(String(255), nullable=False)
-    template_id = Column(String(100), nullable=False)  # classic | modern | minimal | creative | default
+    template_id = Column(String(100), nullable=False)  # classic | modern | minimal | creative
     original_file_path = Column(String(500), nullable=True)
     original_file_type = Column(String(10), nullable=True)  # "pdf" or "docx"
     injected_file_path = Column(String(500), nullable=True)  # AI-optimized DOCX
