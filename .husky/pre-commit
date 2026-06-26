@@ -1,0 +1,2 @@
+npx --yes --package lint-staged --package jest --package eslint -- \
+  lint-staged --cwd frontend
