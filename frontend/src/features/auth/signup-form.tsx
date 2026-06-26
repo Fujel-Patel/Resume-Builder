@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2 } from "lucide-react"
+import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { useAppDispatch, useAppSelector } from "@/lib/hooks"
 import { signup, clearError } from "@/lib/features/auth/authSlice"
 
@@ -17,7 +17,9 @@ export function SignupForm() {
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [showConfirm, setShowConfirm] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -109,15 +111,27 @@ export function SignupForm() {
         <label htmlFor="signup-password" className="mb-1.5 block text-sm font-medium text-foreground">
           Password
         </label>
-        <Input
-          id="signup-password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          aria-invalid={!!errors.password}
-          aria-describedby={errors.password ? "signup-password-error" : undefined}
-          placeholder="At least 8 characters"
-        />
+        <div className="relative">
+          <Input
+            id="signup-password"
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            aria-invalid={!!errors.password}
+            aria-describedby={errors.password ? "signup-password-error" : undefined}
+            placeholder="At least 8 characters"
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            tabIndex={-1}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        </div>
         {errors.password ? (
           <p id="signup-password-error" className="mt-1 text-xs text-destructive" role="alert">
             {errors.password}
@@ -131,15 +145,27 @@ export function SignupForm() {
         <label htmlFor="signup-confirm" className="mb-1.5 block text-sm font-medium text-foreground">
           Confirm Password
         </label>
-        <Input
-          id="signup-confirm"
-          type="password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          aria-invalid={!!errors.confirmPassword}
-          aria-describedby={errors.confirmPassword ? "signup-confirm-error" : undefined}
-          placeholder="Confirm your password"
-        />
+        <div className="relative">
+          <Input
+            id="signup-confirm"
+            type={showConfirm ? "text" : "password"}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            aria-invalid={!!errors.confirmPassword}
+            aria-describedby={errors.confirmPassword ? "signup-confirm-error" : undefined}
+            placeholder="Confirm your password"
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirm(!showConfirm)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            tabIndex={-1}
+            aria-label={showConfirm ? "Hide password" : "Show password"}
+          >
+            {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        </div>
         {errors.confirmPassword && (
           <p id="signup-confirm-error" className="mt-1 text-xs text-destructive" role="alert">
             {errors.confirmPassword}

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2 } from "lucide-react"
+import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { useAppDispatch, useAppSelector } from "@/lib/hooks"
 import { login, clearError } from "@/lib/features/auth/authSlice"
 
@@ -16,6 +16,7 @@ export function LoginForm() {
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
@@ -91,15 +92,27 @@ export function LoginForm() {
             Forgot password?
           </Link>
         </div>
-        <Input
-          id="login-password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          aria-invalid={!!errors.password}
-          aria-describedby={errors.password ? "login-password-error" : undefined}
-          placeholder="Enter your password"
-        />
+        <div className="relative">
+          <Input
+            id="login-password"
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            aria-invalid={!!errors.password}
+            aria-describedby={errors.password ? "login-password-error" : undefined}
+            placeholder="Enter your password"
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            tabIndex={-1}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+          </button>
+        </div>
         {errors.password && (
           <p id="login-password-error" className="mt-1 text-xs text-destructive" role="alert">
             {errors.password}
