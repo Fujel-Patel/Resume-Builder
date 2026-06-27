@@ -69,13 +69,15 @@ jobs:
               sudo apt-get update -qq && sudo apt-get install -y -qq awscli
             )
 
+            LATEST_IMAGE="200020100594.dkr.ecr.$AWS_REGION.amazonaws.com/$ECR_REPOSITORY:latest"
+
             # Login to ECR
             aws ecr get-login-password --region $AWS_REGION \
               | docker login --username AWS --password-stdin \
-                ${{ needs.build.outputs.image }}
+                200020100594.dkr.ecr.$AWS_REGION.amazonaws.com
 
-            # Pull the new image
-            docker pull ${{ needs.build.outputs.image }}
+            # Pull the latest image
+            docker pull $LATEST_IMAGE
 
             # Stop any container using port 8000, then remove old container
             docker stop generative-cv-backend 2>/dev/null || true
@@ -92,7 +94,7 @@ jobs:
               --restart unless-stopped \
               -p 8000:8000 \
               --env-file /opt/generative-cv/.env \
-              ${{ needs.build.outputs.image }}
+              $LATEST_IMAGE
 
             # Clean up dangling images
             docker image prune -f
