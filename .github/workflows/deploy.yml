@@ -77,9 +77,14 @@ jobs:
             # Pull the new image
             docker pull ${{ needs.build.outputs.image }}
 
-            # Stop & remove the old container
-            docker stop generative-cv-backend || true
-            docker rm generative-cv-backend || true
+            # Stop any container using port 8000, then remove old container
+            docker stop generative-cv-backend 2>/dev/null || true
+            docker rm generative-cv-backend 2>/dev/null || true
+            CONTAINER_ON_8000=$(docker ps -q --filter "publish=8000")
+            if [ -n "$CONTAINER_ON_8000" ]; then
+              docker stop $CONTAINER_ON_8000
+              docker rm $CONTAINER_ON_8000
+            fi
 
             # Run the new container
             docker run -d \
