@@ -1,0 +1,92 @@
+name: CI/CD — Build & Deploy
+
+on:
+  push:
+    branches: [main]
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: generative-cv-backend
+
+jobs:
+  build:
+    name: Build & Push to ECR
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build \
+            --file backend/Dockerfile \
+            --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            --tag $ECR_REGISTRY/$ECR_REPOSITORY:latest \
+            backend/
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+    outputs:
+      image: ${{ steps.build-image.outputs.image }}
+
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: AWS_REGION,ECR_REPOSITORY
+          script: |
+            set -e
+
+            # Install AWS CLI if missing
+            command -v aws >/dev/null 2>&1 || (
+              sudo apt-get update -qq && sudo apt-get install -y -qq awscli
+            )
+
+            # Login to ECR
+            aws ecr get-login-password --region $AWS_REGION \
+              | docker login --username AWS --password-stdin \
+                ${{ needs.build.outputs.image }}
+
+            # Pull the new image
+            docker pull ${{ needs.build.outputs.image }}
+
+            # Stop & remove the old container
+            docker stop generative-cv-backend || true
+            docker rm generative-cv-backend || true
+
+            # Run the new container
+            docker run -d \
+              --name generative-cv-backend \
+              --restart unless-stopped \
+              -p 8000:8000 \
+              ${{ needs.build.outputs.image }}
+
+            # Clean up dangling images
+            docker image prune -f
