@@ -86,11 +86,12 @@ jobs:
               docker rm $CONTAINER_ON_8000
             fi
 
-            # Run the new container
+            # Run the new container with env file
             docker run -d \
               --name generative-cv-backend \
               --restart unless-stopped \
               -p 8000:8000 \
+              --env-file /opt/generative-cv/.env \
               ${{ needs.build.outputs.image }}
 
             # Clean up dangling images
