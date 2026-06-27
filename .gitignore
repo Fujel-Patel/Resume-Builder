@@ -74,6 +74,7 @@ backend/uploads/
 .claude/settings.local.json
 
 # Misc
+awscliv2.zip
 *.pem
 *.key
 *.cert

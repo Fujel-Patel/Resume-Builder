@@ -111,3 +111,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# AWS CLI installer
+awcliv2.zip
