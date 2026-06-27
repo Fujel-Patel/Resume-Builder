@@ -18,6 +18,7 @@ engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.APP_ENV == "development",
     pool_pre_ping=True,
+    connect_args={"statement_cache_size": 0},
 )
 
 # Create async session factory (SQLAlchemy 2.0 async best practice)
