@@ -27,10 +27,20 @@ export function LoginForm() {
     dispatch(clearError())
   }, [dispatch])
 
+  useEffect(() => {
+    if (error) {
+      console.debug("[login-form] auth error:", JSON.stringify(error))
+    }
+  }, [error])
+
   const validate = () => {
     const errs: Record<string, string> = {}
-    if (!email) errs.email = "Email is required"
-    else if (!/\S+@\S+\.\S+/.test(email)) errs.email = "Invalid email address"
+    const sanitizedEmail = email.trim()
+    if (!sanitizedEmail) {
+      errs.email = "Email is required"
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sanitizedEmail)) {
+      errs.email = "Invalid email address"
+    }
     if (!password) errs.password = "Password is required"
     setErrors(errs)
     return Object.keys(errs).length === 0
@@ -39,7 +49,40 @@ export function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
-    dispatch(login({ email, password }))
+    dispatch(login({ email: email.trim(), password }))
+  }
+
+  const getFieldError = (field: string): string | undefined => {
+    const clientErr = errors[field]
+    if (typeof clientErr === "string" && clientErr) return clientErr
+    if (error && typeof error === "object" && error.fields && Array.isArray(error.fields[field])) {
+      return error.fields[field][0]
+    }
+    return undefined
+  }
+
+  let errorMessage: string | null = null
+  if (error) {
+    if (typeof error === "string") {
+      errorMessage = error
+    } else if (typeof error === "object" && error !== null) {
+      const raw = (error as Record<string, unknown>).message
+      const msg = typeof raw === "string" ? raw : null
+      const code = typeof raw === "string" ? ((error as Record<string, unknown>).code as string | undefined) ?? null : null
+      if (code === "INVALID_CREDENTIALS") {
+        errorMessage = "Incorrect email or password. Please try again."
+      } else if (code === "ACCOUNT_LOCKED") {
+        errorMessage = msg
+      } else if (code === "RATE_LIMIT_EXCEEDED") {
+        errorMessage = "Too many requests. Please wait a moment and try again."
+      } else if (code === "VALIDATION_ERROR") {
+        errorMessage = "Please check your input and try again."
+      } else if (code === "CONFLICT") {
+        errorMessage = "An account with this email already exists."
+      } else {
+        errorMessage = msg
+      }
+    }
   }
 
   return (
@@ -51,12 +94,12 @@ export function LoginForm() {
         </p>
       </div>
 
-      {error && (
+      {typeof errorMessage === "string" && (
         <div
           role="alert"
           className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
         >
-          {error}
+          {errorMessage}
         </div>
       )}
 
@@ -69,13 +112,14 @@ export function LoginForm() {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          aria-invalid={!!errors.email}
-          aria-describedby={errors.email ? "login-email-error" : undefined}
+          aria-invalid={!!getFieldError("email")}
+          aria-describedby={getFieldError("email") ? "login-email-error" : undefined}
           placeholder="you@example.com"
+          maxLength={255}
         />
-        {errors.email && (
+        {getFieldError("email") && (
           <p id="login-email-error" className="mt-1 text-xs text-destructive" role="alert">
-            {errors.email}
+            {getFieldError("email")}
           </p>
         )}
       </div>
@@ -98,10 +142,11 @@ export function LoginForm() {
             type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            aria-invalid={!!errors.password}
-            aria-describedby={errors.password ? "login-password-error" : undefined}
+            aria-invalid={!!getFieldError("password")}
+            aria-describedby={getFieldError("password") ? "login-password-error" : undefined}
             placeholder="Enter your password"
             className="pr-10"
+            maxLength={128}
           />
           <button
             type="button"
@@ -113,9 +158,9 @@ export function LoginForm() {
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
-        {errors.password && (
+        {getFieldError("password") && (
           <p id="login-password-error" className="mt-1 text-xs text-destructive" role="alert">
-            {errors.password}
+            {getFieldError("password")}
           </p>
         )}
       </div>

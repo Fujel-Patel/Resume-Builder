@@ -2,7 +2,7 @@
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi import Limiter
@@ -85,6 +85,30 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 # Exception handlers
 # ---------------------------------------------------------------------------
+
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """Return PRD-shaped error response for HTTPException."""
+    from starlette.responses import JSONResponse as StarletteJSONResponse
+    detail = exc.detail
+    if isinstance(detail, dict):
+        code = detail.get("code", "INTERNAL_ERROR")
+        message = detail.get("message", "An error occurred")
+        fields = detail.get("fields")
+    else:
+        status_code_map = {
+            400: "INVALID_REQUEST", 401: "UNAUTHORIZED", 403: "FORBIDDEN",
+            404: "NOT_FOUND", 409: "CONFLICT", 422: "VALIDATION_ERROR",
+            423: "ACCOUNT_LOCKED", 429: "RATE_LIMIT_EXCEEDED", 500: "INTERNAL_ERROR",
+        }
+        code = status_code_map.get(exc.status_code, "INTERNAL_ERROR")
+        message = str(detail)
+        fields = None
+    content = {"success": False, "data": None, "error": {"code": code, "message": message}}
+    if fields:
+        content["error"]["fields"] = fields
+    return StarletteJSONResponse(status_code=exc.status_code, content=content, headers=getattr(exc, "headers", None))
+
+app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 
 # ---------------------------------------------------------------------------

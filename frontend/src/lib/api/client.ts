@@ -93,9 +93,13 @@ async function request<T>(
   const body = await res.json().catch(() => ({}))
 
   if (!res.ok) {
+    const rawDetail = body?.detail
+    const detailMessage = typeof rawDetail === "object" && rawDetail !== null
+      ? (rawDetail as Record<string, unknown>)?.message ?? JSON.stringify(rawDetail)
+      : typeof rawDetail === "string" ? rawDetail : `Request failed with status ${res.status}`
     const error: ApiError = body?.error ?? {
       code: "UNKNOWN_ERROR",
-      message: body?.detail ?? `Request failed with status ${res.status}`,
+      message: detailMessage,
     }
     throw new ApiRequestError(res.status, error)
   }

@@ -9,6 +9,8 @@ import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { useAppDispatch, useAppSelector } from "@/lib/hooks"
 import { signup, clearError } from "@/lib/features/auth/authSlice"
 
+const PASSWORD_SPECIAL_CHARS = /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/;]/
+
 export function SignupForm() {
   const router = useRouter()
   const dispatch = useAppDispatch()
@@ -32,13 +34,36 @@ export function SignupForm() {
 
   const validate = () => {
     const errs: Record<string, string> = {}
-    if (!name.trim()) errs.name = "Full name is required"
-    if (!email) errs.email = "Email is required"
-    else if (!/\S+@\S+\.\S+/.test(email)) errs.email = "Invalid email address"
-    if (!password) errs.password = "Password is required"
-    else if (password.length < 8) errs.password = "Must be at least 8 characters"
-    if (!confirmPassword) errs.confirmPassword = "Please confirm your password"
-    else if (password !== confirmPassword) errs.confirmPassword = "Passwords do not match"
+    const trimmedName = name.trim()
+    if (!trimmedName) {
+      errs.name = "Full name is required"
+    } else if (trimmedName.length > 255) {
+      errs.name = "Name must be under 255 characters"
+    }
+    const sanitizedEmail = email.trim()
+    if (!sanitizedEmail) {
+      errs.email = "Email is required"
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sanitizedEmail)) {
+      errs.email = "Invalid email address"
+    }
+    if (!password) {
+      errs.password = "Password is required"
+    } else if (password.length < 8) {
+      errs.password = "Must be at least 8 characters"
+    } else if (!/[A-Z]/.test(password)) {
+      errs.password = "Must contain an uppercase letter"
+    } else if (!/[a-z]/.test(password)) {
+      errs.password = "Must contain a lowercase letter"
+    } else if (!/\d/.test(password)) {
+      errs.password = "Must contain a digit"
+    } else if (!PASSWORD_SPECIAL_CHARS.test(password)) {
+      errs.password = "Must contain a special character"
+    }
+    if (!confirmPassword) {
+      errs.confirmPassword = "Please confirm your password"
+    } else if (password !== confirmPassword) {
+      errs.confirmPassword = "Passwords do not match"
+    }
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -46,8 +71,31 @@ export function SignupForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
-    dispatch(signup({ name, email, password }))
+    const sanitizedName = name.trim().replace(/<[^>]*>/g, "")
+    dispatch(signup({ name: sanitizedName, email: email.trim(), password }))
   }
+
+  const getFieldError = (field: string): string | undefined => {
+    if (errors[field]) return errors[field]
+    if (error?.fields?.[field]) return error.fields[field][0]
+    return undefined
+  }
+
+  const errorMessage: string | null = (() => {
+    if (!error) return null
+    try {
+      const raw = typeof error === "string" ? error : (error as Record<string, unknown>)?.message
+      const msg = typeof raw === "string" ? raw : null
+      if (!msg) return null
+      const code = typeof error === "string" ? null : (error as Record<string, unknown>)?.code ?? null
+      if (code === "CONFLICT") return "An account with this email already exists. Try signing in instead."
+      if (code === "VALIDATION_ERROR") return "Please check your input and try again."
+      if (code === "RATE_LIMIT_EXCEEDED") return "Too many requests. Please wait a moment and try again."
+      return msg
+    } catch {
+      return null
+    }
+  })()
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
@@ -58,12 +106,12 @@ export function SignupForm() {
         </p>
       </div>
 
-      {error && (
+      {typeof errorMessage === "string" && (
         <div
           role="alert"
           className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
         >
-          {error}
+          {errorMessage}
         </div>
       )}
 
@@ -76,13 +124,14 @@ export function SignupForm() {
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          aria-invalid={!!errors.name}
-          aria-describedby={errors.name ? "signup-name-error" : undefined}
+          aria-invalid={!!getFieldError("name")}
+          aria-describedby={getFieldError("name") ? "signup-name-error" : undefined}
           placeholder="John Doe"
+          maxLength={255}
         />
-        {errors.name && (
+        {getFieldError("name") && (
           <p id="signup-name-error" className="mt-1 text-xs text-destructive" role="alert">
-            {errors.name}
+            {getFieldError("name")}
           </p>
         )}
       </div>
@@ -96,13 +145,14 @@ export function SignupForm() {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          aria-invalid={!!errors.email}
-          aria-describedby={errors.email ? "signup-email-error" : undefined}
+          aria-invalid={!!getFieldError("email")}
+          aria-describedby={getFieldError("email") ? "signup-email-error" : undefined}
           placeholder="you@example.com"
+          maxLength={255}
         />
-        {errors.email && (
+        {getFieldError("email") && (
           <p id="signup-email-error" className="mt-1 text-xs text-destructive" role="alert">
-            {errors.email}
+            {getFieldError("email")}
           </p>
         )}
       </div>
@@ -117,10 +167,11 @@ export function SignupForm() {
             type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            aria-invalid={!!errors.password}
-            aria-describedby={errors.password ? "signup-password-error" : undefined}
+            aria-invalid={!!getFieldError("password")}
+            aria-describedby={getFieldError("password") ? "signup-password-error" : undefined}
             placeholder="At least 8 characters"
             className="pr-10"
+            maxLength={72}
           />
           <button
             type="button"
@@ -132,12 +183,14 @@ export function SignupForm() {
             {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
-        {errors.password ? (
+        {getFieldError("password") ? (
           <p id="signup-password-error" className="mt-1 text-xs text-destructive" role="alert">
-            {errors.password}
+            {getFieldError("password")}
           </p>
         ) : (
-          <p className="mt-1 text-xs text-muted-foreground">At least 8 characters</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            At least 8 chars, uppercase, lowercase, digit &amp; special character
+          </p>
         )}
       </div>
 
@@ -151,10 +204,11 @@ export function SignupForm() {
             type={showConfirm ? "text" : "password"}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            aria-invalid={!!errors.confirmPassword}
-            aria-describedby={errors.confirmPassword ? "signup-confirm-error" : undefined}
+            aria-invalid={!!getFieldError("confirmPassword")}
+            aria-describedby={getFieldError("confirmPassword") ? "signup-confirm-error" : undefined}
             placeholder="Confirm your password"
             className="pr-10"
+            maxLength={72}
           />
           <button
             type="button"
@@ -166,9 +220,9 @@ export function SignupForm() {
             {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
-        {errors.confirmPassword && (
+        {getFieldError("confirmPassword") && (
           <p id="signup-confirm-error" className="mt-1 text-xs text-destructive" role="alert">
-            {errors.confirmPassword}
+            {getFieldError("confirmPassword")}
           </p>
         )}
       </div>

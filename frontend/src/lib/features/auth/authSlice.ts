@@ -8,12 +8,29 @@ import {
   type UserOut,
 } from "@/lib/api/auth"
 import { setAccessToken, getAccessToken, clearAccessToken } from "@/lib/auth/token-manager"
+import { ApiRequestError } from "@/lib/api/client"
+
+export type AuthError = {
+  message: string
+  code: string
+  fields?: Record<string, string[]>
+}
+
+function normalizeError(payload: unknown): AuthError {
+  if (payload && typeof payload === "object" && "message" in payload) {
+    return payload as AuthError
+  }
+  if (typeof payload === "string") {
+    return { message: payload, code: "UNKNOWN_ERROR" }
+  }
+  return { message: "Something went wrong", code: "UNKNOWN_ERROR" }
+}
 
 type AuthState = {
   user: UserOut | null
   token: string | null
   loading: boolean
-  error: string | null
+  error: AuthError | null
 }
 
 const initialState: AuthState = {
@@ -31,8 +48,11 @@ export const login = createAsyncThunk(
       const user = await getMeApi()
       return { user, access_token: tokenData.access_token }
     } catch (err: unknown) {
+      if (err instanceof ApiRequestError) {
+        return rejectWithValue({ message: err.message, code: err.code, fields: err.fields })
+      }
       const message = err instanceof Error ? err.message : "Login failed"
-      return rejectWithValue(message)
+      return rejectWithValue({ message, code: "UNKNOWN_ERROR" })
     }
   },
 )
@@ -48,8 +68,11 @@ export const signup = createAsyncThunk(
       const tokenData = await loginApi(email, password)
       return { user, access_token: tokenData.access_token }
     } catch (err: unknown) {
+      if (err instanceof ApiRequestError) {
+        return rejectWithValue({ message: err.message, code: err.code, fields: err.fields })
+      }
       const message = err instanceof Error ? err.message : "Signup failed"
-      return rejectWithValue(message)
+      return rejectWithValue({ message, code: "UNKNOWN_ERROR" })
     }
   },
 )
@@ -74,7 +97,7 @@ export const initializeAuth = createAsyncThunk(
         return { user, access_token: token }
       } catch {
         clearAccessToken()
-        return rejectWithValue("Session expired")
+        return rejectWithValue({ message: "Session expired", code: "SESSION_EXPIRED" })
       }
     }
     clearAccessToken()
@@ -99,6 +122,11 @@ const authSlice = createSlice({
       state.error = null
       clearAccessToken()
     },
+    setServerFieldErrors(state, action: { payload: Record<string, string[]> }) {
+      if (state.error) {
+        state.error.fields = action.payload
+      }
+    },
     setUser(state, action) {
       state.user = action.payload
     },
@@ -117,7 +145,7 @@ const authSlice = createSlice({
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false
-        state.error = (action.payload as string) ?? "Login failed"
+        state.error = normalizeError(action.payload)
       })
       .addCase(signup.pending, (state) => {
         state.loading = true
@@ -131,7 +159,7 @@ const authSlice = createSlice({
       })
       .addCase(signup.rejected, (state, action) => {
         state.loading = false
-        state.error = (action.payload as string) ?? "Signup failed"
+        state.error = normalizeError(action.payload)
       })
       .addCase(initializeAuth.fulfilled, (state, action) => {
         state.loading = false
@@ -140,8 +168,9 @@ const authSlice = createSlice({
           state.token = action.payload.access_token
         }
       })
-      .addCase(initializeAuth.rejected, (state) => {
+      .addCase(initializeAuth.rejected, (state, action) => {
         state.loading = false
+        state.error = normalizeError(action.payload)
         clearAccessToken()
       })
       .addCase(logout.fulfilled, (state) => {
@@ -153,5 +182,5 @@ const authSlice = createSlice({
 })
 
 export { logout as logoutUser }
-export const { clearError, resetAuth, setUser } = authSlice.actions
+export const { clearError, resetAuth, setUser, setServerFieldErrors } = authSlice.actions
 export default authSlice.reducer
