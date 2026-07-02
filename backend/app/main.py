@@ -71,7 +71,7 @@ origins = list({
     settings.CLIENT_URL,
     *(settings.CORS_ORIGINS if isinstance(settings.CORS_ORIGINS, list) else [settings.CORS_ORIGINS]),
     *( ["http://localhost:3000", "http://127.0.0.1:3000"] if settings.APP_ENV == "development" else []),
-    "https://resume-builder-eta-six-80.vercel.app",
+    "https://resume-builder-eta-six-80.vercel.app", "https://resume-builder-git-main-fujel-patels-projects.vercel.app"
 })
 
 app.add_middleware(
