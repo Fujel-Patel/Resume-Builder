@@ -1,6 +1,8 @@
 """FastAPI app entry point — middleware, routers, rate limiting."""
 
 from contextlib import asynccontextmanager
+from starlette.middleware.cors import CORSMiddleware
+import re
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -70,13 +72,13 @@ app.add_middleware(ErrorHandlerMiddleware)
 origins = list({
     settings.CLIENT_URL,
     *(settings.CORS_ORIGINS if isinstance(settings.CORS_ORIGINS, list) else [settings.CORS_ORIGINS]),
-    *( ["http://localhost:3000", "http://127.0.0.1:3000"] if settings.APP_ENV == "development" else []),
-    "https://resume-builder-eta-six-80.vercel.app", "https://resume-builder-git-main-fujel-patels-projects.vercel.app"
+    *(["http://localhost:3000", "http://127.0.0.1:3000"] if settings.APP_ENV == "development" else []),
 })
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",  # catches ALL preview + prod vercel URLs
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
