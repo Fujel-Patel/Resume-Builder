@@ -49,6 +49,7 @@ import {
   type AIProviderUpdate,
   type AIProviderVerifyResponse,
 } from "@/lib/api/ai-providers"
+import { invalidateAiConfig } from "@/hooks/use-ai-config"
 
 const PROVIDER_OPTIONS = [
   { value: "gemini", label: "Gemini", needsBaseUrl: false },
@@ -177,10 +178,12 @@ export function AiSettingsPage() {
           base_url: form.base_url || null,
           model: form.model || null,
           is_default: form.is_default,
+          is_verified: inlineVerifyResult?.valid === true,
         }
         await addProviderApi(create)
       }
       setDialogOpen(false)
+      invalidateAiConfig()
       await fetchProviders()
     } catch {
     } finally {
@@ -262,6 +265,7 @@ export function AiSettingsPage() {
     try {
       await deleteProviderApi(deleteTarget.id)
       setProviders((prev) => prev.filter((p) => p.id !== deleteTarget.id))
+      invalidateAiConfig()
       setDeleteOpen(false)
       setDeleteTarget(null)
     } catch {

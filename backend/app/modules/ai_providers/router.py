@@ -48,6 +48,7 @@ class AIProviderCreate(BaseModel):
     base_url: Optional[str] = None
     model: Optional[str] = None
     is_default: bool = False
+    is_verified: bool = False
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
@@ -215,7 +216,7 @@ async def add_provider(
         base_url=body.base_url,
         model=body.model,
         is_default=body.is_default,
-        is_verified=False,
+        is_verified=body.is_verified,
     )
     db.add(provider)
     await db.commit()

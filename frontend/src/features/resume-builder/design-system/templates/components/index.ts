@@ -1,0 +1,5 @@
+export { MinimalTimelineTemplate } from "./minimal-timeline"
+export { DeveloperPortfolioTemplate } from "./developer-portfolio"
+export { DesignerCreativeTemplate } from "./designer-creative"
+export { StartupFounderTemplate } from "./startup-founder"
+export { GraduateEntryTemplate } from "./graduate-entry"

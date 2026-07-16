@@ -1,0 +1,8 @@
+export { atsCleanConfig } from "./ats-clean"
+export { atsMinimalConfig } from "./ats-minimal"
+export { atsBoldHeadingsConfig } from "./ats-bold-headings"
+export { atsSerifConfig } from "./ats-serif"
+export { atsModernSansConfig } from "./ats-modern-sans"
+export { atsCompactConfig } from "./ats-compact"
+export { atsExecutiveConfig } from "./ats-executive"
+export { atsCreativeSafeConfig } from "./ats-creative-safe"

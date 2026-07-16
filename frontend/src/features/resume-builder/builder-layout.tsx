@@ -9,25 +9,23 @@ import { ResumeViewerModal } from "./viewer/resume-viewer-modal"
 import { useResumeStore } from "@/store/resume-store"
 import { Button } from "@/components/ui/button"
 import { Download, Eye, Loader2, PenLine, Palette } from "lucide-react"
-import { exportResumeAsPdf } from "@/lib/api/pdf-export"
+import { usePagination } from "./engine/use-pagination"
+import { A4 } from "./engine/constants"
+import { exportResumeAsPdfClient } from "./export/pdf-export-client"
 
 export function BuilderLayout() {
   const resume = useResumeStore((s) => s.resume)
   const deferredResume = useDeferredValue(resume)
+  const { pages } = usePagination(resume)
   const [mobileTab, setMobileTab] = useState<"editor" | "preview">("editor")
   const [showTheme, setShowTheme] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
   const [viewerOpen, setViewerOpen] = useState(false)
 
   const handleExport = async () => {
-    const resumeId = resume.id
-    if (!resumeId) {
-      console.warn("No resume ID — cannot export")
-      return
-    }
     setIsExporting(true)
     try {
-      await exportResumeAsPdf(resumeId, resume.templateId)
+      await exportResumeAsPdfClient(resume, pages, A4, 1)
     } catch (err) {
       console.error("PDF export failed:", err)
     } finally {

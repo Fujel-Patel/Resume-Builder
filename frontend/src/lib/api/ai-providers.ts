@@ -15,6 +15,7 @@ export type AIProviderCreate = {
   base_url?: string | null
   model?: string | null
   is_default?: boolean
+  is_verified?: boolean
 }
 
 export type AIProviderUpdate = {

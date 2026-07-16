@@ -82,6 +82,18 @@ class TestCreateProvider:
         data = resp.json()["data"]
         assert data["model"] == "mixtral-8x7b-32768"
 
+    def test_with_is_verified(self, client, mock_db):
+        mock_db.execute.return_value = mock_result(scalar_value=None)
+
+        resp = client.post(BASE, json={
+            "provider_name": "groq",
+            "api_key": "gsk-test",
+            "is_verified": True,
+        })
+        assert resp.status_code == 201
+        data = resp.json()["data"]
+        assert data["is_verified"] is True
+
 
 class TestUpdateProvider:
     PROVIDER_ID = uuid.uuid4()

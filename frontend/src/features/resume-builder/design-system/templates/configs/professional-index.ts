@@ -1,0 +1,7 @@
+export { executiveNavyConfig } from "./executive-navy"
+export { corporateGrayConfig } from "./corporate-gray"
+export { consultantConfig } from "./consultant"
+export { financeFormalConfig } from "./finance-formal"
+export { techProfessionalConfig } from "./tech-professional"
+export { healthcareConfig } from "./healthcare"
+export { legalConfig } from "./legal"

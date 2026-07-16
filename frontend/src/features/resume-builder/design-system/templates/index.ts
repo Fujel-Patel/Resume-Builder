@@ -1,0 +1,10 @@
+export type { TemplateConfig, SectionVariantConfig, TemplateFeatures, TemplateEntry, TemplateMetadata, BuilderTemplateComponent } from "./types"
+export { registerConfigTemplate, registerComponentTemplate, getTemplate, getAllTemplates, getTemplatesByCategory, getTemplateMetadata, getAllMetadata } from "./registry"
+export { ConfigTemplateRenderer } from "../renderer/TemplateRenderer"
+export { SectionRenderer } from "../renderer/SectionRenderer"
+
+export * from "./configs/ats-index"
+export * from "./configs/professional-index"
+export * from "./configs/two-column-index"
+export * from "./configs/creative-index"
+export * from "./configs/index"

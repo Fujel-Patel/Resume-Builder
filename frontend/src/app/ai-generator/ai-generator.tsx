@@ -8,11 +8,12 @@ import { EnhancedCard } from "@/components/ui/enhanced-card"
 import { Badge } from "@/components/ui/badge"
 import { FileUpload } from "@/components/ui/file-upload"
 import { ResumePreview } from "@/features/resume/resume-preview"
+import { useAiConfig } from "@/hooks/use-ai-config"
 import { cn } from "@/lib/utils"
 import {
   Sparkles, FileText, Check, ArrowRight, Lightbulb, Download,
   RotateCcw, ArrowLeft, ChevronRight, Target, Search,
-  X, Eye, RefreshCw, AlertCircle
+  X, Eye, RefreshCw, AlertCircle, Settings
 } from "lucide-react"
 import { type BackendResumeContent } from "@/lib/api/ai-suggest"
 import { optimizeResumeStream } from "@/lib/api/ai-stream"
@@ -112,6 +113,7 @@ function CompareSection({ label, children }: { label: string; children: React.Re
 export function AiGeneratorPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { isConfigured, loading: aiConfigLoading } = useAiConfig()
   const [ready, setReady] = useState(false)
   const [step, setStepState] = useState(1)
   const [maxCompleted, setMaxCompleted] = useState(1)
@@ -227,13 +229,13 @@ export function AiGeneratorPage() {
   }, [searchParams])
 
   useEffect(() => {
-    if (step === 2 && !processing && !parsedData && !error) {
+    if (step === 2 && !processing && !parsedData && !error && isConfigured) {
       startProcessing()
     }
-  }, [step, processing, parsedData, error, startProcessing])
+  }, [step, processing, parsedData, error, startProcessing, isConfigured])
 
   const canContinue = () => {
-    if (step === 1) return jobDesc.trim().length > 50 && file !== null
+    if (step === 1) return !aiConfigLoading && isConfigured && jobDesc.trim().length > 50 && file !== null
     return true
   }
 
@@ -387,6 +389,28 @@ export function AiGeneratorPage() {
 
         <div className="flex flex-1 overflow-hidden">
           <div className="flex-1 overflow-auto p-4 lg:p-6">
+            {!aiConfigLoading && !isConfigured && step === 1 && (
+              <EnhancedCard hover={false} className="mb-6 border-amber-500/30 bg-amber-500/5">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="size-5 shrink-0 text-amber-500" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">AI not configured</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Configure an AI provider to enable resume optimization. You can still browse the wizard, but AI processing requires an API key.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push("/settings/ai")}
+                    className="shrink-0"
+                  >
+                    <Settings className="size-3.5" />
+                    Configure AI
+                  </Button>
+                </div>
+              </EnhancedCard>
+            )}
             {step === 1 && (
               <div className="mx-auto max-w-3xl space-y-6">
                 <div>

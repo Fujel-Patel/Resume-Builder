@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { DashboardShell } from "@/components/layout/dashboard-shell"
 import { Button } from "@/components/ui/button"
 import { EnhancedCard } from "@/components/ui/enhanced-card"
@@ -9,6 +10,7 @@ import { FileUpload } from "@/components/ui/file-upload"
 import { Textarea } from "@/components/ui/textarea"
 import { Skeleton } from "@/components/ui/skeleton"
 import { ScoreGauge } from "@/features/resume/score-gauge"
+import { useAiConfig } from "@/hooks/use-ai-config"
 import {
   Upload,
   FileText,
@@ -25,6 +27,7 @@ import {
   Clock,
   Sparkles,
   FileSpreadsheet,
+  Settings,
 } from "lucide-react"
 import {
   scoreUploadApi,
@@ -66,6 +69,8 @@ const EMPTY_SCORE: ScanResult["score_report"] = {
 type ActiveView = "upload" | "paste"
 
 export function AtsScorePage() {
+  const router = useRouter()
+  const { isConfigured, loading: aiConfigLoading } = useAiConfig()
   const [activeTab, setActiveTab] = useState<ActiveView>("upload")
   const [file, setFile] = useState<File | null>(null)
   const [resumeText, setResumeText] = useState("")
@@ -183,6 +188,29 @@ export function AtsScorePage() {
           </Button>
         </div>
 
+        {!aiConfigLoading && !isConfigured && (
+          <EnhancedCard hover={false} className="border-amber-500/30 bg-amber-500/5">
+            <div className="flex items-center gap-3">
+              <AlertCircle className="size-5 shrink-0 text-amber-500" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">AI not configured</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Configure an AI provider to enable ATS scoring and AI-powered analysis.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push("/settings/ai")}
+                className="shrink-0"
+              >
+                <Settings className="size-3.5" />
+                Configure AI
+              </Button>
+            </div>
+          </EnhancedCard>
+        )}
+
         {/* Input Section (hidden while analyzing) */}
         {!analyzing && !hasResult && (
           <>
@@ -270,6 +298,7 @@ export function AtsScorePage() {
                     size="lg"
                     onClick={handleAnalyze}
                     disabled={
+                      !isConfigured ||
                       (activeTab === "upload" && !file) ||
                       (activeTab === "paste" && !resumeText.trim())
                     }

@@ -1,0 +1,7 @@
+export { sidebarClassicConfig } from "./sidebar-classic"
+export { sidebarModernConfig } from "./sidebar-modern"
+export { sidebarDarkConfig } from "./sidebar-dark"
+export { splitEvenConfig } from "./split-even"
+export { splitGoldenConfig } from "./split-golden"
+export { sidebarRightConfig } from "./sidebar-right"
+export { sidebarNarrowConfig } from "./sidebar-narrow"
