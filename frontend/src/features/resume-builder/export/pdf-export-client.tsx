@@ -100,11 +100,40 @@ export async function exportResumeAsPdfClient(
       )
     }
 
-    const fileName = resume.name
-      ? `${resume.name.replace(/[^a-zA-Z0-9]/g, "-").toLowerCase()}.pdf`
-      : "resume.pdf"
+    const sanitize = (s: string) => s.replace(/[^a-zA-Z0-9]+/g, "-").replace(/^-|-$/g, "")
+    const fullName = sanitize(resume.content.contact.fullName || resume.name || "Resume")
+    const jobTitle = sanitize(resume.content.contact.title || resume.targetRole || "")
+    const fileName = jobTitle ? `${fullName}(${jobTitle}).pdf` : `${fullName}.pdf`
 
-    pdf.save(fileName)
+    const blob = pdf.output("blob")
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const win: any = window
+    if (typeof win.showSaveFilePicker === "function") {
+      try {
+        const handle = await win.showSaveFilePicker({
+          suggestedName: fileName,
+          types: [
+            {
+              description: "PDF Document",
+              accept: { "application/pdf": [".pdf"] },
+            },
+          ],
+        })
+        const writable = await (handle as { createWritable(): Promise<{ write(b: Blob): Promise<void>; close(): Promise<void> }> }).createWritable()
+        await writable.write(blob)
+        await writable.close()
+      } catch (e) {
+        if ((e as Error).name === "AbortError") return
+      }
+    }
+
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = fileName
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 5000)
   } finally {
     exportContainer.remove()
   }
