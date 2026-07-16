@@ -270,7 +270,8 @@ export const novaTemplateConfig: TemplateConfig = {
 export const obsidianEdgeTemplateConfig: TemplateConfig = {
   id: "obsidian-edge",
   name: "Obsidian Edge",
-  description: "Modern executive template with bold black header",
+  description:
+    "Bold black header with white body, icon section headings, multi-column skills — print-ready A4",
   preview: "/templates/obsidian-edge.png",
   layout: "single",
   fonts: {
@@ -279,24 +280,24 @@ export const obsidianEdgeTemplateConfig: TemplateConfig = {
   },
   colors: {
     primary: "#000000",
-    secondary: "#1f2937",
+    secondary: "#0A0A0A",
     accent: "#000000",
-    background: "#F4F5F7",
+    background: "#ffffff",
     text: "#374151",
     muted: "#6b7280",
     border: "#e5e7eb",
   },
   spacing: {
     pageMargin: "0px",
-    sectionGap: "20px",
-    itemGap: "12px",
+    sectionGap: "18px",
+    itemGap: "10px",
   },
   fontSize: {
-    name: "32px",
-    title: "18px",
-    heading: "18px",
-    body: "14px",
-    small: "13px",
+    name: "28px",
+    title: "15px",
+    heading: "14px",
+    body: "12.5px",
+    small: "11.5px",
   },
   sections: [
     {

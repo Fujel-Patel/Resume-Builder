@@ -32,7 +32,7 @@ export const sampleResumeData: ResumeData = {
       photoUrl: "",
     },
     summary:
-      "Results-driven Software Engineer with 6+ years of experience building scalable web applications and microservices. Proficient in modern JavaScript frameworks, cloud infrastructure, and agile methodologies. Passionate about crafting clean, maintainable code and delivering intuitive user experiences that drive business impact.",
+      "Software Engineer with 6 years of experience building web applications and backend services in fast-paced technology environments. Strong in translating product requirements into scalable technical solutions, improving system reliability, and collaborating closely with cross-functional teams. Brings a practical, user-focused approach to development with experience across e-commerce and SaaS.",
     jobDescription: "",
     experience: [
       {
@@ -102,17 +102,29 @@ export const sampleResumeData: ResumeData = {
       },
     ],
     skills: [
-      { id: "skg_1", name: "Frontend", skills: ["React", "TypeScript", "Next.js", "Tailwind CSS"] },
-      { id: "skg_2", name: "Backend", skills: ["Node.js", "Python", "Go", "PostgreSQL"] },
+      {
+        id: "skg_1",
+        name: "Core",
+        skills: [
+          "JavaScript",
+          "TypeScript",
+          "React",
+          "Node.js",
+          "REST APIs",
+          "PostgreSQL",
+          "Git",
+          "Agile Development",
+        ],
+      },
     ],
     languages: [
-      { id: "lang_1", name: "English", proficiency: "fluent" },
-      { id: "lang_2", name: "Indonesian", proficiency: "native" },
+      { id: "lang_1", name: "Indonesian", proficiency: "native" },
+      { id: "lang_2", name: "English", proficiency: "fluent" },
     ],
     certifications: [
-      { id: "cert_1", name: "AWS Solutions Architect", issuer: "Amazon Web Services", date: "2023", url: "" },
-      { id: "cert_2", name: "Google Cloud Professional", issuer: "Google Cloud", date: "2022", url: "" },
-      { id: "cert_3", name: "Meta Backend Specialization", issuer: "Meta", date: "2021", url: "" },
+      { id: "cert_1", name: "AWS Certified Cloud Practitioner", issuer: "", date: "2023", url: "" },
+      { id: "cert_2", name: "Professional Scrum Master I (PSM I)", issuer: "", date: "2022", url: "" },
+      { id: "cert_3", name: "Google IT Automation with Python Certificate", issuer: "", date: "2021", url: "" },
     ],
     projects: [
       {
@@ -132,9 +144,9 @@ export const sampleResumeData: ResumeData = {
   },
   theme: {
     primaryColor: "#000000",
-    secondaryColor: "#1f2937",
+    secondaryColor: "#0A0A0A",
     textColor: "#374151",
-    backgroundColor: "#F4F5F7",
+    backgroundColor: "#ffffff",
     accentColor: "#000000",
     fontFamily: "Inter, sans-serif",
     headingFont: "Inter, sans-serif",

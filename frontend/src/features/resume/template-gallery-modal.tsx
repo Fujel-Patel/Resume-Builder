@@ -69,7 +69,7 @@ const galleryTemplates: GalleryTemplate[] = [
   { id: "minimal", label: "Minimal", description: "Clean lightweight design with muted tones" },
   { id: "creative", label: "Creative", description: "Two-column layout with dark sidebar" },
   { id: "professional-executive", label: "Professional Executive", description: "Corporate navy design with structured sections", tag: "New" },
-  { id: "obsidian-edge", label: "Obsidian Edge", description: "Modern executive template with bold black header", tag: "New" },
+  { id: "obsidian-edge", label: "Obsidian Edge", description: "Bold black header with white body and multi-column skills", tag: "New" },
   { id: "blue-steel", label: "Blue Steel", description: "Minimalist European design with elegant typography", tag: "New" },
   { id: "neon-green", label: "Neon Green", description: "Modern software-engineer resume with clean typography and green accents", tag: "New" },
 ]

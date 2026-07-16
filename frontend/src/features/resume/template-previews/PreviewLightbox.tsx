@@ -1,17 +1,28 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import { X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { templateMap } from "@/features/resume-builder/preview/templates"
+import { builderTemplates, templateMap } from "@/features/resume-builder/preview/templates"
 import { sampleResumeData } from "./sampleResumeData"
+import { useResumeStore } from "@/store/resume-store"
 
 type Props = {
   templateId: string
   onClose: () => void
 }
 
+const DEFAULT_FEATURES = [
+  "A4 / US-Letter Size",
+  "Editable Text",
+  "Fully customizable",
+  "Print ready format",
+  "Online resume with shareable link",
+]
+
 export function PreviewLightbox({ templateId, onClose }: Props) {
+  const updateTemplateId = useResumeStore((s) => s.updateTemplateId)
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose()
@@ -21,42 +32,129 @@ export function PreviewLightbox({ templateId, onClose }: Props) {
   }, [onClose])
 
   const Template = templateMap[templateId]
+  const meta = useMemo(
+    () => builderTemplates.find((t) => t.id === templateId),
+    [templateId],
+  )
+
   if (!Template) return null
+
+  const handleUse = () => {
+    updateTemplateId(templateId)
+    onClose()
+  }
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-6"
       onClick={onClose}
     >
       <div
-        className="relative flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+        className="relative flex w-full overflow-hidden rounded-2xl bg-background shadow-2xl"
         style={{
-          width: "80vw",
-          maxWidth: 1200,
-          height: "90vh",
-          maxHeight: 1000,
+          maxWidth: 1100,
+          height: "min(90vh, 920px)",
         }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="shrink-0 flex items-center justify-between border-b px-5 py-3">
-          <p className="text-sm font-medium text-foreground">Template Preview</p>
-          <Button variant="ghost" size="icon-sm" onClick={onClose}>
-            <X className="size-4" />
-          </Button>
-        </div>
+        {/* Close */}
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-3 right-3 z-20 flex size-8 items-center justify-center rounded-full border border-border bg-background/90 text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
+          aria-label="Close preview"
+        >
+          <X className="size-4" />
+        </button>
 
-        {/* Scrollable preview */}
-        <div className="flex-1 overflow-y-auto bg-muted/30 p-8">
+        {/* Left: live resume preview */}
+        <div className="flex flex-1 items-start justify-center overflow-y-auto bg-muted/40 p-6 sm:p-8">
           <div
-            className="mx-auto bg-white shadow-sm"
+            className="shrink-0 overflow-hidden rounded-lg bg-white shadow-md ring-1 ring-black/5"
             style={{
-              width: 794,
-              fontFamily: "Inter, sans-serif",
+              width: 420,
+              height: Math.round(1123 * (420 / 794)),
+              maxWidth: "100%",
             }}
           >
-            <Template resume={sampleResumeData} />
+            <div
+              style={{
+                width: 794,
+                height: 1123,
+                transform: `scale(${420 / 794})`,
+                transformOrigin: "top left",
+                fontFamily: "Inter, sans-serif",
+              }}
+            >
+              <Template resume={sampleResumeData} />
+            </div>
           </div>
+        </div>
+
+        {/* Right: template details + Use this template */}
+        <aside className="hidden w-[340px] shrink-0 flex-col border-l border-border bg-card p-8 sm:flex md:w-[380px]">
+          <div className="flex flex-1 flex-col">
+            <h2
+              className="text-[28px] font-semibold tracking-wide text-foreground"
+              style={{ letterSpacing: "0.04em" }}
+            >
+              {(meta?.name ?? templateId).toUpperCase()}
+            </h2>
+            <div className="mt-4 h-px w-full bg-border" />
+
+            <p className="mt-6 text-[15px] leading-relaxed text-muted-foreground">
+              {meta?.description ||
+                "A carefully crafted resume layout that makes designing your CV an absolute breeze."}
+            </p>
+
+            <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground">
+              Each template has been crafted with care to make designing your
+              resume an absolute breeze for you.
+            </p>
+
+            <ul className="mt-8 space-y-2.5 text-[15px] text-foreground/90">
+              {DEFAULT_FEATURES.map((feature) => (
+                <li key={feature} className="flex items-start gap-2.5">
+                  <span className="mt-2 size-1.5 shrink-0 rounded-full bg-foreground/70" />
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+
+            {meta?.tags && meta.tags.length > 0 && (
+              <div className="mt-6 flex flex-wrap gap-2">
+                {meta.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-medium text-muted-foreground"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <Button
+            type="button"
+            onClick={handleUse}
+            className="mt-8 h-11 w-full rounded-xl bg-foreground text-background hover:bg-foreground/90"
+            size="lg"
+          >
+            Use this template
+          </Button>
+        </aside>
+
+        {/* Mobile: sticky Use button */}
+        <div className="absolute inset-x-0 bottom-0 flex border-t border-border bg-card p-4 sm:hidden">
+          <Button
+            type="button"
+            onClick={handleUse}
+            className="h-11 w-full rounded-xl bg-foreground text-background hover:bg-foreground/90"
+            size="lg"
+          >
+            Use this template
+          </Button>
         </div>
       </div>
     </div>

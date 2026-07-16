@@ -80,8 +80,10 @@ export const builderTemplates: BuilderTemplateEntry[] = [
   {
     id: "obsidian-edge",
     name: "Obsidian Edge",
-    description: "Modern executive template with bold black header",
+    description:
+      "Bold black header with white body, icon section headings, multi-column skills — print-ready A4",
     tags: ["Modern", "ATS Friendly", "Professional"],
+    category: "professional",
     component: ObsidianEdgeTemplate,
   },
   {

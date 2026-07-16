@@ -1,363 +1,681 @@
 "use client"
 
-import { Mail, Phone, MapPin, Globe, Github, Linkedin } from "lucide-react"
-import type { ResumeData } from "@/types/resume"
-import { ProfileImage, CompactSkills } from "../resume-page"
+import { memo, type CSSProperties, type ReactNode } from "react"
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Github,
+  Linkedin,
+  Globe,
+  FileText,
+  Briefcase,
+  GraduationCap,
+  Brain,
+  Languages as LanguagesIcon,
+  Award,
+  Rocket,
+} from "lucide-react"
+import type { ResumeData, SkillGroup } from "@/types/resume"
 
 const C = {
   black: "#000000",
   white: "#ffffff",
   mutedWhite: "#E5E7EB",
-  bodyBg: "#F4F5F7",
   heading: "#111827",
   body: "#374151",
+  muted: "#6B7280",
+}
+
+/** Matches reference: tight A4, clean sans, print-ready */
+const PAGE: CSSProperties = {
+  fontFamily: "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+  width: "210mm",
+  minHeight: "297mm",
+  backgroundColor: C.white,
+  color: C.body,
+  boxSizing: "border-box",
+  WebkitFontSmoothing: "antialiased",
 }
 
 type Props = { resume: ResumeData }
 
-const SECTION_ICONS: Record<string, string> = {
-  summary: "\uD83D\uDCC4",
-  experience: "\uD83D\uDCBC",
-  education: "\uD83C\uDF93",
-  skills: "\uD83E\uDDE0",
-  languages: "\uD83C\uDF0D",
-  certifications: "\uD83C\uDFC6",
-  projects: "\uD83D\uDE80",
-}
-
-export function ObsidianEdgeTemplate({ resume }: Props) {
-  const { content, sections } = resume
-  const { contact, summary, experience, education, skills, languages, certifications, projects } = content
-  const visibleTypes = new Set(sections.filter(s => s.visible).map(s => s.type))
-
+function resumePropsEqual(a: Props, b: Props): boolean {
+  const ac = a.resume
+  const bc = b.resume
   return (
-    <div
-      style={{
-        fontFamily: "Inter, sans-serif",
-        width: "210mm",
-        backgroundColor: "#ffffff",
-        color: C.body,
-      }}
-    >
-      {/* Black header */}
-      <section
-        style={{
-          backgroundColor: C.black,
-          color: C.white,
-          padding: 32,
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
-          <div style={{ flex: 1 }}>
-            <h1
-              style={{
-                fontSize: 32,
-                fontWeight: 700,
-                margin: 0,
-                lineHeight: 1.2,
-              }}
-            >
-              {contact.fullName || "Your Name"}
-            </h1>
-            <p
-              style={{
-                fontSize: 18,
-                fontWeight: 400,
-                color: C.mutedWhite,
-                margin: "4px 0 0 0",
-              }}
-            >
-              {contact.title || "Job Title"}
-            </p>
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                gap: 24,
-                marginTop: 16,
-                fontSize: 13,
-                color: C.white,
-              }}
-            >
-              {contact.email && (
-                <span className="flex items-center gap-1.5">
-                  <Mail className="size-3.5 shrink-0" />
-                  {contact.email}
-                </span>
-              )}
-              {contact.phone && (
-                <span className="flex items-center gap-1.5">
-                  <Phone className="size-3.5 shrink-0" />
-                  {contact.phone}
-                </span>
-              )}
-              {contact.location && (
-                <span className="flex items-center gap-1.5">
-                  <MapPin className="size-3.5 shrink-0" />
-                  {contact.location}
-                </span>
-              )}
-              {contact.website && (
-                <span className="flex items-center gap-1.5">
-                  <Globe className="size-3.5 shrink-0" />
-                  {contact.website}
-                </span>
-              )}
-              {contact.github && (
-                <span className="flex items-center gap-1.5">
-                  <Github className="size-3.5 shrink-0" />
-                  {contact.github.replace("https://github.com/", "")}
-                </span>
-              )}
-              {contact.linkedin && (
-                <span className="flex items-center gap-1.5">
-                  <Linkedin className="size-3.5 shrink-0" />
-                  {contact.linkedin.replace("https://linkedin.com/in/", "")}
-                </span>
-              )}
-            </div>
-          </div>
-          {contact.photoUrl && (
-            <ProfileImage
-              photoUrl={contact.photoUrl}
-              fullName={contact.fullName}
-              size={88}
-              borderRadius="50%"
-              bgColor="#374151"
-              textColor="#ffffff"
-              fontSize={30}
-            />
-          )}
-        </div>
-      </section>
-
-      {/* Light gray body */}
-      <div
-        style={{
-          backgroundColor: C.bodyBg,
-          padding: 24,
-          display: "flex",
-          flexDirection: "column",
-          gap: 20,
-        }}
-      >
-        {summary && visibleTypes.has("summary") && (
-          <Section icon={SECTION_ICONS.summary} title="Summary">
-            <p style={{ fontSize: 14, lineHeight: 1.7, color: C.body, margin: 0 }}>
-              {summary}
-            </p>
-          </Section>
-        )}
-
-        {skills.length > 0 && visibleTypes.has("skills") && (
-          <Section icon={SECTION_ICONS.skills} title="Skills">
-            <CompactSkills
-              skills={skills}
-              fontSize={13}
-              color={C.body}
-              labelColor={C.heading}
-            />
-          </Section>
-        )}
-
-        {projects.length > 0 && visibleTypes.has("projects") && (
-          <Section icon={SECTION_ICONS.projects} title="Projects">
-            {projects.map((proj, i) => (
-              <div
-                key={proj.id}
-                style={{ marginBottom: i < projects.length - 1 ? 12 : 0 }}
-              >
-                <p
-                  style={{
-                    fontSize: 15,
-                    fontWeight: 700,
-                    color: C.heading,
-                    margin: "0 0 2px 0",
-                  }}
-                >
-                  {proj.name}
-                  {proj.role ? ` — ${proj.role}` : ""}
-                </p>
-                {proj.bullets.length > 0 && (
-                  <ul
-                    style={{
-                      margin: "4px 0 0 0",
-                      paddingLeft: 18,
-                      fontSize: 13,
-                      lineHeight: 1.6,
-                      color: C.body,
-                    }}
-                  >
-                    {proj.bullets.map((b, bi) => (
-                      <li key={bi}>{b}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </Section>
-        )}
-
-        {experience.length > 0 && visibleTypes.has("experience") && (
-          <Section icon={SECTION_ICONS.experience} title="Professional Experience">
-            {experience.map((exp, i) => (
-              <div
-                key={exp.id}
-                style={{
-                  marginBottom: i < experience.length - 1 ? 12 : 0,
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                  }}
-                >
-                  <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: 15, fontWeight: 700, color: C.heading, margin: 0 }}>
-                      {exp.role}
-                    </p>
-                    <p style={{ fontSize: 14, fontWeight: 600, color: C.body, margin: "2px 0 0 0" }}>
-                      {exp.company}
-                    </p>
-                  </div>
-                  <div style={{ textAlign: "right", fontSize: 13, color: C.body, lineHeight: 1.4 }}>
-                    {exp.location && <p style={{ margin: 0 }}>{exp.location}</p>}
-                    {(exp.startDate || exp.endDate) && (
-                      <p style={{ margin: 0 }}>
-                        {exp.startDate}
-                        {exp.startDate && exp.endDate && " – "}
-                        {exp.current ? "Present" : exp.endDate}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                {exp.bullets.length > 0 && (
-                  <ul
-                    style={{
-                      margin: "6px 0 0 0",
-                      paddingLeft: 18,
-                      fontSize: 13,
-                      lineHeight: 1.6,
-                      color: C.body,
-                    }}
-                  >
-                    {exp.bullets.map((b, bi) => (
-                      <li key={bi}>{b}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </Section>
-        )}
-
-        {education.length > 0 && visibleTypes.has("education") && (
-          <Section icon={SECTION_ICONS.education} title="Education">
-            {education.map((edu, i) => (
-              <div
-                key={edu.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  marginBottom: i < education.length - 1 ? 12 : 0,
-                }}
-              >
-                <div>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: C.heading, margin: 0 }}>
-                    {edu.degree}{edu.field ? ` in ${edu.field}` : ""}
-                  </p>
-                  <p style={{ fontSize: 14, fontWeight: 400, color: C.body, margin: "2px 0 0 0" }}>
-                    {edu.institution}
-                  </p>
-                </div>
-                <div style={{ textAlign: "right", fontSize: 13, color: C.body, lineHeight: 1.4 }}>
-                  {(edu.startDate || edu.endDate) && (
-                    <p style={{ margin: 0 }}>
-                      {edu.startDate}
-                      {edu.startDate && edu.endDate && " – "}
-                      {edu.current ? "Present" : edu.endDate}
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </Section>
-        )}
-
-        {certifications.length > 0 && visibleTypes.has("certifications") && (
-          <Section icon={SECTION_ICONS.certifications} title="Certificates">
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
-                gap: 12,
-              }}
-            >
-              {certifications.map((cert) => (
-                <div key={cert.id}>
-                  <ul
-                    style={{
-                      margin: 0,
-                      paddingLeft: 18,
-                      fontSize: 13,
-                      color: C.body,
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    <li>
-                      {cert.name}
-                      {cert.issuer ? ` — ${cert.issuer}` : ""}
-                      {cert.date ? ` (${cert.date})` : ""}
-                    </li>
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </Section>
-        )}
-
-        {languages.length > 0 && visibleTypes.has("languages") && (
-          <Section icon={SECTION_ICONS.languages} title="Languages">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
-              {languages.map((lang) => (
-                <div key={lang.id} style={{ fontSize: 13, color: C.body }}>
-                  <p style={{ fontWeight: 600, margin: "0 0 2px 0", color: C.heading }}>
-                    {lang.name}
-                  </p>
-                  <p style={{ margin: 0, textTransform: "capitalize" }}>
-                    {lang.proficiency}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </Section>
-        )}
-      </div>
-    </div>
+    JSON.stringify(ac.content) === JSON.stringify(bc.content) &&
+    JSON.stringify(ac.sections) === JSON.stringify(bc.sections) &&
+    JSON.stringify(ac.theme) === JSON.stringify(bc.theme)
   )
 }
 
-function Section({ icon, title, children }: { icon?: string; title: string; children: React.ReactNode }) {
+function flattenSkills(groups: SkillGroup[]): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  for (const group of groups) {
+    for (const skill of group.skills) {
+      const key = skill.trim()
+      if (!key || seen.has(key.toLowerCase())) continue
+      seen.add(key.toLowerCase())
+      out.push(key)
+    }
+  }
+  return out
+}
+
+function formatDateRange(
+  startDate: string,
+  endDate: string,
+  current: boolean,
+): string {
+  if (!startDate && !endDate && !current) return ""
+  const end = current ? "Present" : endDate
+  if (startDate && end) return `${startDate} – ${end}`
+  return startDate || end
+}
+
+function stripUrl(url: string, prefixes: string[]): string {
+  let value = url.trim()
+  for (const prefix of prefixes) {
+    if (value.toLowerCase().startsWith(prefix.toLowerCase())) {
+      value = value.slice(prefix.length)
+    }
+  }
+  return value.replace(/\/$/, "")
+}
+
+/** Fixed icon slot — keeps icons + text on the same baseline */
+function IconSlot({
+  children,
+  size = 14,
+  color = "currentColor",
+}: {
+  children: ReactNode
+  size?: number
+  color?: string
+}) {
   return (
-    <section>
-      <h2
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        width: size,
+        height: size,
+        flexShrink: 0,
+        color,
+        lineHeight: 0,
+      }}
+    >
+      {children}
+    </span>
+  )
+}
+
+type ContactCell = { icon: ReactNode; value: string }
+
+export const ObsidianEdgeTemplate = memo(function ObsidianEdgeTemplate({
+  resume,
+}: Props) {
+  const { content, sections } = resume
+  const {
+    contact,
+    summary,
+    experience,
+    education,
+    skills,
+    languages,
+    certifications,
+    projects,
+  } = content
+  const visibleTypes = new Set(
+    sections.filter((s) => s.visible).map((s) => s.type),
+  )
+
+  const skillList = flattenSkills(skills)
+
+  // Reference layout: 2×2 grid — email | phone / location | github
+  // Prefer that pairing so columns stay balanced (not fill-order cascade).
+  const leftCol: ContactCell[] = []
+  const rightCol: ContactCell[] = []
+
+  if (contact.email) {
+    leftCol.push({
+      icon: <Mail size={13} strokeWidth={1.75} />,
+      value: contact.email,
+    })
+  }
+  if (contact.phone) {
+    rightCol.push({
+      icon: <Phone size={13} strokeWidth={1.75} />,
+      value: contact.phone,
+    })
+  }
+  if (contact.location) {
+    leftCol.push({
+      icon: <MapPin size={13} strokeWidth={1.75} />,
+      value: contact.location,
+    })
+  }
+  if (contact.github) {
+    rightCol.push({
+      icon: <Github size={13} strokeWidth={1.75} />,
+      value: stripUrl(contact.github, [
+        "https://www.github.com/",
+        "https://github.com/",
+        "http://github.com/",
+        "github.com/",
+      ]),
+    })
+  }
+  if (contact.linkedin) {
+    rightCol.push({
+      icon: <Linkedin size={13} strokeWidth={1.75} />,
+      value: stripUrl(contact.linkedin, [
+        "https://www.linkedin.com/in/",
+        "https://linkedin.com/in/",
+        "http://linkedin.com/in/",
+        "linkedin.com/in/",
+      ]),
+    })
+  }
+  if (contact.website) {
+    // Keep website on the shorter column so the grid stays balanced
+    const cell: ContactCell = {
+      icon: <Globe size={13} strokeWidth={1.75} />,
+      value: stripUrl(contact.website, ["https://", "http://"]),
+    }
+    if (leftCol.length <= rightCol.length) leftCol.push(cell)
+    else rightCol.push(cell)
+  }
+
+  const contactRows = Math.max(leftCol.length, rightCol.length)
+
+  return (
+    <div style={PAGE}>
+      {/* ===== BLACK HEADER (reference: full-bleed, tight padding) ===== */}
+      <header
         style={{
-          fontSize: 18,
-          fontWeight: 700,
-          color: C.heading,
-          margin: "0 0 12px 0",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
+          backgroundColor: C.black,
+          color: C.white,
+          padding: "26px 28px 22px",
         }}
       >
-        {icon && <span style={{ fontSize: 18 }}>{icon}</span>}
-        {title}
+        <h1
+          style={{
+            fontSize: 30,
+            fontWeight: 700,
+            margin: 0,
+            padding: 0,
+            lineHeight: 1.12,
+            letterSpacing: "-0.025em",
+            color: C.white,
+          }}
+        >
+          {contact.fullName || "Your Name"}
+        </h1>
+
+        {contact.title ? (
+          <p
+            style={{
+              fontSize: 14,
+              fontWeight: 400,
+              color: C.mutedWhite,
+              margin: "5px 0 0 0",
+              padding: 0,
+              lineHeight: 1.3,
+            }}
+          >
+            {contact.title}
+          </p>
+        ) : null}
+
+        {contactRows > 0 ? (
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              columnGap: 32,
+              rowGap: 7,
+              marginTop: 14,
+              fontSize: 12,
+              lineHeight: 1.35,
+              color: C.white,
+            }}
+          >
+            {Array.from({ length: contactRows }).flatMap((_, row) => [
+              <ContactLine key={`l-${row}`} cell={leftCol[row]} />,
+              <ContactLine key={`r-${row}`} cell={rightCol[row]} />,
+            ])}
+          </div>
+        ) : null}
+      </header>
+
+      {/* ===== WHITE BODY ===== */}
+      <div
+        style={{
+          backgroundColor: C.white,
+          padding: "18px 28px 24px",
+          display: "flex",
+          flexDirection: "column",
+          gap: 14,
+        }}
+      >
+        {summary && visibleTypes.has("summary") ? (
+          <Section
+            icon={<FileText size={15} strokeWidth={2} />}
+            title="Summary"
+          >
+            <p
+              style={{
+                fontSize: 12,
+                lineHeight: 1.6,
+                color: C.body,
+                margin: 0,
+                padding: 0,
+              }}
+            >
+              {summary}
+            </p>
+          </Section>
+        ) : null}
+
+        {experience.length > 0 && visibleTypes.has("experience") ? (
+          <Section
+            icon={<Briefcase size={15} strokeWidth={2} />}
+            title="Professional Experience"
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {experience.map((exp) => {
+                const role = exp.role?.trim() ?? ""
+                const company = exp.company?.trim() ?? ""
+                const dates = formatDateRange(
+                  exp.startDate,
+                  exp.endDate,
+                  exp.current,
+                )
+                const meta = [dates, exp.location?.trim()]
+                  .filter(Boolean)
+                  .join(" | ")
+
+                // Avoid leading ", Company" when role is empty
+                let titleNode: ReactNode = null
+                if (role && company) {
+                  titleNode = (
+                    <>
+                      <span style={{ fontWeight: 700 }}>{role}</span>
+                      <span style={{ fontWeight: 400 }}>{`, ${company}`}</span>
+                    </>
+                  )
+                } else if (role) {
+                  titleNode = <span style={{ fontWeight: 700 }}>{role}</span>
+                } else if (company) {
+                  titleNode = <span style={{ fontWeight: 700 }}>{company}</span>
+                }
+
+                const bullets = (exp.bullets ?? []).map((b) => b.trim()).filter(Boolean)
+
+                return (
+                  <div key={exp.id} className="avoid-break">
+                    {(titleNode || meta) && (
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "baseline",
+                          gap: 16,
+                          marginBottom: bullets.length ? 3 : 0,
+                        }}
+                      >
+                        {titleNode ? (
+                          <p
+                            style={{
+                              fontSize: 12.5,
+                              color: C.heading,
+                              margin: 0,
+                              padding: 0,
+                              lineHeight: 1.35,
+                              flex: 1,
+                              minWidth: 0,
+                            }}
+                          >
+                            {titleNode}
+                          </p>
+                        ) : (
+                          <span />
+                        )}
+                        {meta ? (
+                          <p
+                            style={{
+                              fontSize: 11,
+                              color: C.muted,
+                              margin: 0,
+                              padding: 0,
+                              whiteSpace: "nowrap",
+                              flexShrink: 0,
+                              lineHeight: 1.35,
+                            }}
+                          >
+                            {meta}
+                          </p>
+                        ) : null}
+                      </div>
+                    )}
+                    {bullets.length > 0 ? (
+                      <ul style={BULLET_LIST}>
+                        {bullets.map((b, bi) => (
+                          <li key={bi} style={BULLET_ITEM}>
+                            {b}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                )
+              })}
+            </div>
+          </Section>
+        ) : null}
+
+        {education.length > 0 && visibleTypes.has("education") ? (
+          <Section
+            icon={<GraduationCap size={15} strokeWidth={2} />}
+            title="Education"
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              {education.map((edu) => {
+                const degree = edu.degree?.trim() ?? ""
+                const field = edu.field?.trim() ?? ""
+                const institution = edu.institution?.trim() ?? ""
+
+                // "Bachelor of Computer Science, Universitas Indonesia"
+                // or "MCA, Sigma University" when field empty
+                let left = ""
+                if (degree && field) {
+                  // Prefer "Degree in Field" only when degree is short (B.S., M.S.)
+                  // Long degree names like "Bachelor of Computer Science" already include field
+                  const degreeHasField =
+                    degree.toLowerCase().includes(field.toLowerCase()) ||
+                    degree.split(" ").length >= 3
+                  left = degreeHasField
+                    ? degree
+                    : `${degree} in ${field}`
+                } else {
+                  left = degree || field
+                }
+                if (institution) {
+                  left = left ? `${left}, ${institution}` : institution
+                }
+
+                const dates = formatDateRange(
+                  edu.startDate,
+                  edu.endDate,
+                  edu.current,
+                )
+                // Education type has no location — dates only on the right
+
+                return (
+                  <div
+                    key={edu.id}
+                    className="avoid-break"
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "baseline",
+                      gap: 16,
+                    }}
+                  >
+                    <p
+                      style={{
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        color: C.heading,
+                        margin: 0,
+                        padding: 0,
+                        lineHeight: 1.35,
+                        flex: 1,
+                        minWidth: 0,
+                      }}
+                    >
+                      {left}
+                      {edu.gpa ? (
+                        <span
+                          style={{
+                            fontWeight: 400,
+                            color: C.muted,
+                            fontSize: 11.5,
+                          }}
+                        >
+                          {` · GPA ${edu.gpa}`}
+                        </span>
+                      ) : null}
+                    </p>
+                    {dates ? (
+                      <p
+                        style={{
+                          fontSize: 11,
+                          color: C.muted,
+                          margin: 0,
+                          padding: 0,
+                          whiteSpace: "nowrap",
+                          flexShrink: 0,
+                          lineHeight: 1.35,
+                        }}
+                      >
+                        {dates}
+                      </p>
+                    ) : null}
+                  </div>
+                )
+              })}
+            </div>
+          </Section>
+        ) : null}
+
+        {skillList.length > 0 && visibleTypes.has("skills") ? (
+          <Section icon={<Brain size={15} strokeWidth={2} />} title="Skills">
+            <BulletGrid items={skillList} columns={3} />
+          </Section>
+        ) : null}
+
+        {languages.length > 0 && visibleTypes.has("languages") ? (
+          <Section
+            icon={<LanguagesIcon size={15} strokeWidth={2} />}
+            title="Languages"
+          >
+            <BulletGrid
+              items={languages.map((lang) => lang.name).filter(Boolean)}
+              columns={2}
+            />
+          </Section>
+        ) : null}
+
+        {certifications.length > 0 && visibleTypes.has("certifications") ? (
+          <Section
+            icon={<Award size={15} strokeWidth={2} />}
+            title="Certificates"
+          >
+            <BulletGrid
+              items={certifications.map((cert) => {
+                const name = cert.name?.trim() ?? ""
+                const issuer = cert.issuer?.trim() ?? ""
+                if (name && issuer) return `${name} (${issuer})`
+                return name || issuer
+              }).filter(Boolean)}
+              columns={3}
+            />
+          </Section>
+        ) : null}
+
+        {projects.length > 0 && visibleTypes.has("projects") ? (
+          <Section icon={<Rocket size={15} strokeWidth={2} />} title="Projects">
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {projects.map((proj) => {
+                const bullets = (proj.bullets ?? [])
+                  .map((b) => b.trim())
+                  .filter(Boolean)
+                return (
+                  <div key={proj.id} className="avoid-break">
+                    <p
+                      style={{
+                        fontSize: 12.5,
+                        fontWeight: 700,
+                        color: C.heading,
+                        margin: 0,
+                        padding: 0,
+                        lineHeight: 1.35,
+                      }}
+                    >
+                      {proj.name}
+                      {proj.role ? (
+                        <span style={{ fontWeight: 400 }}>
+                          {` — ${proj.role}`}
+                        </span>
+                      ) : null}
+                    </p>
+                    {bullets.length > 0 ? (
+                      <ul style={{ ...BULLET_LIST, marginTop: 3 }}>
+                        {bullets.map((b, bi) => (
+                          <li key={bi} style={BULLET_ITEM}>
+                            {b}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                )
+              })}
+            </div>
+          </Section>
+        ) : null}
+      </div>
+    </div>
+  )
+}, resumePropsEqual)
+
+function ContactLine({ cell }: { cell?: ContactCell }) {
+  if (!cell) {
+    return <span aria-hidden style={{ minHeight: 1 }} />
+  }
+  return (
+    <span
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        minWidth: 0,
+        wordBreak: "break-word",
+      }}
+    >
+      <IconSlot size={14} color={C.white}>
+        {cell.icon}
+      </IconSlot>
+      <span style={{ minWidth: 0 }}>{cell.value}</span>
+    </span>
+  )
+}
+
+function Section({
+  icon,
+  title,
+  children,
+}: {
+  icon: ReactNode
+  title: string
+  children: ReactNode
+}) {
+  return (
+    <section className="avoid-break" style={{ margin: 0, padding: 0 }}>
+      <h2
+        style={{
+          fontSize: 13.5,
+          fontWeight: 700,
+          color: C.heading,
+          margin: "0 0 7px 0",
+          padding: 0,
+          display: "flex",
+          alignItems: "center",
+          gap: 7,
+          letterSpacing: "0.01em",
+          lineHeight: 1.2,
+        }}
+      >
+        <IconSlot size={16} color={C.heading}>
+          {icon}
+        </IconSlot>
+        <span>{title}</span>
       </h2>
       {children}
     </section>
+  )
+}
+
+/** Classic disc bullets matching reference (• not custom circles) */
+const BULLET_LIST: CSSProperties = {
+  margin: 0,
+  padding: "0 0 0 16px",
+  listStyleType: "disc",
+  listStylePosition: "outside",
+  fontSize: 11.5,
+  lineHeight: 1.55,
+  color: C.body,
+}
+
+const BULLET_ITEM: CSSProperties = {
+  margin: "0 0 1px 0",
+  padding: 0,
+}
+
+function BulletGrid({
+  items,
+  columns,
+}: {
+  items: string[]
+  columns: 2 | 3
+}) {
+  return (
+    <ul
+      style={{
+        margin: 0,
+        padding: 0,
+        listStyle: "none",
+        display: "grid",
+        gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+        columnGap: 12,
+        rowGap: 3,
+        fontSize: 11.5,
+        lineHeight: 1.5,
+        color: C.body,
+      }}
+    >
+      {items.map((item, i) => (
+        <li
+          key={`${item}-${i}`}
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 7,
+            minWidth: 0,
+            margin: 0,
+            padding: 0,
+          }}
+        >
+          {/* True disc bullet aligned to first text line */}
+          <span
+            aria-hidden
+            style={{
+              flexShrink: 0,
+              width: 4,
+              height: 4,
+              marginTop: 6,
+              borderRadius: "50%",
+              backgroundColor: C.body,
+            }}
+          />
+          <span style={{ wordBreak: "break-word", minWidth: 0 }}>{item}</span>
+        </li>
+      ))}
+    </ul>
   )
 }
