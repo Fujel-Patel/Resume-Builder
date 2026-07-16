@@ -251,3 +251,22 @@
   break-inside: avoid;
   page-break-inside: avoid;
 }
+
+/* Resume viewer modal print styles */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  body [data-resume-export],
+  body [data-resume-export] * {
+    visibility: visible !important;
+  }
+
+  body [data-resume-export] {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 210mm;
+  }
+}

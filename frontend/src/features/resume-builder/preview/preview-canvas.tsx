@@ -1,69 +1,85 @@
 "use client"
 
-import { memo } from "react"
+import { memo, useCallback } from "react"
 import type { ResumeData } from "@/types/resume"
+import { usePagination } from "../engine/use-pagination"
+import { A4, INLINE_PREVIEW_SCALE } from "../engine/constants"
 import { templateMap } from "./templates"
-import { NovaTemplate } from "./templates/nova-template"
 
 type PreviewCanvasProps = {
   resume: ResumeData
   scale?: number
-  showPageShadow?: boolean
-}
-
-function previewPropsEqual(a: PreviewCanvasProps, b: PreviewCanvasProps) {
-  return a.scale === b.scale && a.showPageShadow === b.showPageShadow && resumeContentEqual(a.resume, b.resume)
-}
-
-function resumeContentEqual(a: ResumeData, b: ResumeData): boolean {
-  if (a.templateId !== b.templateId) return false
-  return (
-    JSON.stringify(a.content) === JSON.stringify(b.content) &&
-    JSON.stringify(a.sections) === JSON.stringify(b.sections) &&
-    JSON.stringify(a.theme) === JSON.stringify(b.theme)
-  )
+  onClick?: () => void
 }
 
 export const PreviewCanvas = memo(function PreviewCanvas({
   resume,
-  scale = 0.7,
-  showPageShadow = true,
+  scale = INLINE_PREVIEW_SCALE,
+  onClick,
 }: PreviewCanvasProps) {
-  const TemplateComponent = templateMap[resume.templateId] || NovaTemplate
+  const { pages, MeasurePortal } = usePagination(resume)
+  const TemplateComponent = templateMap[resume.templateId]
+
+  const handleClick = useCallback(() => {
+    onClick?.()
+  }, [onClick])
+
+  if (!TemplateComponent) return null
 
   return (
-    <>
-      {/* Screen preview — scaled down */}
-      <div className="print:hidden flex flex-col items-center py-8">
+    <div
+      className="flex flex-col items-center py-6 gap-5 cursor-pointer select-none"
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault()
+          handleClick()
+        }
+      }}
+      aria-label="Open fullscreen resume preview"
+    >
+      <MeasurePortal resume={resume} />
+      {pages.map((page) => (
         <div
-          className="print:shadow-none"
+          key={page.pageIndex}
           style={{
-            width: `${210 * scale}mm`,
-            transformOrigin: "top center",
-            boxShadow: showPageShadow
-              ? "0 2px 20px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.05)"
-              : "none",
-            borderRadius: "2px",
-            backgroundColor: "#ffffff",
+            width: `${A4.WIDTH_PX * scale}px`,
+            height: `${A4.HEIGHT_PX * scale}px`,
+            overflow: "hidden",
+            borderRadius: "3px",
+            boxShadow: "0 2px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04)",
           }}
         >
           <div
             style={{
+              width: `${A4.WIDTH_PX}px`,
               transform: `scale(${scale})`,
               transformOrigin: "top left",
-              width: "210mm",
             }}
           >
-            <TemplateComponent resume={resume} />
+            <div
+              className="relative bg-white"
+              style={{
+                width: `${A4.WIDTH_PX}px`,
+                height: `${A4.HEIGHT_PX}px`,
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  width: `${A4.WIDTH_PX}px`,
+                  transform: `translateY(-${page.offsetY}px)`,
+                  transformOrigin: "top left",
+                }}
+              >
+                <TemplateComponent resume={resume} />
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-
-      {/* Print-only version — full A4 size, hidden on screen */}
-      <div className="print-preview hidden print:block print:bg-white print:overflow-visible"
-        style={{ width: "210mm", margin: "0 auto" }}>
-        <TemplateComponent resume={resume} />
-      </div>
-    </>
+      ))}
+    </div>
   )
-}, previewPropsEqual)
+})
