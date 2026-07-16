@@ -1,9 +1,9 @@
 """Resumes router — PRD endpoints, always 404 (never 403) for ownership."""
 
-import logging
 import uuid
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, Request, Response, UploadFile, status
+from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.database import get_db
@@ -12,8 +12,6 @@ from app.modules.resumes import schemas, service
 from app.modules.users import models as user_models
 from app.types.common import success
 from app.utils.auth import get_current_user
-
-logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -151,7 +149,7 @@ async def export_resume_pdf(
             detail={"code": "PDF_SERVICE_UNAVAILABLE", "message": f"PDF export service not available: {e}"},
         )
     except Exception as e:
-        logger.exception("PDF export failed for resume %s", resume_id)
+        logger.exception("PDF export failed for resume {}", resume_id)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={"code": "PDF_GENERATION_ERROR", "message": f"Failed to generate PDF: {e}"},

@@ -1,11 +1,10 @@
 """Structured performance metrics for AI requests."""
 
 import json
-import logging
 import time
 from dataclasses import dataclass, fields
 
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 
 @dataclass
@@ -25,7 +24,7 @@ class AIRequestMetrics:
 
 def log_ai_metrics(m: AIRequestMetrics):
     filtered = {f.name: getattr(m, f.name) for f in fields(m) if getattr(m, f.name)}
-    logger.info("AI_METRICS %s", json.dumps(filtered))
+    logger.info("AI_METRICS {}", json.dumps(filtered))
 
 
 class Timer:

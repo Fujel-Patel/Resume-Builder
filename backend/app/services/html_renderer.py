@@ -146,6 +146,40 @@ def _skills(d: dict) -> list:
     return out
 
 
+def _compact_skills_html(skills: list, columns: int = 2, font_size: int = 12, color: str = "#374151", label_color: str | None = None) -> str:
+    """Render skills in a compact grid layout.
+
+    Named groups: **Category** — skill1, skill2, skill3
+    Unnamed groups: comma-separated skill list
+    """
+    if not skills:
+        return ""
+
+    label_color = label_color or color
+
+    # If no named groups, render as comma-separated inline text
+    has_named = any(g.get("name") for g in skills)
+    if not has_named:
+        all_skills = []
+        for g in skills:
+            all_skills.extend(g.get("skills", []))
+        if not all_skills:
+            return ""
+        return f"<p style='font-size:{font_size}px;color:{color};margin:0;line-height:1.6;'>{e(', '.join(all_skills))}</p>"
+
+    cells = ""
+    for g in skills:
+        name = g.get("name", "")
+        items = g.get("skills", [])
+        if name:
+            nm = name.replace("_", " ").title()
+            cells += f"<div style='font-size:{font_size}px;color:{color};line-height:1.6;min-width:0;'><p style='margin:0;'><span style='font-weight:600;color:{label_color};'>{e(nm)}</span><span style='color:{color};'>&nbsp;&mdash;&nbsp;{e(', '.join(items))}</span></p></div>"
+        else:
+            cells += f"<div style='font-size:{font_size}px;color:{color};line-height:1.6;min-width:0;'><p style='margin:0;'>{e(', '.join(items))}</p></div>"
+
+    return f"<div style='display:grid;grid-template-columns:repeat({columns},1fr);gap:6px 24px;'>{cells}</div>"
+
+
 def _certifications(d: dict) -> list:
     return d.get("certifications") or []
 
@@ -218,14 +252,7 @@ def _nova_sidebar(p: dict, skills: list) -> str:
     if skills:
         html = '<div style="margin-bottom:12px;">'
         html += '<div style="border-bottom:1px solid #d1d5db;padding-bottom:4px;margin-bottom:8px;"><h2 style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#374151;">Skills</h2></div>'
-        for g in skills:
-            if g.get("name"):
-                html += f"<p style='font-size:10px;font-weight:600;color:#374151;margin:0 0 2px 0;text-transform:uppercase;letter-spacing:0.5px;'>{e(g['name'])}</p>"
-            chips = "".join(
-                f"<span style='display:inline-block;font-size:9px;background:#f3f4f6;color:#374151;padding:2px 6px;border-radius:2px;margin:1px;'>{e(s)}</span>"
-                for s in g.get("skills", [])
-            )
-            html += f"<div style='margin-bottom:6px;'>{chips}</div>"
+        html += _compact_skills_html(skills, columns=1, font_size=10, color="#374151", label_color="#111827")
         html += "</div>"
         sections.append(html)
 
@@ -244,6 +271,27 @@ def _nova_main(summary, experience, education, certifications, projects) -> str:
     # Summary
     if summary:
         section("Professional Summary", f"<p style='font-size:11px;line-height:1.6;color:#374151;'>{e(summary)}</p>", first=True)
+
+    # Projects
+    if projects:
+        items = ""
+        for proj in projects:
+            desc = proj.get("description") or ""
+            tech = proj.get("tech_stack") or []
+            desc_html = f"<p style='font-size:11px;line-height:1.5;color:#374151;margin-top:2px;'>{e(desc)}</p>" if desc else ""
+            tech_html = ""
+            if tech:
+                tech_html = "<div style='margin-top:2px;display:flex;flex-wrap:wrap;gap:3px;'>" + "".join(
+                    f"<span style='font-size:9px;background:#f3f4f6;color:#374151;padding:1px 5px;border-radius:2px;'>{e(t)}</span>"
+                    for t in tech
+                ) + "</div>"
+            items += f"""\
+<div class="avoid-break" style="margin-bottom:6px;">
+  <p style="font-size:12px;font-weight:600;color:#111827;margin:0;">{e(proj.get('name'))}</p>
+  {desc_html}
+  {tech_html}
+</div>"""
+        section("Projects", items)
 
     # Experience
     if experience:
@@ -304,27 +352,6 @@ def _nova_main(summary, experience, education, certifications, projects) -> str:
   {f'<p style="font-size:10px;color:#9ca3af;white-space:nowrap;flex-shrink:0;margin:0;">{e(year)}</p>' if year else ''}
 </div>"""
         section("Certifications", items)
-
-    # Projects
-    if projects:
-        items = ""
-        for proj in projects:
-            desc = proj.get("description") or ""
-            tech = proj.get("tech_stack") or []
-            desc_html = f"<p style='font-size:11px;line-height:1.5;color:#374151;margin-top:2px;'>{e(desc)}</p>" if desc else ""
-            tech_html = ""
-            if tech:
-                tech_html = "<div style='margin-top:2px;display:flex;flex-wrap:wrap;gap:3px;'>" + "".join(
-                    f"<span style='font-size:9px;background:#f3f4f6;color:#374151;padding:1px 5px;border-radius:2px;'>{e(t)}</span>"
-                    for t in tech
-                ) + "</div>"
-            items += f"""\
-<div class="avoid-break" style="margin-bottom:6px;">
-  <p style="font-size:12px;font-weight:600;color:#111827;margin:0;">{e(proj.get('name'))}</p>
-  {desc_html}
-  {tech_html}
-</div>"""
-        section("Projects", items)
 
     # Custom sections
     # (not included in Nova sidebar-based template to match frontend)
@@ -405,6 +432,39 @@ def _obsidian_edge(data: dict) -> str:
             f'<p style="font-size:14px;line-height:1.7;color:{OE_BODY};margin:0;">{e(summary)}</p>'
         )
 
+    # Skills
+    if skills:
+        body_parts += _oe_section(
+            "Skills", OE_ICONS["skills"],
+            _compact_skills_html(skills, columns=2, font_size=13, color=OE_BODY, label_color=OE_HEADING)
+        )
+
+    # Projects
+    if projects:
+        items = ""
+        for i, proj in enumerate(projects):
+            desc = proj.get("description") or ""
+            tech = proj.get("tech_stack") or []
+            desc_html = f'<p style="font-size:13px;color:{OE_BODY};margin:2px 0 0 0;">{e(desc)}</p>' if desc else ""
+            tech_html = ""
+            if tech:
+                tech_html = (
+                    '<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">'
+                    + "".join(
+                        f'<span style="font-size:12px;background:#e5e7eb;color:{OE_BODY};padding:2px 8px;border-radius:4px;">{e(t)}</span>'
+                        for t in tech
+                    )
+                    + "</div>"
+                )
+            mb = "margin-bottom:12px;" if i < len(projects) - 1 else ""
+            items += f"""\
+<div class="avoid-break" style="{mb}">
+  <p style="font-size:15px;font-weight:700;color:{OE_HEADING};margin:0 0 2px 0;">{e(proj.get('name') or '')}</p>
+  {desc_html}
+  {tech_html}
+</div>"""
+        body_parts += _oe_section("Projects", OE_ICONS["projects"], items)
+
     # Experience
     if experience:
         items = ""
@@ -468,27 +528,6 @@ def _obsidian_edge(data: dict) -> str:
 </div>"""
         body_parts += _oe_section("Education", OE_ICONS["education"], items)
 
-    # Skills
-    if skills:
-        grid = ""
-        for group in skills:
-            name_html = ""
-            if group.get("name"):
-                nm = group["name"].replace("_", " ").title()
-                name_html = f'<p style="font-size:14px;font-weight:600;color:{OE_HEADING};margin:0 0 4px 0;">{e(nm)}</p>'
-            items_html = "".join(
-                f"<li style='margin-bottom:1px;'>{e(s)}</li>" for s in group.get("skills", [])
-            )
-            grid += f"""\
-<div>
-  {name_html}
-  <ul style="margin:0;padding-left:18px;font-size:13px;color:{OE_BODY};line-height:1.6;">{items_html}</ul>
-</div>"""
-        body_parts += _oe_section(
-            "Skills", OE_ICONS["skills"],
-            f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">{grid}</div>'
-        )
-
     # Certifications
     if certifications:
         items = ""
@@ -504,32 +543,6 @@ def _obsidian_edge(data: dict) -> str:
             "Certificates", OE_ICONS["certifications"],
             f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;"><ul style="margin:0;padding-left:18px;font-size:13px;color:{OE_BODY};line-height:1.6;">{items}</ul></div>'
         )
-
-    # Projects
-    if projects:
-        items = ""
-        for i, proj in enumerate(projects):
-            desc = proj.get("description") or ""
-            tech = proj.get("tech_stack") or []
-            desc_html = f'<p style="font-size:13px;color:{OE_BODY};margin:2px 0 0 0;">{e(desc)}</p>' if desc else ""
-            tech_html = ""
-            if tech:
-                tech_html = (
-                    '<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">'
-                    + "".join(
-                        f'<span style="font-size:12px;background:#e5e7eb;color:{OE_BODY};padding:2px 8px;border-radius:4px;">{e(t)}</span>'
-                        for t in tech
-                    )
-                    + "</div>"
-                )
-            mb = "margin-bottom:12px;" if i < len(projects) - 1 else ""
-            items += f"""\
-<div class="avoid-break" style="{mb}">
-  <p style="font-size:15px;font-weight:700;color:{OE_HEADING};margin:0 0 2px 0;">{e(proj.get('name') or '')}</p>
-  {desc_html}
-  {tech_html}
-</div>"""
-        body_parts += _oe_section("Projects", OE_ICONS["projects"], items)
 
     return f"""\
 <div style="font-family:Inter,sans-serif;width:210mm;background:white;color:{OE_BODY};">
@@ -629,6 +642,44 @@ def _blue_steel(data: dict) -> str:
   <p style="font-size:13px;line-height:1.7;color:{BS_TEXT};margin:0;">{e(summary)}</p>
 </div>"""
 
+    # Skills
+    if skills:
+        body += f"""\
+<div style="background:{BS_CARD_BG};padding:20px;margin-bottom:16px;">
+  {_bs_section_heading("Skills")}
+  {_compact_skills_html(skills, columns=2, font_size=12, color=BS_TEXT, label_color=BS_PRIMARY)}
+</div>"""
+
+    # Projects
+    if projects:
+        items = ""
+        for i, proj in enumerate(projects):
+            desc = proj.get("description") or ""
+            tech = proj.get("tech_stack") or []
+            desc_html = f'<p style="font-size:12px;color:{BS_TEXT};margin:2px 0 0 0;">{e(desc)}</p>' if desc else ""
+            tech_html = ""
+            if tech:
+                tech_html = (
+                    '<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">'
+                    + "".join(
+                        f'<span style="font-size:11px;background:#e5e7eb;color:{BS_TEXT};padding:1px 6px;border-radius:3px;">{e(t)}</span>'
+                        for t in tech
+                    )
+                    + "</div>"
+                )
+            mb = "margin-bottom:12px;" if i < len(projects) - 1 else ""
+            items += f"""\
+<div class="avoid-break" style="{mb}">
+  <p style="font-size:13px;font-weight:600;color:{BS_PRIMARY};margin:0 0 2px 0;">{e(proj.get('name') or '')}</p>
+  {desc_html}
+  {tech_html}
+</div>"""
+        body += f"""\
+<div style="background:{BS_CARD_BG};padding:20px;margin-bottom:16px;">
+  {_bs_section_heading("Projects")}
+  {items}
+</div>"""
+
     # Experience
     if experience:
         items = ""
@@ -695,33 +746,23 @@ def _blue_steel(data: dict) -> str:
   {items}
 </div>"""
 
-    # --- Two-column bottom section ---
-    bottom_cols = ""
+    # --- Bottom: Languages + Certifications ---
+    bottom_content = ""
 
-    # Skills (left)
-    if skills:
-        grid = ""
-        for group in skills:
-            name_html = ""
-            if group.get("name"):
-                nm = group["name"].replace("_", " ").title()
-                name_html = f'<p style="font-size:12px;font-weight:600;color:{BS_PRIMARY};margin:0 0 4px 0;text-transform:uppercase;letter-spacing:0.04em;">{e(nm)}</p>'
-            items_html = "".join(
-                f"<li style='margin-bottom:1px;'>{e(s)}</li>" for s in group.get("skills", [])
-            )
-            grid += f"""\
-<div style="margin-bottom:12px;">
-  {name_html}
-  <ul style="margin:0;padding-left:14px;font-size:12px;color:{BS_TEXT};line-height:1.7;">{items_html}</ul>
-</div>"""
-        bottom_cols += f"""\
+    has_langs = d.get("languages") or []
+    if has_langs:
+        lang_items = ""
+        for lang in has_langs:
+            nm = e(lang.get("name") or "")
+            prof = (lang.get("proficiency") or "").capitalize()
+            lang_items += f'<p style="font-size:12px;color:{BS_TEXT};margin:0;line-height:1.6;"><span style="font-weight:500;color:{BS_PRIMARY};">{nm}</span> <span style="color:{BS_MUTED};">({e(prof)})</span></p>'
+        bottom_content += f"""\
 <div style="flex:1;background:{BS_CARD_BG};padding:20px;">
-  {_bs_section_heading("Skills")}
-  {grid}
+  {_bs_section_heading("Languages")}
+  <div style="display:flex;flex-direction:column;gap:8px;">
+    {lang_items}
+  </div>
 </div>"""
-
-    # Languages + Certifications + Projects (right)
-    right_content = ""
 
     if certifications:
         items = ""
@@ -733,49 +774,14 @@ def _blue_steel(data: dict) -> str:
             if year:
                 name_str += f" ({e(year)})"
             items += f"<li style='margin-bottom:1px;'>{name_str}</li>"
-        right_content += f"""\
-<div style="background:{BS_CARD_BG};padding:20px;">
+        bottom_content += f"""\
+<div style="flex:1;background:{BS_CARD_BG};padding:20px;">
   {_bs_section_heading("Certificates")}
   <ul style="margin:0;padding-left:14px;font-size:12px;color:{BS_TEXT};line-height:1.6;">{items}</ul>
 </div>"""
 
-    if projects:
-        items = ""
-        for i, proj in enumerate(projects):
-            desc = proj.get("description") or ""
-            tech = proj.get("tech_stack") or []
-            desc_html = f'<p style="font-size:12px;color:{BS_TEXT};margin:2px 0 0 0;">{e(desc)}</p>' if desc else ""
-            tech_html = ""
-            if tech:
-                tech_html = (
-                    '<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">'
-                    + "".join(
-                        f'<span style="font-size:11px;background:#e5e7eb;color:{BS_TEXT};padding:1px 6px;border-radius:3px;">{e(t)}</span>'
-                        for t in tech
-                    )
-                    + "</div>"
-                )
-            mb = "margin-bottom:12px;" if i < len(projects) - 1 else ""
-            items += f"""\
-<div class="avoid-break" style="{mb}">
-  <p style="font-size:13px;font-weight:600;color:{BS_PRIMARY};margin:0 0 2px 0;">{e(proj.get('name') or '')}</p>
-  {desc_html}
-  {tech_html}
-</div>"""
-        right_content += f"""\
-<div style="background:{BS_CARD_BG};padding:20px;">
-  {_bs_section_heading("Projects")}
-  {items}
-</div>"""
-
-    if right_content:
-        bottom_cols += f"""\
-<div style="flex:1;display:flex;flex-direction:column;gap:16px;">
-  {right_content}
-</div>"""
-
-    if bottom_cols:
-        body += f'<div style="display:flex;gap:16px;">{bottom_cols}</div>'
+    if bottom_content:
+        body += f'<div style="display:flex;gap:16px;">{bottom_content}</div>'
 
     return f"""\
 <div style="font-family:Inter,sans-serif;width:210mm;background:{BS_BODY_BG};color:{BS_TEXT};">
@@ -895,6 +901,41 @@ def _neon_green(data: dict) -> str:
   <p style="font-size:12px;line-height:1.7;color:{NG_SECONDARY};margin:0;">{e(summary)}</p>
 </div>"""
 
+    # Skills
+    if skills:
+        body += _ng_section_heading("Skills")
+        body += _compact_skills_html(skills, columns=2, font_size=11, color=NG_SECONDARY, label_color=NG_TEXT)
+
+    # Projects
+    if projects:
+        body += _ng_section_heading("Projects")
+        for i, proj in enumerate(projects):
+            proj_name = e(proj.get("name") or "")
+            desc = proj.get("description") or ""
+            tech = proj.get("tech_stack") or []
+            desc_html = f'<p style="font-size:12px;font-style:italic;color:{NG_SECONDARY};margin:2px 0 0 0;">{e(desc)}</p>' if desc else ""
+            tech_html = ""
+            if tech:
+                tech_html = (
+                    '<div style="margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;">'
+                    + "".join(
+                        f'<span style="font-size:10px;background:#e5e7eb;color:{NG_TEXT};padding:1px 6px;border-radius:3px;">{e(t)}</span>'
+                        for t in tech
+                    )
+                    + "</div>"
+                )
+            mb = "margin-bottom:18px;" if i < len(projects) - 1 else ""
+            body += f"""\
+<div class="avoid-break" style="{mb}">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+    <div style="flex:1;">
+      <p style="font-size:13px;font-weight:700;color:{NG_TEXT};margin:0;">{proj_name}</p>
+      {desc_html}
+    </div>
+  </div>
+  {tech_html}
+</div>"""
+
     # Experience
     if experience:
         body += _ng_section_heading("Professional Experience")
@@ -951,21 +992,10 @@ def _neon_green(data: dict) -> str:
   {right}
 </div>"""
 
-    # Skills (flat keyword row)
-    if skills:
-        all_skill_names: list[str] = []
-        for g in skills:
-            all_skill_names.extend(g.get("skills", []))
-        if all_skill_names:
-            body += _ng_section_heading("Skills")
-            joined = " \u2022 ".join(e(s) for s in all_skill_names)
-            body += f'<p style="font-size:11px;color:{NG_SECONDARY};margin:0;line-height:1.7;">{joined}</p>'
-
-    # Two-column bottom: Languages + Certifications/Projects
+    # Two-column bottom: Languages + Certifications
     has_langs = d.get("languages") or []
     has_certs = certifications
-    has_projs = projects
-    if has_langs or has_certs or has_projs:
+    if has_langs or has_certs:
         bottom = ""
         if has_langs:
             lang_items = ""
@@ -980,42 +1010,22 @@ def _neon_green(data: dict) -> str:
     {lang_items}
   </div>
 </div>"""
-        if has_certs or has_projs:
-            right_bottom = ""
-            if has_certs:
-                cert_items = ""
-                for cert in has_certs:
-                    year = cert.get("year") or ""
-                    name_str = e(cert.get("name") or "")
-                    if cert.get("issuer"):
-                        name_str += f" &mdash; {e(cert.get('issuer'))}"
-                    if year:
-                        name_str += f" ({e(year)})"
-                    cert_items += f"<li style='margin-bottom:1px;'>{name_str}</li>"
-                if cert_items:
-                    right_bottom += f"""\
-<div style="margin-bottom:20px;">
+        if has_certs:
+            cert_items = ""
+            for cert in has_certs:
+                year = cert.get("year") or ""
+                name_str = e(cert.get("name") or "")
+                if cert.get("issuer"):
+                    name_str += f" &mdash; {e(cert.get('issuer'))}"
+                if year:
+                    name_str += f" ({e(year)})"
+                cert_items += f"<li style='margin-bottom:1px;'>{name_str}</li>"
+            if cert_items:
+                bottom += f"""\
+<div style="flex:1;min-width:0;">
   {_ng_section_heading("Certifications")}
   <ul style="margin:0;padding-left:14px;font-size:11px;color:{NG_SECONDARY};line-height:1.6;">{cert_items}</ul>
 </div>"""
-            if has_projs:
-                proj_items = ""
-                for proj in has_projs:
-                    proj_name = e(proj.get("name") or "")
-                    desc = proj.get("description") or ""
-                    entry = f"<li><span style='font-weight:600;color:{NG_TEXT};'>{proj_name}</span>"
-                    if desc:
-                        entry += f": {e(desc)}"
-                    entry += "</li>"
-                    proj_items += entry
-                if proj_items:
-                    right_bottom += f"""\
-<div>
-  {_ng_section_heading("Projects")}
-  <ul style="margin:0;padding-left:14px;font-size:11px;color:{NG_SECONDARY};line-height:1.6;">{proj_items}</ul>
-</div>"""
-            if right_bottom:
-                bottom += f'<div style="flex:1;min-width:0;">{right_bottom}</div>'
 
         if bottom:
             body += f'<div style="display:flex;gap:40px;margin-top:28px;">{bottom}</div>'
@@ -1080,6 +1090,32 @@ def _professional_executive(data: dict) -> str:
         body += section_heading("Summary", first=True)
         body += f"<p style='font-size:14px;line-height:1.7;color:#333333;margin:0;'>{e(summary)}</p>"
 
+    # Skills
+    if skills:
+        body += section_heading("Skills")
+        body += _compact_skills_html(skills, columns=2, font_size=14, color="#333333", label_color="#222222")
+
+    # Projects
+    if projects:
+        body += section_heading("Projects")
+        for i, proj in enumerate(projects):
+            desc = proj.get("description") or ""
+            tech = proj.get("tech_stack") or []
+            desc_html = f"<p style='font-size:14px;color:#4b5563;margin:2px 0 0 0;'>{e(desc)}</p>" if desc else ""
+            tech_html = ""
+            if tech:
+                tech_html = "<div style='margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;'>" + "".join(
+                    f"<span style='font-size:12px;background:#f3f4f6;color:#374151;padding:2px 8px;border-radius:4px;'>{e(t)}</span>"
+                    for t in tech
+                ) + "</div>"
+            mb = "margin-bottom:16px;" if i < len(projects) - 1 else ""
+            body += f"""\
+<div class="avoid-break" style="{mb}">
+  <p style="font-size:15px;font-weight:600;color:#222222;margin:0 0 2px 0;">{e(proj.get('name'))}</p>
+  {desc_html}
+  {tech_html}
+</div>"""
+
     # Experience
     if experience:
         body += section_heading("Experience")
@@ -1120,24 +1156,6 @@ def _professional_executive(data: dict) -> str:
   {date_html}
 </div>"""
 
-    # Skills
-    if skills:
-        body += section_heading("Skills")
-        grid_items = ""
-        for group in skills:
-            items = "".join(
-                f"<li style='margin-bottom:1px;'>{e(s)}</li>" for s in group.get("skills", [])
-            )
-            name_html = f"<p style='font-size:14px;font-weight:600;color:#222222;margin:0 0 4px 0;'>{e(group.get('name','').replace('_',' ').title())}</p>" if group.get("name") else ""
-            grid_items += f"""\
-<div class="avoid-break">
-  {name_html}
-  <ul style="margin:0;padding-left:18px;font-size:14px;color:#333333;line-height:1.6;">
-    {items}
-  </ul>
-</div>"""
-        body += f"<div style='display:grid;grid-template-columns:repeat(2,1fr);gap:24px;'>{grid_items}</div>"
-
     # Certifications
     if certifications:
         body += section_heading("Certificates")
@@ -1146,27 +1164,6 @@ def _professional_executive(data: dict) -> str:
             year = cert.get("year") or ""
             items += f"<li style='margin-bottom:2px;'>{e(cert.get('name'))}{' — '+e(cert.get('issuer')) if cert.get('issuer') else ''}{' ('+e(year)+')' if year else ''}</li>"
         body += f"<ul style='margin:0;padding-left:18px;font-size:14px;color:#333333;line-height:1.6;'>{items}</ul>"
-
-    # Projects
-    if projects:
-        body += section_heading("Projects")
-        for i, proj in enumerate(projects):
-            desc = proj.get("description") or ""
-            tech = proj.get("tech_stack") or []
-            desc_html = f"<p style='font-size:14px;color:#4b5563;margin:2px 0 0 0;'>{e(desc)}</p>" if desc else ""
-            tech_html = ""
-            if tech:
-                tech_html = "<div style='margin-top:4px;display:flex;flex-wrap:wrap;gap:4px;'>" + "".join(
-                    f"<span style='font-size:12px;background:#f3f4f6;color:#374151;padding:2px 8px;border-radius:4px;'>{e(t)}</span>"
-                    for t in tech
-                ) + "</div>"
-            mb = "margin-bottom:16px;" if i < len(projects) - 1 else ""
-            body += f"""\
-<div class="avoid-break" style="{mb}">
-  <p style="font-size:15px;font-weight:600;color:#222222;margin:0 0 2px 0;">{e(proj.get('name'))}</p>
-  {desc_html}
-  {tech_html}
-</div>"""
 
     return f"""\
 <div style="font-family:Inter,sans-serif;width:210mm;padding:40px;color:#333333;background:white;">

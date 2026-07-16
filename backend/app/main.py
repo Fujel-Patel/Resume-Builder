@@ -1,21 +1,22 @@
 """FastAPI app entry point — middleware, routers, rate limiting."""
 
 from contextlib import asynccontextmanager
-from starlette.middleware.cors import CORSMiddleware
-import re
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from loguru import logger
 from slowapi import Limiter
 from slowapi.middleware import SlowAPIMiddleware
 from slowapi.util import get_remote_address
 from sqlalchemy import text
 
 from app.config.database import Base, engine
+from app.config.logging import setup_logging
 from app.config.settings import settings
 from app.middleware.auth import AuthMiddleware
 from app.middleware.error_handler import ErrorHandlerMiddleware, validation_exception_handler
+from app.middleware.request_logger import RequestLoggingMiddleware
 from app.utils.http_client import close_client as close_http_client
 from app.modules.ai.router import router as ai_router
 from app.modules.ai_providers.router import router as ai_providers_router
@@ -24,22 +25,24 @@ from app.modules.auth.router import router as auth_router
 from app.modules.resumes.router import router as resumes_router
 from app.modules.users.router import router as users_router
 
+setup_logging(debug=(settings.APP_ENV == "development"))
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    logger.info("Starting up — environment={}", settings.APP_ENV)
     async with engine.connect() as conn:
         await conn.execute(text("SELECT 1"))
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    logger.info("Database ready")
     yield
-    # Cleanup Playwright browser on shutdown
+    logger.info("Shutting down")
     try:
         from app.services.pdf_service import shutdown_browser
         await shutdown_browser()
     except ImportError:
-        pass  # playwright not installed
-
-    # Close shared HTTP client (connection pool)
+        pass
     await close_http_client()
 
 
@@ -65,6 +68,7 @@ app.add_middleware(SlowAPIMiddleware)
 # ---------------------------------------------------------------------------
 app.add_middleware(AuthMiddleware)
 app.add_middleware(ErrorHandlerMiddleware)
+app.add_middleware(RequestLoggingMiddleware)
 
 # ---------------------------------------------------------------------------
 # CORS — outermost so it runs LAST on response (catches error responses too)

@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2, CheckCircle2 } from "lucide-react"
+import { toast } from "sonner"
 import { resetPasswordApi } from "@/lib/api/auth"
 import { ApiRequestError } from "@/lib/api/client"
 
@@ -48,13 +49,20 @@ export function ResetPasswordForm() {
     e.preventDefault()
     setError("")
     if (!validate()) return
-    if (!token) { setError("Missing reset token"); return }
+    if (!token) {
+      setError("Missing reset token")
+      toast.error("Missing reset token. Please request a new link.")
+      return
+    }
     setLoading(true)
     try {
       await resetPasswordApi(token, password)
       setDone(true)
+      toast.success("Password reset successfully!")
     } catch (e) {
-      setError(e instanceof ApiRequestError ? e.message : "Something went wrong")
+      const msg = e instanceof ApiRequestError ? e.message : "Something went wrong"
+      setError(msg)
+      toast.error(msg)
     } finally {
       setLoading(false)
     }

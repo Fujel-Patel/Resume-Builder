@@ -35,10 +35,10 @@ current skills, do the following:
 3. Combine both sets, remove duplicates, and categorize into these groups.
 
 Use these exact category keys:
-"languages", "frontend", "backend", "database", "devops", "ai_tools", "other"
+"Languages", "Frameworks", "Tools", "Database"
 
 Return ONLY a JSON object with category keys and array values:
-{"languages": ["Python", "JavaScript", "TypeScript"], "frontend": ["React", "Next.js", "Tailwind CSS"], ...}
+{"Languages": ["Python", "JavaScript", "TypeScript"], "Frameworks": ["React", "Next.js", "FastAPI"], ...}
 
 Every skill must go into exactly one group. Include ALL skills — do not skip any.
 If a category has no skills, omit it from the JSON.
@@ -140,6 +140,7 @@ RULES:
 - Use keywords from job description naturally
 - Keep language professional and concise
 - Skills: add relevant ones from JD, never remove existing ones
+- Skills should be categorized into groups: Languages, Frameworks, Tools, Database
 """
 
 # Parse-and-optimize combined prompt (single AI call)

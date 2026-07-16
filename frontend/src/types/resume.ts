@@ -29,6 +29,7 @@ export type ContactInfo = {
   website: string
   linkedin: string
   github: string
+  photoUrl: string
 }
 
 export type ExperienceItem = {
@@ -176,17 +177,18 @@ export const emptyContact: ContactInfo = {
   website: "",
   linkedin: "",
   github: "",
+  photoUrl: "",
 }
 
 export const defaultSections: SectionConfig[] = [
   { id: "contact", type: "contact", title: "Contact", order: 0, visible: true },
   { id: "summary", type: "summary", title: "Professional Summary", order: 1, visible: true },
-  { id: "experience", type: "experience", title: "Experience", order: 2, visible: true },
-  { id: "education", type: "education", title: "Education", order: 3, visible: true },
-  { id: "skills", type: "skills", title: "Skills", order: 4, visible: true },
-  { id: "languages", type: "languages", title: "Languages", order: 5, visible: false },
-  { id: "certifications", type: "certifications", title: "Certifications", order: 6, visible: false },
-  { id: "projects", type: "projects", title: "Projects", order: 7, visible: false },
+  { id: "skills", type: "skills", title: "Skills", order: 2, visible: true },
+  { id: "projects", type: "projects", title: "Projects", order: 3, visible: true },
+  { id: "experience", type: "experience", title: "Experience", order: 4, visible: true },
+  { id: "education", type: "education", title: "Education", order: 5, visible: true },
+  { id: "certifications", type: "certifications", title: "Certifications", order: 6, visible: true },
+  { id: "languages", type: "languages", title: "Languages", order: 7, visible: false },
   { id: "awards", type: "awards", title: "Awards", order: 8, visible: false },
   { id: "interests", type: "interests", title: "Interests", order: 9, visible: false },
   { id: "references", type: "references", title: "References", order: 10, visible: false },

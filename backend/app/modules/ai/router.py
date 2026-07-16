@@ -1,13 +1,13 @@
 """AI router — PRD response shape, no raw returns."""
 
 import json
-import logging
 import re
 import time
 from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, status
 from fastapi.responses import StreamingResponse
+from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.database import get_db
@@ -18,8 +18,6 @@ from app.modules.users import models as user_models
 from app.types.common import success
 from app.utils.auth import get_current_user
 from app.utils.pdf_parser import extract_text_from_bytes
-
-logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
@@ -79,7 +77,7 @@ async def _safe_ai_complete(user_id: str, prompt: str, db: AsyncSession, max_tok
     finally:
         _elapsed = time.perf_counter() - _st
         if _elapsed > 1.0:
-            logger.info("AI_COMPLETE timing | user=%s | tokens=%d | elapsed=%.2fs", user_id, max_tokens, _elapsed)
+            logger.info("AI_COMPLETE timing | user={} | tokens={} | elapsed={:.2f}s", user_id, max_tokens, _elapsed)
 
 
 def _parse_json_safe(raw: str) -> dict | list:
@@ -284,8 +282,8 @@ def _sse_error(code: str, message: str) -> str:
 
 def _log_raw_response(raw: str, extracted: str = "", provider: str = "", model: str = "") -> None:
     logger.warning(
-        "SSE_RAW_RESPONSE | provider=%s | model=%s | raw_len=%d | extracted_len=%d | "
-        "raw_preview=%s | extracted_preview=%s",
+        "SSE_RAW_RESPONSE | provider={} | model={} | raw_len={} | extracted_len={} | "
+        "raw_preview={} | extracted_preview={}",
         provider,
         model,
         len(raw),
@@ -378,7 +376,7 @@ async def _optimize_resume_events(
                 str(current_user.id), combined_prompt, db, max_tokens=8192, json_mode=True
             )
         except Exception as e:
-            logger.error("SSE_AI_FAILURE | user=%s | error=%s", current_user.id, e)
+            logger.error("SSE_AI_FAILURE | user={} | error={}", current_user.id, e)
             yield _sse_error("AI_PROVIDER_ERROR", f"AI request failed: {e}")
             return
         stage_timers["optimization"] = time.perf_counter() - _tx
@@ -435,7 +433,7 @@ async def _optimize_resume_events(
             )
             resume = await resume_service.create_resume(db, current_user.id, resume_in)
         except Exception as e:
-            logger.error("SSE_DB_FAILURE | user=%s | error=%s", current_user.id, e)
+            logger.error("SSE_DB_FAILURE | user={} | error={}", current_user.id, e)
             yield _sse_error("RESUME_CREATE_ERROR", f"Failed to save resume: {e}")
             return
         stage_timers["saving"] = time.perf_counter() - _tx
@@ -443,8 +441,8 @@ async def _optimize_resume_events(
         total = time.perf_counter() - _t0
 
         logger.info(
-            "OPTIMIZE_RESUME_STREAM timing | user=%s | upload=%.2fs | extract=%.2fs "
-            "| optimize=%.2fs | validate=%.2fs | save=%.2fs | total=%.2fs",
+            "OPTIMIZE_RESUME_STREAM timing | user={} | upload={:.2f}s | extract={:.2f}s "
+            "| optimize={:.2f}s | validate={:.2f}s | save={:.2f}s | total={:.2f}s",
             current_user.id,
             stage_timers.get("upload", 0),
             stage_timers.get("extraction", 0),
@@ -460,7 +458,7 @@ async def _optimize_resume_events(
             "resume_id": str(resume.id),
         })
     except Exception as e:
-        logger.exception("SSE_UNEXPECTED | user=%s | error=%s", current_user.id, e)
+        logger.exception("SSE_UNEXPECTED | user={} | error={}", current_user.id, e)
         yield _sse_error("UNEXPECTED_ERROR", f"An unexpected error occurred: {e}")
 
 
@@ -612,8 +610,8 @@ async def optimize_resume(
     _t7 = time.perf_counter()
 
     logger.info(
-        "OPTIMIZE_RESUME timing | user=%s | pdf_parse=%.2fs | ai_request=%.2fs "
-        "| json_extract=%.2fs | db_save=%.2fs | total=%.2fs",
+        "OPTIMIZE_RESUME timing | user={} | pdf_parse={:.2f}s | ai_request={:.2f}s "
+        "| json_extract={:.2f}s | db_save={:.2f}s | total={:.2f}s",
         current_user.id,
         _t2 - _t1,
         _t4 - _t3,

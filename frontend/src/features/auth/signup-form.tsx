@@ -6,10 +6,22 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 import { useAppDispatch, useAppSelector } from "@/lib/hooks"
-import { signup, clearError } from "@/lib/features/auth/authSlice"
+import { signup, clearError, type AuthError } from "@/lib/features/auth/authSlice"
 
 const PASSWORD_SPECIAL_CHARS = /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/;]/
+
+function getSignupErrorMessage(error: AuthError | string | null): string | null {
+  if (!error) return null
+  if (typeof error === "string") return error
+  const { code, message } = error
+  if (code === "CONFLICT") return "An account with this email already exists. Try signing in instead."
+  if (code === "VALIDATION_ERROR") return "Please check your input and try again."
+  if (code === "RATE_LIMIT_EXCEEDED") return "Too many requests. Please wait a moment and try again."
+  if (code === "UNKNOWN_ERROR" && !message) return "Something went wrong. Please try again."
+  return message
+}
 
 export function SignupForm() {
   const router = useRouter()
@@ -31,6 +43,12 @@ export function SignupForm() {
   useEffect(() => {
     dispatch(clearError())
   }, [dispatch])
+
+  useEffect(() => {
+    if (!error) return
+    const msg = getSignupErrorMessage(error)
+    if (msg) toast.error(msg)
+  }, [error])
 
   const validate = () => {
     const errs: Record<string, string> = {}
@@ -81,21 +99,7 @@ export function SignupForm() {
     return undefined
   }
 
-  const errorMessage: string | null = (() => {
-    if (!error) return null
-    try {
-      const raw = typeof error === "string" ? error : (error as Record<string, unknown>)?.message
-      const msg = typeof raw === "string" ? raw : null
-      if (!msg) return null
-      const code = typeof error === "string" ? null : (error as Record<string, unknown>)?.code ?? null
-      if (code === "CONFLICT") return "An account with this email already exists. Try signing in instead."
-      if (code === "VALIDATION_ERROR") return "Please check your input and try again."
-      if (code === "RATE_LIMIT_EXCEEDED") return "Too many requests. Please wait a moment and try again."
-      return msg
-    } catch {
-      return null
-    }
-  })()
+  const errorMessage = getSignupErrorMessage(error)
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">

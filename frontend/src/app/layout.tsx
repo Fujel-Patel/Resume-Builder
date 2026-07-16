@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Space_Grotesk, DM_Sans } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { ReduxProvider } from "@/providers/redux-provider";
@@ -35,6 +36,15 @@ export default function RootLayout({
           <ThemeProvider>
             {children}
             <UnauthorizedOverlay />
+            <Toaster
+              position="top-right"
+              richColors
+              closeButton
+              duration={4000}
+              toastOptions={{
+                className: "text-sm",
+              }}
+            />
           </ThemeProvider>
         </ReduxProvider>
       </body>

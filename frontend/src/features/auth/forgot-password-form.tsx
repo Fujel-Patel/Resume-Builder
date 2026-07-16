@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2, ArrowLeft, CheckCircle2 } from "lucide-react"
+import { toast } from "sonner"
 import { forgotPasswordApi } from "@/lib/api/auth"
 import { ApiRequestError } from "@/lib/api/client"
 
@@ -24,13 +25,16 @@ export function ForgotPasswordForm() {
     e.preventDefault()
     setError("")
     const err = validate()
-    if (err) { setError(err); return }
+    if (err) { setError(err); toast.error(err); return }
     setLoading(true)
     try {
       await forgotPasswordApi(email)
       setSent(true)
+      toast.success("Reset link sent! Check your email.")
     } catch (e) {
-      setError(e instanceof ApiRequestError ? e.message : "Something went wrong")
+      const msg = e instanceof ApiRequestError ? e.message : "Something went wrong"
+      setError(msg)
+      toast.error(msg)
     } finally {
       setLoading(false)
     }

@@ -29,6 +29,7 @@ export const sampleResumeData: ResumeData = {
       website: "auliaprameswari.dev",
       linkedin: "https://linkedin.com/in/auliaprameswari",
       github: "https://github.com/auliaprameswari",
+      photoUrl: "",
     },
     summary:
       "Results-driven Software Engineer with 6+ years of experience building scalable web applications and microservices. Proficient in modern JavaScript frameworks, cloud infrastructure, and agile methodologies. Passionate about crafting clean, maintainable code and delivering intuitive user experiences that drive business impact.",

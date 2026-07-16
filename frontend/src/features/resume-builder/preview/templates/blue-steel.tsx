@@ -2,6 +2,7 @@
 
 import { MapPin, Mail, Phone, Linkedin } from "lucide-react"
 import type { ResumeData } from "@/types/resume"
+import { ProfileImage, CompactSkills } from "../resume-page"
 
 const C = {
   primary: "#2F3552",
@@ -17,15 +18,8 @@ type Props = { resume: ResumeData }
 
 export function BlueSteelTemplate({ resume }: Props) {
   const { content, sections } = resume
-  const { contact, summary, experience, education, skills, languages, interests } = content
+  const { contact, summary, experience, education, skills, languages, interests, projects } = content
   const visibleTypes = new Set(sections.filter(s => s.visible).map(s => s.type))
-
-  const initials = (contact.fullName || "")
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2)
 
   return (
     <div
@@ -115,50 +109,107 @@ export function BlueSteelTemplate({ resume }: Props) {
         </div>
 
         {/* Photo circle */}
-        <div
-          style={{
-            width: 80,
-            height: 80,
-            borderRadius: "50%",
-            backgroundColor: C.primary,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-            color: "#ffffff",
-            fontSize: 28,
-            fontWeight: 600,
-            fontFamily: "Inter, sans-serif",
-            lineHeight: 1,
-          }}
-        >
-          {initials}
-        </div>
+        <ProfileImage
+          photoUrl={contact.photoUrl}
+          fullName={contact.fullName}
+          size={80}
+          borderRadius="50%"
+          bgColor={C.primary}
+          textColor="#ffffff"
+          fontSize={28}
+          fontWeight={600}
+        />
       </div>
 
       {/* White card wrapper */}
       <div style={{ padding: "20px 32px 32px" }}>
         {/* Summary */}
-          {summary && visibleTypes.has("summary") && (
-            <div
+        {summary && visibleTypes.has("summary") && (
+          <div
+            style={{
+              backgroundColor: C.cardBg,
+              padding: 20,
+              marginBottom: 16,
+            }}
+          >
+            <p
               style={{
-                backgroundColor: C.cardBg,
-                padding: 20,
-                marginBottom: 16,
+                fontSize: 13,
+                lineHeight: 1.7,
+                color: C.text,
+                margin: 0,
               }}
             >
-              <p
+              {summary}
+            </p>
+          </div>
+        )}
+
+        {/* Skills */}
+        {skills.length > 0 && visibleTypes.has("skills") && (
+          <div
+            style={{
+              backgroundColor: C.cardBg,
+              padding: 20,
+              marginBottom: 16,
+            }}
+          >
+            <SectionHeading title="Skills" />
+            <CompactSkills
+              skills={skills}
+              fontSize={12}
+              color={C.text}
+              labelColor={C.heading}
+            />
+          </div>
+        )}
+
+        {/* Projects */}
+        {projects.length > 0 && visibleTypes.has("projects") && (
+          <div
+            style={{
+              backgroundColor: C.cardBg,
+              padding: 20,
+              marginBottom: 16,
+            }}
+          >
+            <SectionHeading title="Projects" />
+            {projects.map((proj, i) => (
+              <div
+                key={proj.id}
                 style={{
-                  fontSize: 13,
-                  lineHeight: 1.7,
-                  color: C.text,
-                  margin: 0,
+                  marginBottom: i < projects.length - 1 ? 16 : 0,
                 }}
               >
-                {summary}
-              </p>
-            </div>
-          )}
+                <p style={{ fontSize: 14, fontWeight: 700, color: C.heading, margin: 0 }}>
+                  {proj.name}
+                </p>
+                {proj.role && (
+                  <p style={{ fontSize: 12, lineHeight: 1.6, color: C.text, margin: "4px 0 0 0" }}>
+                    {proj.role}
+                  </p>
+                )}
+                {proj.bullets.length > 0 && (
+                  <ul
+                    style={{
+                      margin: "4px 0 0 0",
+                      paddingLeft: 14,
+                      fontSize: 12,
+                      lineHeight: 1.6,
+                      color: C.text,
+                    }}
+                  >
+                    {proj.bullets.map((b, bi) => (
+                      <li key={bi} style={{ marginBottom: 2 }}>
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Work Experience */}
         {experience.length > 0 && visibleTypes.has("experience") && (
@@ -265,10 +316,9 @@ export function BlueSteelTemplate({ resume }: Props) {
           </div>
         )}
 
-        {/* Two-column bottom section */}
+        {/* Bottom: Languages + Interests */}
         <div style={{ display: "flex", gap: 16 }}>
-          {/* Left: Skills */}
-          {skills.length > 0 && visibleTypes.has("skills") && (
+          {languages.length > 0 && visibleTypes.has("languages") && (
             <div
               style={{
                 flex: 1,
@@ -276,106 +326,60 @@ export function BlueSteelTemplate({ resume }: Props) {
                 padding: 20,
               }}
             >
-              <SectionHeading title="Skills" />
-              {skills.map((group) => (
-                <div key={group.id} style={{ marginBottom: 12 }}>
-                  {group.name && (
-                    <p
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 600,
-                        color: C.heading,
-                        margin: "0 0 4px 0",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.04em",
-                      }}
-                    >
-                      {group.name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                    </p>
-                  )}
-                  <ul
-                    style={{
-                      margin: 0,
-                      paddingLeft: 14,
-                      fontSize: 12,
-                      color: C.text,
-                      lineHeight: 1.7,
-                    }}
-                  >
-                    {group.skills.map((s, si) => (
-                      <li key={si} style={{ marginBottom: 1 }}>
-                        {s}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+              <SectionHeading title="Languages" />
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {languages.map((lang) => (
+                  <div key={lang.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontSize: 12, fontWeight: 500, color: C.heading, minWidth: 70 }}>
+                      {lang.name}
+                    </span>
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((dot) => {
+                        const filled = dot <= proficiencyToDots(lang.proficiency)
+                        return (
+                          <span
+                            key={dot}
+                            style={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: "50%",
+                              backgroundColor: filled ? C.primary : "#D1D5DB",
+                              display: "inline-block",
+                            }}
+                          />
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
-          {/* Right: Languages + Strengths */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 16 }}>
-            {languages.length > 0 && visibleTypes.has("languages") && (
-              <div
+          {interests.length > 0 && visibleTypes.has("interests") && (
+            <div
+              style={{
+                flex: 1,
+                backgroundColor: C.cardBg,
+                padding: 20,
+              }}
+            >
+              <SectionHeading title="Strengths" />
+              <ul
                 style={{
-                  backgroundColor: C.cardBg,
-                  padding: 20,
+                  margin: 0,
+                  paddingLeft: 14,
+                  fontSize: 12,
+                  color: C.text,
+                  lineHeight: 1.8,
                 }}
               >
-                <SectionHeading title="Languages" />
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {languages.map((lang) => (
-                    <div key={lang.id} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                      <span style={{ fontSize: 12, fontWeight: 500, color: C.heading, minWidth: 70 }}>
-                        {lang.name}
-                      </span>
-                      <div className="flex gap-0.5">
-                        {[1, 2, 3, 4, 5].map((dot) => {
-                          const filled = dot <= proficiencyToDots(lang.proficiency)
-                          return (
-                            <span
-                              key={dot}
-                              style={{
-                                width: 8,
-                                height: 8,
-                                borderRadius: "50%",
-                                backgroundColor: filled ? C.primary : "#D1D5DB",
-                                display: "inline-block",
-                              }}
-                            />
-                          )
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {interests.length > 0 && visibleTypes.has("interests") && (
-              <div
-                style={{
-                  backgroundColor: C.cardBg,
-                  padding: 20,
-                }}
-              >
-                <SectionHeading title="Strengths" />
-                <ul
-                  style={{
-                    margin: 0,
-                    paddingLeft: 14,
-                    fontSize: 12,
-                    color: C.text,
-                    lineHeight: 1.8,
-                  }}
-                >
-                  {interests.map((item) => (
-                    <li key={item.id}>{item.name}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
+                {interests.map((item) => (
+                  <li key={item.id}>{item.name}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
     </div>

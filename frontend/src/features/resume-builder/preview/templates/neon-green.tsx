@@ -3,6 +3,7 @@
 import { memo } from "react"
 import { MapPin, Phone, Mail, Globe } from "lucide-react"
 import type { ResumeData } from "@/types/resume"
+import { ProfileImage, CompactSkills } from "../resume-page"
 
 const C = {
   accent: "#3DDC97",
@@ -26,17 +27,8 @@ function resumePropsEqual(a: Props, b: Props): boolean {
 
 export const NeonGreenTemplate = memo(function NeonGreenTemplate({ resume }: Props) {
   const { content, sections } = resume
-  const { contact, summary, experience, education, skills, languages, certifications } = content
+  const { contact, summary, experience, education, skills, languages, certifications, projects } = content
   const visibleTypes = new Set(sections.filter(s => s.visible).map(s => s.type))
-
-  const initials = (contact.fullName || "")
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2)
-
-  const allSkills = skills.flatMap((g) => g.skills)
 
   const contactItems: { icon: React.ReactNode; value: string | undefined }[] = [
     { icon: <MapPin className="size-3.5 shrink-0" style={{ color: C.accent }} />, value: contact.location },
@@ -129,27 +121,16 @@ export const NeonGreenTemplate = memo(function NeonGreenTemplate({ resume }: Pro
         </div>
 
         {/* Profile image / initials */}
-        {initials && (
-          <div
-            style={{
-              width: 88,
-              height: 88,
-              borderRadius: 6,
-              backgroundColor: C.accent,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              flexShrink: 0,
-              color: C.background,
-              fontSize: 28,
-              fontWeight: 600,
-              fontFamily: "Inter, sans-serif",
-              lineHeight: 1,
-            }}
-          >
-            {initials}
-          </div>
-        )}
+        <ProfileImage
+          photoUrl={contact.photoUrl}
+          fullName={contact.fullName}
+          size={88}
+          borderRadius={6}
+          bgColor={C.accent}
+          textColor={C.background}
+          fontSize={28}
+          fontWeight={600}
+        />
       </div>
 
       {/* ===== CONTENT ===== */}
@@ -167,6 +148,104 @@ export const NeonGreenTemplate = memo(function NeonGreenTemplate({ resume }: Pro
             >
               {summary}
             </p>
+          </div>
+        )}
+
+        {/* ===== SKILLS ===== */}
+        {skills.length > 0 && visibleTypes.has("skills") && (
+          <div style={{ marginBottom: 24 }}>
+            <SectionHeading title="Skills" />
+            <CompactSkills
+              skills={skills}
+              fontSize={11}
+              color={C.secondary}
+              labelColor={C.text}
+            />
+          </div>
+        )}
+
+        {/* ===== PROJECTS ===== */}
+        {projects.length > 0 && visibleTypes.has("projects") && (
+          <div style={{ marginBottom: 24 }}>
+            <SectionHeading title="Projects" />
+            {projects.map((proj, i) => (
+              <div
+                key={proj.id}
+                className="avoid-break"
+                style={{
+                  marginBottom: i < projects.length - 1 ? 16 : 0,
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                  }}
+                >
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 700,
+                        color: C.text,
+                        margin: 0,
+                      }}
+                    >
+                      {proj.name}
+                    </p>
+                    {proj.role && (
+                      <p
+                        style={{
+                          fontSize: 12,
+                          fontStyle: "italic",
+                          color: C.secondary,
+                          margin: "2px 0 0 0",
+                        }}
+                      >
+                        {proj.role}
+                      </p>
+                    )}
+                  </div>
+                  <div
+                    style={{
+                      textAlign: "right",
+                      fontSize: 11,
+                      color: C.muted,
+                      lineHeight: 1.5,
+                      whiteSpace: "nowrap",
+                      marginLeft: 12,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {(proj.startDate || proj.endDate) && (
+                      <div>
+                        {proj.startDate}
+                        {proj.startDate && " – "}
+                        {proj.endDate}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                {proj.bullets.length > 0 && (
+                  <ul
+                    style={{
+                      margin: "4px 0 0 0",
+                      paddingLeft: 14,
+                      fontSize: 11,
+                      lineHeight: 1.6,
+                      color: C.secondary,
+                    }}
+                  >
+                    {proj.bullets.map((b, bi) => (
+                      <li key={bi} style={{ marginBottom: 1 }}>
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
           </div>
         )}
 
@@ -318,23 +397,6 @@ export const NeonGreenTemplate = memo(function NeonGreenTemplate({ resume }: Pro
                 </div>
               </div>
             ))}
-          </div>
-        )}
-
-        {/* ===== SKILLS ===== */}
-        {allSkills.length > 0 && visibleTypes.has("skills") && (
-          <div style={{ marginBottom: 24 }}>
-            <SectionHeading title="Skills" />
-            <p
-              style={{
-                fontSize: 11,
-                color: C.secondary,
-                margin: 0,
-                lineHeight: 1.7,
-              }}
-            >
-              {allSkills.join(" \u2022 ")}
-            </p>
           </div>
         )}
 

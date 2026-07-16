@@ -2,6 +2,7 @@
 
 import { Mail, Phone, MapPin, Linkedin, Globe } from "lucide-react"
 import type { ResumeData } from "@/types/resume"
+import { ProfileImage, CompactSkills } from "../resume-page"
 
 const C = {
   primary: "#355E88",
@@ -31,71 +32,84 @@ export function ProfessionalExecutiveTemplate({ resume }: Props) {
         color: C.body,
       }}
     >
-      <div>
-        <h1
-          style={{
-            fontSize: 42,
-            fontWeight: 700,
-            color: C.primary,
-            margin: 0,
-            lineHeight: 1.1,
-          }}
-        >
-          {contact.fullName || "Your Name"}
-        </h1>
-        <p
-          style={{
-            fontSize: 20,
-            fontWeight: 400,
-            color: C.roleLabel,
-            marginTop: 8,
-            marginBottom: 0,
-          }}
-        >
-          {contact.title || "Job Title"}
-        </p>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
+        <div style={{ flex: 1 }}>
+          <h1
+            style={{
+              fontSize: 42,
+              fontWeight: 700,
+              color: C.primary,
+              margin: 0,
+              lineHeight: 1.1,
+            }}
+          >
+            {contact.fullName || "Your Name"}
+          </h1>
+          <p
+            style={{
+              fontSize: 20,
+              fontWeight: 400,
+              color: C.roleLabel,
+              marginTop: 8,
+              marginBottom: 0,
+            }}
+          >
+            {contact.title || "Job Title"}
+          </p>
 
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 16,
-            marginTop: 14,
-            fontSize: 13,
-            color: C.dark,
-          }}
-        >
-          {contact.email && (
-            <span className="flex items-center gap-1.5">
-              <Mail className="size-3.5 shrink-0" style={{ color: C.primary }} />
-              {contact.email}
-            </span>
-          )}
-          {contact.phone && (
-            <span className="flex items-center gap-1.5">
-              <Phone className="size-3.5 shrink-0" style={{ color: C.primary }} />
-              {contact.phone}
-            </span>
-          )}
-          {contact.location && (
-            <span className="flex items-center gap-1.5">
-              <MapPin className="size-3.5 shrink-0" style={{ color: C.primary }} />
-              {contact.location}
-            </span>
-          )}
-          {contact.linkedin && (
-            <span className="flex items-center gap-1.5">
-              <Linkedin className="size-3.5 shrink-0" style={{ color: C.primary }} />
-              {contact.linkedin.replace("https://linkedin.com/in/", "")}
-            </span>
-          )}
-          {contact.github && (
-            <span className="flex items-center gap-1.5">
-              <Globe className="size-3.5 shrink-0" style={{ color: C.primary }} />
-              {contact.github.replace("https://github.com/", "")}
-            </span>
-          )}
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 16,
+              marginTop: 14,
+              fontSize: 13,
+              color: C.dark,
+            }}
+          >
+            {contact.email && (
+              <span className="flex items-center gap-1.5">
+                <Mail className="size-3.5 shrink-0" style={{ color: C.primary }} />
+                {contact.email}
+              </span>
+            )}
+            {contact.phone && (
+              <span className="flex items-center gap-1.5">
+                <Phone className="size-3.5 shrink-0" style={{ color: C.primary }} />
+                {contact.phone}
+              </span>
+            )}
+            {contact.location && (
+              <span className="flex items-center gap-1.5">
+                <MapPin className="size-3.5 shrink-0" style={{ color: C.primary }} />
+                {contact.location}
+              </span>
+            )}
+            {contact.linkedin && (
+              <span className="flex items-center gap-1.5">
+                <Linkedin className="size-3.5 shrink-0" style={{ color: C.primary }} />
+                {contact.linkedin.replace("https://linkedin.com/in/", "")}
+              </span>
+            )}
+            {contact.github && (
+              <span className="flex items-center gap-1.5">
+                <Globe className="size-3.5 shrink-0" style={{ color: C.primary }} />
+                {contact.github.replace("https://github.com/", "")}
+              </span>
+            )}
+          </div>
         </div>
+        {contact.photoUrl && (
+          <ProfileImage
+            photoUrl={contact.photoUrl}
+            fullName={contact.fullName}
+            size={90}
+            borderRadius="50%"
+            bgColor={C.primary}
+            textColor="#ffffff"
+            fontSize={32}
+          />
+        )}
       </div>
 
       <Divider />
@@ -112,6 +126,37 @@ export function ProfessionalExecutiveTemplate({ resume }: Props) {
           >
             {summary}
           </p>
+        </Section>
+      )}
+
+      {skills.length > 0 && visibleTypes.has("skills") && (
+        <Section heading="Skills">
+          <CompactSkills
+            skills={skills}
+            fontSize={14}
+            color={C.body}
+            labelColor={C.dark}
+          />
+        </Section>
+      )}
+
+      {projects.length > 0 && visibleTypes.has("projects") && (
+        <Section heading="Projects">
+          {projects.map((proj, i) => (
+            <div key={proj.id} style={{ marginBottom: i < projects.length - 1 ? 16 : 0 }}>
+              <p style={{ fontSize: 15, fontWeight: 600, color: C.dark, margin: "0 0 2px 0" }}>
+                {proj.name}
+                {proj.role ? ` — ${proj.role}` : ""}
+              </p>
+              {proj.bullets.length > 0 && (
+                <ul style={{ margin: "4px 0 0 0", paddingLeft: 18, fontSize: 14, lineHeight: 1.6, color: C.body }}>
+                  {proj.bullets.map((b, i) => (
+                    <li key={i}>{b}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
         </Section>
       )}
 
@@ -189,40 +234,6 @@ export function ProfessionalExecutiveTemplate({ resume }: Props) {
         </Section>
       )}
 
-      {skills.length > 0 && visibleTypes.has("skills") && (
-        <Section heading="Skills">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 24 }}>
-            {skills.map((group) => (
-              <div key={group.id}>
-                {group.name && (
-                  <p style={{ fontSize: 14, fontWeight: 600, color: C.dark, margin: "0 0 4px 0" }}>
-                    {group.name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                  </p>
-                )}
-                <ul style={{ margin: 0, paddingLeft: 18, fontSize: 14, color: C.body, lineHeight: 1.6 }}>
-                  {group.skills.map((s, si) => (
-                    <li key={si}>{s}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {languages.length > 0 && visibleTypes.has("languages") && (
-        <Section heading="Languages">
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-            {languages.map((lang) => (
-              <div key={lang.id} style={{ fontSize: 14, color: C.body }}>
-                <p style={{ fontWeight: 600, margin: "0 0 2px 0", color: C.dark }}>{lang.name}</p>
-                <p style={{ margin: 0, color: C.muted, textTransform: "capitalize" }}>{lang.proficiency}</p>
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
       {certifications.length > 0 && visibleTypes.has("certifications") && (
         <Section heading="Certificates">
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
@@ -241,23 +252,16 @@ export function ProfessionalExecutiveTemplate({ resume }: Props) {
         </Section>
       )}
 
-      {projects.length > 0 && visibleTypes.has("projects") && (
-        <Section heading="Projects">
-          {projects.map((proj, i) => (
-            <div key={proj.id} style={{ marginBottom: i < projects.length - 1 ? 16 : 0 }}>
-              <p style={{ fontSize: 15, fontWeight: 600, color: C.dark, margin: "0 0 2px 0" }}>
-                {proj.name}
-                {proj.role ? ` — ${proj.role}` : ""}
-              </p>
-              {proj.bullets.length > 0 && (
-                <ul style={{ margin: "4px 0 0 0", paddingLeft: 18, fontSize: 14, lineHeight: 1.6, color: C.body }}>
-                  {proj.bullets.map((b, i) => (
-                    <li key={i}>{b}</li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
+      {languages.length > 0 && visibleTypes.has("languages") && (
+        <Section heading="Languages">
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+            {languages.map((lang) => (
+              <div key={lang.id} style={{ fontSize: 14, color: C.body }}>
+                <p style={{ fontWeight: 600, margin: "0 0 2px 0", color: C.dark }}>{lang.name}</p>
+                <p style={{ margin: 0, color: C.muted, textTransform: "capitalize" }}>{lang.proficiency}</p>
+              </div>
+            ))}
+          </div>
         </Section>
       )}
     </div>

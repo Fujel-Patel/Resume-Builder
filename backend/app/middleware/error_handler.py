@@ -5,15 +5,13 @@ PRD response shape:
   Error:   { "success": false, "error": { "code": "...", "message": "...", "fields": {...} } }
 """
 
-import logging
 from typing import Callable
 
 from fastapi import Request, Response, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from loguru import logger
 from starlette.middleware.base import BaseHTTPMiddleware
-
-logger = logging.getLogger(__name__)
 
 
 def _error_body(code: str, message: str, fields: dict = None) -> dict:
@@ -28,7 +26,7 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
         try:
             return await call_next(request)
         except Exception as exc:
-            logger.exception("Unhandled exception: %s", exc)
+            logger.exception("Unhandled exception: {}", exc)
 
             # FastAPI HTTPException (has status_code + detail)
             if hasattr(exc, "status_code"):
@@ -74,7 +72,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         loc = ".".join(str(x) for x in error["loc"] if x != "body")
         fields.setdefault(loc, []).append(error["msg"])
 
-    logger.warning("Validation error for %s: %s", request.url.path, exc.errors())
+    logger.warning("Validation error for {}: {}", request.url.path, exc.errors())
 
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,

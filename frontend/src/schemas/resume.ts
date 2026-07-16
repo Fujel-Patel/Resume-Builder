@@ -9,6 +9,7 @@ export const contactSchema = z.object({
   website: z.string().url("Invalid URL").or(z.literal("")).optional().default(""),
   linkedin: z.string().max(200).optional().default(""),
   github: z.string().max(200).optional().default(""),
+  photoUrl: z.string().max(100000).optional().default(""),
 })
 
 export const experienceItemSchema = z.object({

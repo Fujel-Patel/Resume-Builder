@@ -6,8 +6,22 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { toast } from "sonner"
 import { useAppDispatch, useAppSelector } from "@/lib/hooks"
-import { login, clearError } from "@/lib/features/auth/authSlice"
+import { login, clearError, type AuthError } from "@/lib/features/auth/authSlice"
+
+function getLoginErrorMessage(error: AuthError | string | null): string | null {
+  if (!error) return null
+  if (typeof error === "string") return error
+  const { code, message } = error
+  if (code === "INVALID_CREDENTIALS") return "Incorrect email or password. Please try again."
+  if (code === "ACCOUNT_LOCKED") return message
+  if (code === "RATE_LIMIT_EXCEEDED") return "Too many requests. Please wait a moment and try again."
+  if (code === "VALIDATION_ERROR") return "Please check your input and try again."
+  if (code === "CONFLICT") return "An account with this email already exists."
+  if (code === "UNKNOWN_ERROR" && !message) return "Something went wrong. Please try again."
+  return message
+}
 
 export function LoginForm() {
   const router = useRouter()
@@ -28,9 +42,10 @@ export function LoginForm() {
   }, [dispatch])
 
   useEffect(() => {
-    if (error) {
-      console.debug("[login-form] auth error:", JSON.stringify(error))
-    }
+    if (!error) return
+    console.debug("[login-form] auth error:", JSON.stringify(error))
+    const msg = getLoginErrorMessage(error)
+    if (msg) toast.error(msg)
   }, [error])
 
   const validate = () => {
@@ -61,29 +76,7 @@ export function LoginForm() {
     return undefined
   }
 
-  let errorMessage: string | null = null
-  if (error) {
-    if (typeof error === "string") {
-      errorMessage = error
-    } else if (typeof error === "object" && error !== null) {
-      const raw = (error as Record<string, unknown>).message
-      const msg = typeof raw === "string" ? raw : null
-      const code = typeof raw === "string" ? ((error as Record<string, unknown>).code as string | undefined) ?? null : null
-      if (code === "INVALID_CREDENTIALS") {
-        errorMessage = "Incorrect email or password. Please try again."
-      } else if (code === "ACCOUNT_LOCKED") {
-        errorMessage = msg
-      } else if (code === "RATE_LIMIT_EXCEEDED") {
-        errorMessage = "Too many requests. Please wait a moment and try again."
-      } else if (code === "VALIDATION_ERROR") {
-        errorMessage = "Please check your input and try again."
-      } else if (code === "CONFLICT") {
-        errorMessage = "An account with this email already exists."
-      } else {
-        errorMessage = msg
-      }
-    }
-  }
+  const errorMessage = getLoginErrorMessage(error)
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">

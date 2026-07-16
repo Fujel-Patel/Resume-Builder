@@ -2,6 +2,7 @@
 
 import { Mail, Phone, MapPin, Globe, Github, Linkedin } from "lucide-react"
 import type { ResumeData } from "@/types/resume"
+import { ProfileImage, CompactSkills } from "../resume-page"
 
 const C = {
   black: "#000000",
@@ -46,71 +47,86 @@ export function ObsidianEdgeTemplate({ resume }: Props) {
           padding: 32,
         }}
       >
-        <h1
-          style={{
-            fontSize: 32,
-            fontWeight: 700,
-            margin: 0,
-            lineHeight: 1.2,
-          }}
-        >
-          {contact.fullName || "Your Name"}
-        </h1>
-        <p
-          style={{
-            fontSize: 18,
-            fontWeight: 400,
-            color: C.mutedWhite,
-            margin: "4px 0 0 0",
-          }}
-        >
-          {contact.title || "Job Title"}
-        </p>
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 24,
-            marginTop: 16,
-            fontSize: 13,
-            color: C.white,
-          }}
-        >
-          {contact.email && (
-            <span className="flex items-center gap-1.5">
-              <Mail className="size-3.5 shrink-0" />
-              {contact.email}
-            </span>
-          )}
-          {contact.phone && (
-            <span className="flex items-center gap-1.5">
-              <Phone className="size-3.5 shrink-0" />
-              {contact.phone}
-            </span>
-          )}
-          {contact.location && (
-            <span className="flex items-center gap-1.5">
-              <MapPin className="size-3.5 shrink-0" />
-              {contact.location}
-            </span>
-          )}
-          {contact.website && (
-            <span className="flex items-center gap-1.5">
-              <Globe className="size-3.5 shrink-0" />
-              {contact.website}
-            </span>
-          )}
-          {contact.github && (
-            <span className="flex items-center gap-1.5">
-              <Github className="size-3.5 shrink-0" />
-              {contact.github.replace("https://github.com/", "")}
-            </span>
-          )}
-          {contact.linkedin && (
-            <span className="flex items-center gap-1.5">
-              <Linkedin className="size-3.5 shrink-0" />
-              {contact.linkedin.replace("https://linkedin.com/in/", "")}
-            </span>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 20 }}>
+          <div style={{ flex: 1 }}>
+            <h1
+              style={{
+                fontSize: 32,
+                fontWeight: 700,
+                margin: 0,
+                lineHeight: 1.2,
+              }}
+            >
+              {contact.fullName || "Your Name"}
+            </h1>
+            <p
+              style={{
+                fontSize: 18,
+                fontWeight: 400,
+                color: C.mutedWhite,
+                margin: "4px 0 0 0",
+              }}
+            >
+              {contact.title || "Job Title"}
+            </p>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 24,
+                marginTop: 16,
+                fontSize: 13,
+                color: C.white,
+              }}
+            >
+              {contact.email && (
+                <span className="flex items-center gap-1.5">
+                  <Mail className="size-3.5 shrink-0" />
+                  {contact.email}
+                </span>
+              )}
+              {contact.phone && (
+                <span className="flex items-center gap-1.5">
+                  <Phone className="size-3.5 shrink-0" />
+                  {contact.phone}
+                </span>
+              )}
+              {contact.location && (
+                <span className="flex items-center gap-1.5">
+                  <MapPin className="size-3.5 shrink-0" />
+                  {contact.location}
+                </span>
+              )}
+              {contact.website && (
+                <span className="flex items-center gap-1.5">
+                  <Globe className="size-3.5 shrink-0" />
+                  {contact.website}
+                </span>
+              )}
+              {contact.github && (
+                <span className="flex items-center gap-1.5">
+                  <Github className="size-3.5 shrink-0" />
+                  {contact.github.replace("https://github.com/", "")}
+                </span>
+              )}
+              {contact.linkedin && (
+                <span className="flex items-center gap-1.5">
+                  <Linkedin className="size-3.5 shrink-0" />
+                  {contact.linkedin.replace("https://linkedin.com/in/", "")}
+                </span>
+              )}
+            </div>
+          </div>
+          {contact.photoUrl && (
+            <ProfileImage
+              photoUrl={contact.photoUrl}
+              fullName={contact.fullName}
+              size={88}
+              borderRadius="50%"
+              bgColor="#374151"
+              textColor="#ffffff"
+              fontSize={30}
+            />
           )}
         </div>
       </section>
@@ -130,6 +146,55 @@ export function ObsidianEdgeTemplate({ resume }: Props) {
             <p style={{ fontSize: 14, lineHeight: 1.7, color: C.body, margin: 0 }}>
               {summary}
             </p>
+          </Section>
+        )}
+
+        {skills.length > 0 && visibleTypes.has("skills") && (
+          <Section icon={SECTION_ICONS.skills} title="Skills">
+            <CompactSkills
+              skills={skills}
+              fontSize={13}
+              color={C.body}
+              labelColor={C.heading}
+            />
+          </Section>
+        )}
+
+        {projects.length > 0 && visibleTypes.has("projects") && (
+          <Section icon={SECTION_ICONS.projects} title="Projects">
+            {projects.map((proj, i) => (
+              <div
+                key={proj.id}
+                style={{ marginBottom: i < projects.length - 1 ? 12 : 0 }}
+              >
+                <p
+                  style={{
+                    fontSize: 15,
+                    fontWeight: 700,
+                    color: C.heading,
+                    margin: "0 0 2px 0",
+                  }}
+                >
+                  {proj.name}
+                  {proj.role ? ` — ${proj.role}` : ""}
+                </p>
+                {proj.bullets.length > 0 && (
+                  <ul
+                    style={{
+                      margin: "4px 0 0 0",
+                      paddingLeft: 18,
+                      fontSize: 13,
+                      lineHeight: 1.6,
+                      color: C.body,
+                    }}
+                  >
+                    {proj.bullets.map((b, bi) => (
+                      <li key={bi}>{b}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
           </Section>
         )}
 
@@ -222,58 +287,6 @@ export function ObsidianEdgeTemplate({ resume }: Props) {
           </Section>
         )}
 
-        {skills.length > 0 && visibleTypes.has("skills") && (
-          <Section icon={SECTION_ICONS.skills} title="Skills">
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
-                gap: 16,
-              }}
-            >
-              {skills.map((group) => (
-                <div key={group.id}>
-                  {group.name && (
-                    <p style={{ fontSize: 14, fontWeight: 600, color: C.heading, margin: "0 0 4px 0" }}>
-                      {group.name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                    </p>
-                  )}
-                  <ul
-                    style={{
-                      margin: 0,
-                      paddingLeft: 18,
-                      fontSize: 13,
-                      color: C.body,
-                      lineHeight: 1.6,
-                    }}
-                  >
-                    {group.skills.map((s, si) => (
-                      <li key={si}>{s}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </Section>
-        )}
-
-        {languages.length > 0 && visibleTypes.has("languages") && (
-          <Section icon={SECTION_ICONS.languages} title="Languages">
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
-              {languages.map((lang) => (
-                <div key={lang.id} style={{ fontSize: 13, color: C.body }}>
-                  <p style={{ fontWeight: 600, margin: "0 0 2px 0", color: C.heading }}>
-                    {lang.name}
-                  </p>
-                  <p style={{ margin: 0, textTransform: "capitalize" }}>
-                    {lang.proficiency}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </Section>
-        )}
-
         {certifications.length > 0 && visibleTypes.has("certifications") && (
           <Section icon={SECTION_ICONS.certifications} title="Certificates">
             <div
@@ -306,41 +319,20 @@ export function ObsidianEdgeTemplate({ resume }: Props) {
           </Section>
         )}
 
-        {projects.length > 0 && visibleTypes.has("projects") && (
-          <Section icon={SECTION_ICONS.projects} title="Projects">
-            {projects.map((proj, i) => (
-              <div
-                key={proj.id}
-                style={{ marginBottom: i < projects.length - 1 ? 12 : 0 }}
-              >
-                <p
-                  style={{
-                    fontSize: 15,
-                    fontWeight: 700,
-                    color: C.heading,
-                    margin: "0 0 2px 0",
-                  }}
-                >
-                  {proj.name}
-                  {proj.role ? ` — ${proj.role}` : ""}
-                </p>
-                {proj.bullets.length > 0 && (
-                  <ul
-                    style={{
-                      margin: "4px 0 0 0",
-                      paddingLeft: 18,
-                      fontSize: 13,
-                      lineHeight: 1.6,
-                      color: C.body,
-                    }}
-                  >
-                    {proj.bullets.map((b, bi) => (
-                      <li key={bi}>{b}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ))}
+        {languages.length > 0 && visibleTypes.has("languages") && (
+          <Section icon={SECTION_ICONS.languages} title="Languages">
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+              {languages.map((lang) => (
+                <div key={lang.id} style={{ fontSize: 13, color: C.body }}>
+                  <p style={{ fontWeight: 600, margin: "0 0 2px 0", color: C.heading }}>
+                    {lang.name}
+                  </p>
+                  <p style={{ margin: 0, textTransform: "capitalize" }}>
+                    {lang.proficiency}
+                  </p>
+                </div>
+              ))}
+            </div>
           </Section>
         )}
       </div>

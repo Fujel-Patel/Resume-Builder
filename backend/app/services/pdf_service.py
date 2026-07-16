@@ -7,9 +7,8 @@ and returns A4 PDF bytes.
 from __future__ import annotations
 
 import asyncio
-import logging
 
-logger = logging.getLogger(__name__)
+from loguru import logger
 
 _BROWSER_LOCK = asyncio.Lock()
 _BROWSER = None

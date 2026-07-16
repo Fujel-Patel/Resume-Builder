@@ -32,12 +32,13 @@ function SectionTitle({ children, className = "" }: { children: React.ReactNode;
 }
 
 function SkillsGrouped({ skillGroups, className = "" }: { skillGroups: Record<string, string[]>; className?: string }) {
+  const entries = Object.entries(skillGroups)
   return (
-    <div className={`space-y-1 ${className}`}>
-      {Object.entries(skillGroups).map(([group, skills]) => (
-        <div key={group} className="text-[11px] leading-relaxed">
-          <span className="font-bold text-gray-800">{group.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}: </span>
-          <span className="text-gray-600">{skills.join(", ")}</span>
+    <div className={`grid grid-cols-2 gap-x-6 gap-y-1 ${className}`}>
+      {entries.map(([group, skills]) => (
+        <div key={group} className="text-[11px] leading-relaxed min-w-0">
+          <span className="font-bold text-gray-800">{group.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}</span>
+          <span className="text-gray-600">{"\u00a0\u2014\u00a0"}{skills.join(", ")}</span>
         </div>
       ))}
     </div>
@@ -48,7 +49,7 @@ function SkillsFlat({ skills }: { skills: string[] }) {
   return (
     <div className="mt-1 flex flex-wrap gap-1.5">
       {skills.map((s) => (
-        <span key={s} className="rounded-full bg-gray-100 px-2.5 py-0.5 text-[10px] font-medium text-gray-700">{s}</span>
+        <span key={s} className="rounded bg-gray-100 px-2 py-0.5 text-[10px] font-medium text-gray-700">{s}</span>
       ))}
     </div>
   )

@@ -1,7 +1,6 @@
-import logging
 from urllib.parse import quote
 
-log = logging.getLogger("email_sender")
+from loguru import logger
 
 
 def send_verification_email(to_email: str, token: str, verification_url_base: str = "http://localhost:8000/api/v1/auth/verify-email") -> None:
@@ -11,10 +10,10 @@ def send_verification_email(to_email: str, token: str, verification_url_base: st
     """
     verification_link = f"{verification_url_base}?token={quote(token)}"
     # Placeholder: log the link
-    log.info("Verification email to %s: %s", to_email, verification_link)
+    logger.info("Verification email to {}: {}", to_email, verification_link)
 
 
 def send_password_reset_email(to_email: str, token: str, reset_url_base: str = "http://localhost:8000/api/v1/auth/reset-password") -> None:
     """Send a password‑reset email (placeholder)."""
     reset_link = f"{reset_url_base}?token={quote(token)}"
-    log.info("Password reset email to %s: %s", to_email, reset_link)
+    logger.info("Password reset email to {}: {}", to_email, reset_link)

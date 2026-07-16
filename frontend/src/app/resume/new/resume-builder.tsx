@@ -65,6 +65,7 @@ function mapLegacyToNew(legacy: LegacyResumeData, id: string) {
         website: legacy.links.portfolio || legacy.links.website,
         linkedin: legacy.links.linkedin ? `https://linkedin.com/in/${legacy.links.linkedin}` : "",
         github: legacy.links.github ? `https://github.com/${legacy.links.github}` : "",
+        photoUrl: "",
       },
       summary: legacy.summary,
       experience: legacy.experience.map((e) => ({
