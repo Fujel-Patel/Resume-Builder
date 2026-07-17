@@ -95,9 +95,19 @@ async def score_ats_upload(
     resume_text = extract_text_from_bytes(content, ext)
 
     if not resume_text.strip():
+        if ext == "pdf":
+            msg = (
+                "Could not extract text from file. The PDF may be image-based "
+                "(scanned) or encrypted. Please upload a text-based PDF or DOCX."
+            )
+        else:
+            msg = (
+                "Could not extract text from file. "
+                "Please ensure the DOCX contains readable text."
+            )
         raise HTTPException(
             status_code=422,
-            detail={"code": "PARSE_ERROR", "message": "Could not extract text from file"},
+            detail={"code": "PARSE_ERROR", "message": msg},
         )
 
     try:

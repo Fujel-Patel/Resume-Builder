@@ -78,3 +78,8 @@ awscliv2.zip
 *.pem
 *.key
 *.cert
+# Backend generated files
+backend/backup.dump
+backend/supabase-go
+backend/supabase/
+backend/supabase_linux_amd64.tar.gz

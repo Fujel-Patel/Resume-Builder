@@ -51,21 +51,93 @@ def extract_text_from_bytes(content: bytes, ext: str = "pdf") -> str:
     Returns
     -------
     str
-        The concatenated text of all pages / paragraphs.
+        The concatenated text of all pages / paragraphs.  Returns an empty
+        string when the file cannot be parsed or contains no extractable text.
     """
+    from loguru import logger
+
     if ext == "docx":
         from docx import Document
         import io
 
-        doc = Document(io.BytesIO(content))
-        return "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+        try:
+            doc = Document(io.BytesIO(content))
+        except Exception as exc:
+            logger.warning("EXTRACT_FAILED | ext=docx | size={} | error={}", len(content), exc)
+            return ""
+        text = "\n".join(p.text for p in doc.paragraphs if p.text.strip())
+        if not text.strip():
+            logger.warning(
+                "EXTRACT_EMPTY | ext=docx | size={} | paragraphs_total={} paragraphs_with_text={}",
+                len(content),
+                len(doc.paragraphs),
+                sum(1 for p in doc.paragraphs if p.text.strip()),
+            )
+        return text
     # Default to PDF
-    doc = fitz.open(stream=content, filetype="pdf")
     try:
+        doc = fitz.open(stream=content, filetype="pdf")
+    except Exception as exc:
+        logger.warning("EXTRACT_FAILED | ext=pdf | size={} | error={}", len(content), exc)
+        return ""
+    try:
+        page_count = len(doc)
         page_texts = [page.get_text() for page in doc]
-        return "\n".join(page_texts)
+        text = "\n".join(page_texts)
+
+        if not text.strip():
+            image_counts = [len(page.get_images(full=True)) for page in doc]
+            total_images = sum(image_counts)
+            logger.info(
+                "EXTRACT_EMPTY_OCR_FALLBACK | ext=pdf | size={} | pages={} | total_embedded_images={} | images_per_page={}",
+                len(content),
+                page_count,
+                total_images,
+                image_counts,
+            )
+            text = _ocr_pdf_pages(doc, logger)
+
+        return text
+    except Exception as exc:
+        logger.warning("EXTRACT_FAILED | ext=pdf | size={} | error={}", len(content), exc)
+        return ""
     finally:
         doc.close()
+
+
+def _ocr_pdf_pages(doc: fitz.Document, logger: Any) -> str:
+    """Run Tesseract OCR on each page of an open PDF and return concatenated text.
+
+    Pages are rendered at 300 DPI for good OCR quality.  Returns an empty
+    string if pytesseract is not installed or OCR produces no text.
+    """
+    try:
+        import io
+
+        import pytesseract
+        from PIL import Image
+    except ImportError:
+        logger.warning("OCR_UNAVAILABLE | pytesseract or Pillow not installed — skipping OCR fallback")
+        return ""
+
+    ocr_parts: list[str] = []
+    for page_idx, page in enumerate(doc):
+        try:
+            pix = page.get_pixmap(dpi=300)
+            img = Image.open(io.BytesIO(pix.tobytes("png")))
+            page_text = pytesseract.image_to_string(img, lang="eng")
+            if page_text.strip():
+                ocr_parts.append(page_text.strip())
+        except Exception as exc:
+            logger.warning("OCR_PAGE_FAILED | page={} | error={}", page_idx + 1, exc)
+
+    ocr_text = "\n".join(ocr_parts)
+    logger.info(
+        "OCR_COMPLETE | pages_processed={} ocr_chars={}",
+        len(doc),
+        len(ocr_text),
+    )
+    return ocr_text
 
 
 def extract_text(pdf_path: str | Path) -> str:

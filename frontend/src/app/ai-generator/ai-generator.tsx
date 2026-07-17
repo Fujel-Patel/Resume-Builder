@@ -18,6 +18,7 @@ import {
 import { type BackendResumeContent } from "@/lib/api/ai-suggest"
 import { optimizeResumeStream } from "@/lib/api/ai-stream"
 import { updateResumeApi } from "@/lib/api/resumes"
+import { isScannedPdf } from "@/lib/pdf-check"
 import { api } from "@/lib/api/client"
 import type { ResumeTemplate, ResumeData } from "@/features/resume/types"
 
@@ -89,12 +90,37 @@ function toFrontend(d: BackendResumeContent | null): ResumeData | null {
   }
 }
 
-function diff(a: string | undefined, b: string | undefined): boolean {
-  return a?.trim() !== b?.trim()
+function diff(a: string | undefined | null, b: string | undefined | null): boolean {
+  const av = a?.trim() || ""
+  const bv = b?.trim() || ""
+  return av !== bv
 }
 
 function diffArr<T>(a: T[] | undefined, b: T[] | undefined): boolean {
+  if (!a && !b) return false
+  if (!a || !b) return true
+  if (a.length !== b.length) return true
   return JSON.stringify(a) !== JSON.stringify(b)
+}
+
+function experienceKey(e: { company: string; role: string }) {
+  return `${e.company}|||${e.role}`
+}
+
+function hasExperienceDiff(
+  orig: { company: string; role: string; startDate: string; endDate: string; description: string },
+  opt: { company: string; role: string; startDate: string; endDate: string; description: string },
+) {
+  return diff(orig.company, opt.company) || diff(orig.role, opt.role) ||
+    diff(orig.startDate, opt.startDate) || diff(orig.endDate, opt.endDate) ||
+    diff(orig.description, opt.description)
+}
+
+function hasProjectDiff(
+  orig: { name: string; description: string },
+  opt: { name: string; description: string },
+) {
+  return diff(orig.name, opt.name) || diff(orig.description, opt.description)
 }
 
 function CompareSection({ label, children }: { label: string; children: React.ReactNode }) {
@@ -145,8 +171,21 @@ export function AiGeneratorPage() {
   const [downloading, setDownloading] = useState(false)
   const [stageLabel, setStageLabel] = useState("")
   const [elapsed, setElapsed] = useState(0)
+  const [scannedWarning, setScannedWarning] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
   const elapsedTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  useEffect(() => {
+    if (!file) {
+      setScannedWarning(false)
+      return
+    }
+    let cancelled = false
+    isScannedPdf(file).then((scanned) => {
+      if (!cancelled) setScannedWarning(scanned)
+    })
+    return () => { cancelled = true }
+  }, [file])
 
   const startProcessing = useCallback(async () => {
     if (!file) return
@@ -454,6 +493,14 @@ export function AiGeneratorPage() {
                       <FileUpload onFile={(f) => setFile(f)} />
                     )}
                   </div>
+                  {scannedWarning && (
+                    <div className="lg:col-span-2 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+                      <AlertCircle className="size-4 shrink-0 mt-0.5 text-amber-500" />
+                      <p className="text-xs text-muted-foreground">
+                        This PDF appears to be image-based (scanned). OCR processing will be attempted, but results may vary. For best results, use a text-based PDF or DOCX.
+                      </p>
+                    </div>
+                  )}
                   <div>
                     <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Template</p>
                     <div className="space-y-2">
@@ -598,43 +645,149 @@ export function AiGeneratorPage() {
                     </CompareSection>
                   )}
 
-                  {optimizedFrontend.experience.map((exp, i) => {
-                    const orig = parsedFrontend.experience[i]
-                    if (!orig || !diff(orig.description, exp.description)) return null
-                    return (
-                      <CompareSection key={`exp-${i}`} label={`Experience — ${exp.role} @ ${exp.company}`}>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="rounded-lg border bg-card p-3">
-                            <p className="text-[11px] text-muted-foreground mb-1">Original</p>
-                            <p className="text-xs leading-relaxed text-foreground whitespace-pre-wrap">{orig.description || "(none)"}</p>
-                          </div>
-                          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
-                            <p className="text-[11px] text-emerald-600 mb-1">Optimized</p>
-                            <p className="text-xs leading-relaxed text-foreground whitespace-pre-wrap">{exp.description || "(none)"}</p>
-                          </div>
-                        </div>
-                      </CompareSection>
-                    )
-                  })}
+                  {(() => {
+                    const origExpMap = new Map(parsedFrontend.experience.map(e => [experienceKey(e), e]))
+                    const optExpMap = new Map(optimizedFrontend.experience.map(e => [experienceKey(e), e]))
+                    const expSections: React.ReactNode[] = []
 
-                  {optimizedFrontend.projects.map((proj, i) => {
-                    const orig = parsedFrontend.projects[i]
-                    if (!orig || !diff(orig.description, proj.description)) return null
-                    return (
-                      <CompareSection key={`proj-${i}`} label={`Project — ${proj.name}`}>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="rounded-lg border bg-card p-3">
-                            <p className="text-[11px] text-muted-foreground mb-1">Original</p>
-                            <p className="text-xs leading-relaxed text-foreground">{orig.description || "(none)"}</p>
-                          </div>
-                          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
-                            <p className="text-[11px] text-emerald-600 mb-1">Optimized</p>
-                            <p className="text-xs leading-relaxed text-foreground">{proj.description || "(none)"}</p>
-                          </div>
-                        </div>
-                      </CompareSection>
-                    )
-                  })}
+                    for (const exp of optimizedFrontend.experience) {
+                      const key = experienceKey(exp)
+                      const orig = origExpMap.get(key)
+                      if (!orig) {
+                        expSections.push(
+                          <CompareSection key={`exp-new-${key}`} label={`Experience — ${exp.role} @ ${exp.company}`}>
+                            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
+                              <p className="text-[11px] text-emerald-600 mb-1">Added by AI</p>
+                              <p className="text-xs leading-relaxed text-foreground whitespace-pre-wrap">
+                                {exp.description || "(no description)"}
+                              </p>
+                            </div>
+                          </CompareSection>,
+                        )
+                      } else if (hasExperienceDiff(orig, exp)) {
+                        expSections.push(
+                          <CompareSection key={`exp-${key}`} label={`Experience — ${exp.role} @ ${exp.company}`}>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="rounded-lg border bg-card p-3 space-y-2">
+                                <p className="text-[11px] text-muted-foreground">Original</p>
+                                {(diff(orig.role, exp.role) || diff(orig.company, exp.company)) && (
+                                  <p className="text-xs font-medium text-foreground">{orig.role} @ {orig.company}</p>
+                                )}
+                                {diff(orig.startDate, exp.startDate) || diff(orig.endDate, exp.endDate) ? (
+                                  <p className="text-[11px] text-muted-foreground">{orig.startDate} — {orig.endDate}</p>
+                                ) : null}
+                                <p className="text-xs leading-relaxed text-foreground whitespace-pre-wrap">{orig.description || "(none)"}</p>
+                              </div>
+                              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-2">
+                                <p className="text-[11px] text-emerald-600">Optimized</p>
+                                {(diff(orig.role, exp.role) || diff(orig.company, exp.company)) && (
+                                  <p className="text-xs font-medium text-foreground">{exp.role} @ {exp.company}</p>
+                                )}
+                                {diff(orig.startDate, exp.startDate) || diff(orig.endDate, exp.endDate) ? (
+                                  <p className="text-[11px] text-muted-foreground">{exp.startDate} — {exp.endDate}</p>
+                                ) : null}
+                                <p className="text-xs leading-relaxed text-foreground whitespace-pre-wrap">{exp.description || "(none)"}</p>
+                              </div>
+                            </div>
+                          </CompareSection>,
+                        )
+                      }
+                    }
+
+                    for (const exp of parsedFrontend.experience) {
+                      if (!optExpMap.has(experienceKey(exp))) {
+                        expSections.push(
+                          <CompareSection key={`exp-removed-${experienceKey(exp)}`} label={`Experience — ${exp.role} @ ${exp.company}`}>
+                            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                              <p className="text-[11px] text-destructive mb-1">Removed by AI</p>
+                              <p className="text-xs leading-relaxed text-foreground whitespace-pre-wrap">{exp.description || "(none)"}</p>
+                            </div>
+                          </CompareSection>,
+                        )
+                      }
+                    }
+
+                    return expSections
+                  })()}
+
+                  {(() => {
+                    const origProjMap = new Map(parsedFrontend.projects.map(p => [p.name, p]))
+                    const optProjMap = new Map(optimizedFrontend.projects.map(p => [p.name, p]))
+                    const projSections: React.ReactNode[] = []
+
+                    for (const proj of optimizedFrontend.projects) {
+                      const orig = origProjMap.get(proj.name)
+                      if (!orig) {
+                        projSections.push(
+                          <CompareSection key={`proj-new-${proj.name}`} label={`Project — ${proj.name}`}>
+                            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
+                              <p className="text-[11px] text-emerald-600 mb-1">Added by AI</p>
+                              <p className="text-xs leading-relaxed text-foreground">{proj.description || "(no description)"}</p>
+                            </div>
+                          </CompareSection>,
+                        )
+                      } else if (hasProjectDiff(orig, proj)) {
+                        projSections.push(
+                          <CompareSection key={`proj-${proj.name}`} label={`Project — ${proj.name}`}>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="rounded-lg border bg-card p-3 space-y-2">
+                                <p className="text-[11px] text-muted-foreground">Original</p>
+                                {diff(orig.name, proj.name) && (
+                                  <p className="text-xs font-medium text-foreground">{orig.name}</p>
+                                )}
+                                <p className="text-xs leading-relaxed text-foreground">{orig.description || "(none)"}</p>
+                              </div>
+                              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-2">
+                                <p className="text-[11px] text-emerald-600">Optimized</p>
+                                {diff(orig.name, proj.name) && (
+                                  <p className="text-xs font-medium text-foreground">{proj.name}</p>
+                                )}
+                                <p className="text-xs leading-relaxed text-foreground">{proj.description || "(none)"}</p>
+                              </div>
+                            </div>
+                          </CompareSection>,
+                        )
+                      }
+                    }
+
+                    for (const proj of parsedFrontend.projects) {
+                      if (!optProjMap.has(proj.name)) {
+                        projSections.push(
+                          <CompareSection key={`proj-removed-${proj.name}`} label={`Project — ${proj.name}`}>
+                            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                              <p className="text-[11px] text-destructive mb-1">Removed by AI</p>
+                              <p className="text-xs leading-relaxed text-foreground">{proj.description || "(none)"}</p>
+                            </div>
+                          </CompareSection>,
+                        )
+                      }
+                    }
+
+                    return projSections
+                  })()}
+
+                  {!diff(parsedFrontend.personal.title, optimizedFrontend.personal.title) &&
+                    !diff(parsedFrontend.summary, optimizedFrontend.summary) &&
+                    !diffArr(parsedFrontend.skills, optimizedFrontend.skills) &&
+                    parsedFrontend.experience.every((e, i) => {
+                      const key = experienceKey(e)
+                      const opt = optimizedFrontend.experience.find(o => experienceKey(o) === key)
+                      return opt ? !hasExperienceDiff(e, opt) : false
+                    }) &&
+                    optimizedFrontend.experience.every((e) =>
+                      parsedFrontend.experience.some(o => experienceKey(o) === experienceKey(e)),
+                    ) &&
+                    parsedFrontend.projects.every((p) => {
+                      const opt = optimizedFrontend.projects.find(o => o.name === p.name)
+                      return opt ? !hasProjectDiff(p, opt) : false
+                    }) &&
+                    optimizedFrontend.projects.every((p) =>
+                      parsedFrontend.projects.some(o => o.name === p.name),
+                    ) && (
+                      <div className="rounded-lg border bg-muted/50 p-8 text-center">
+                        <p className="text-sm text-muted-foreground">No changes detected. Your resume is already well-optimized for this role.</p>
+                      </div>
+                    )}
                 </div>
               </div>
             )}

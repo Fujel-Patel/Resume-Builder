@@ -356,7 +356,18 @@ async def _optimize_resume_events(
         stage_timers["extraction"] = time.perf_counter() - _tx
 
         if not resume_text.strip():
-            yield _sse_error("PARSE_ERROR", "Could not extract text from file")
+            if ext == "pdf":
+                yield _sse_error(
+                    "PARSE_ERROR",
+                    "Could not extract text from file. The PDF may be image-based "
+                    "(scanned) or encrypted. Please upload a text-based PDF or DOCX.",
+                )
+            else:
+                yield _sse_error(
+                    "PARSE_ERROR",
+                    "Could not extract text from file. "
+                    "Please ensure the DOCX contains readable text.",
+                )
             return
 
         # --- Stage 3: AI optimization ---
@@ -533,9 +544,19 @@ async def optimize_resume(
     _t2 = time.perf_counter()
 
     if not resume_text.strip():
+        if ext == "pdf":
+            msg = (
+                "Could not extract text from file. The PDF may be image-based "
+                "(scanned) or encrypted. Please upload a text-based PDF or DOCX."
+            )
+        else:
+            msg = (
+                "Could not extract text from file. "
+                "Please ensure the DOCX contains readable text."
+            )
         raise HTTPException(
             status_code=422,
-            detail={"code": "PARSE_ERROR", "message": "Could not extract text from file"},
+            detail={"code": "PARSE_ERROR", "message": msg},
         )
 
     # Single combined AI call: parse + optimize

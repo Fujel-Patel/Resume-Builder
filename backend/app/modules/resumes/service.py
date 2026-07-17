@@ -218,9 +218,19 @@ async def scan_resume(
         tmp_path.unlink(missing_ok=True)
 
     if not raw_text.strip():
+        if suffix == ".pdf":
+            msg = (
+                "Could not extract text from file. The PDF may be image-based "
+                "(scanned) or encrypted. Please upload a text-based PDF or DOCX."
+            )
+        else:
+            msg = (
+                "Could not extract text from file. "
+                "Please ensure the DOCX contains readable text."
+            )
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail={"code": "PARSE_ERROR", "message": "Could not extract text from file"},
+            detail={"code": "PARSE_ERROR", "message": msg},
         )
 
     prompt = f"{RESUME_PARSE_PROMPT}\n\nResume Text:\n{raw_text[:10000]}"

@@ -41,6 +41,8 @@ dependencies = [
     "python-docx>=1.2.0",                  # DOCX file parsing
     "playwright>=1.48.0",                  # Headless browser for PDF generation
     "loguru>=0.7.2",                       # Structured logging
+    "pytesseract>=0.3.10",                 # OCR for scanned/image-based PDFs
+    "Pillow>=10.0.0",                      # Image handling for OCR pipeline
 ]
 
 # ---------------------------------------------------------------
