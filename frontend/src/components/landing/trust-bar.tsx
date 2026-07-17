@@ -13,7 +13,7 @@ export function TrustBar() {
         <p className="mb-6 text-center text-xs text-muted-foreground">
           Trusted by professionals at
         </p>
-        <div className="flex items-center justify-center gap-8 lg:gap-16">
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 lg:gap-16">
           {companies.map((company, index) => (
             <div
               key={company.name}

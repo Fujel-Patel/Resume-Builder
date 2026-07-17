@@ -106,7 +106,7 @@ export function DashboardHome() {
   return (
     <DashboardShell title="Dashboard">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-foreground">{greeting}, {firstName} 👋</h2>
             <p className="text-sm text-muted-foreground">Here&apos;s what&apos;s happening with your resumes.</p>
@@ -224,7 +224,7 @@ export function DashboardHome() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
             { icon: Search, label: "Upload Resume", desc: "Import an existing resume" },
             { icon: Sparkles, label: "AI Optimize", desc: "Enhance with AI suggestions" },

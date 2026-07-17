@@ -34,7 +34,7 @@ export function FileUpload({ onFile, accept = ".pdf,.docx", className }: FileUpl
       onDrop={handleDrop}
       onClick={() => inputRef.current?.click()}
       className={cn(
-        "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-card border-2 border-dashed p-8 text-center transition-all duration-200",
+        "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-card border-2 border-dashed p-6 sm:p-8 text-center transition-all duration-200",
         dragging
           ? "border-brand bg-brand/5"
           : "border-border hover:border-muted-foreground/30",

@@ -48,7 +48,7 @@ export function BuilderLayout() {
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-semibold text-foreground">{resume.name || "Resume Builder"}</h2>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <TemplateSelector />
             <Button
               variant="outline"

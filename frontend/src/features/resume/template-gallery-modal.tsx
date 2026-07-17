@@ -122,7 +122,7 @@ export function TemplateGalleryModal() {
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[1200px] p-0 gap-0" showCloseButton={false}>
+        <DialogContent className="sm:max-w-[calc(100vw-3rem)] p-0 gap-0" showCloseButton={false}>
           <div className="flex items-center justify-between border-b px-8 py-5">
             <div>
               <DialogTitle className="text-xl">Template Gallery</DialogTitle>
@@ -135,7 +135,7 @@ export function TemplateGalleryModal() {
             </Button>
           </div>
 
-          <div className="grid grid-cols-3 gap-6 p-8 overflow-y-auto" style={{ maxHeight: "calc(100vh - 200px)" }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-8 overflow-y-auto" style={{ maxHeight: "calc(100vh - 200px)" }}>
             {galleryTemplates.map((t) => (
               <div
                 key={t.id}

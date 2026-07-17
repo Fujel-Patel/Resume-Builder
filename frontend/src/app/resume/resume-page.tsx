@@ -199,7 +199,7 @@ export function ResumePage() {
   return (
     <DashboardShell title="My Resumes">
       <div className="space-y-5">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-foreground">My Resumes</h2>
             <p className="text-sm text-muted-foreground">Manage and optimize your resume collection.</p>
@@ -210,7 +210,7 @@ export function ResumePage() {
           </Button>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -221,7 +221,7 @@ export function ResumePage() {
             />
           </div>
           <select
-            className="rounded-lg border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="shrink-0 rounded-lg border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             value={statusFilter ?? ""}
             onChange={(e) => setStatusFilter(e.target.value || null)}
           >
@@ -231,7 +231,7 @@ export function ResumePage() {
             <option value="Complete">Complete</option>
           </select>
           <select
-            className="rounded-lg border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            className="shrink-0 rounded-lg border bg-card px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as "date" | "name" | "score")}
           >
@@ -244,7 +244,7 @@ export function ResumePage() {
         {filtered.length > 0 ? (
           <div className="space-y-2">
             {filtered.map((r) => (
-              <EnhancedCard key={r.id} hover className={`flex items-center gap-4 ${deletingIds.has(r.id) ? "swipe-delete" : ""}`}>
+              <EnhancedCard key={r.id} hover className={`flex flex-wrap items-center gap-3 sm:gap-4 ${deletingIds.has(r.id) ? "swipe-delete" : ""}`}>
                 <ResumeListItem
                   resume={r}
                   actions={

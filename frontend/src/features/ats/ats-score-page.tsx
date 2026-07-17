@@ -175,7 +175,7 @@ export function AtsScorePage() {
     <DashboardShell title="ATS Score Analysis">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold text-foreground">ATS Score Analysis</h2>
             <p className="text-sm text-muted-foreground">

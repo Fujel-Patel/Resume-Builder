@@ -416,7 +416,7 @@ function ExperienceEditor({ entries, onChange, onRemove, deletingIndex }: { entr
             <span className="text-xs font-medium text-foreground">#{i + 1}</span>
             <button onClick={() => onRemove(i)} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 className="size-3.5" /></button>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input value={e.company} onChange={(ev) => updateEntry(i, "company", ev.target.value)} className="rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Company" />
             <input value={e.role} onChange={(ev) => updateEntry(i, "role", ev.target.value)} className="rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Role" />
             <input value={e.startDate} onChange={(ev) => updateEntry(i, "startDate", ev.target.value)} className="rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Start date" />
@@ -474,7 +474,7 @@ function EducationEditor({ entries, onChange, onRemove, deletingIndex }: { entri
             <span className="text-xs font-medium text-foreground">#{i + 1}</span>
             <button onClick={() => onRemove(i)} className="text-muted-foreground hover:text-destructive transition-colors"><Trash2 className="size-3.5" /></button>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input value={e.school} onChange={(ev) => updateEntry(i, "school", ev.target.value)} className="rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder="School" />
             <input value={e.degree} onChange={(ev) => updateEntry(i, "degree", ev.target.value)} className="rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Degree" />
             <input value={e.field} onChange={(ev) => updateEntry(i, "field", ev.target.value)} className="rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Field of study" />
@@ -543,7 +543,7 @@ function CertificationsEditor({ entries, onChange, onRemove, deletingIndex }: { 
         <div key={i} className={`flex items-start gap-2 rounded-lg border bg-background p-3 ${i === deletingIndex ? "swipe-delete" : ""}`}>
           <div className="flex-1 space-y-2">
             <input value={c.name} onChange={(ev) => updateEntry(i, "name", ev.target.value)} className="w-full rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Certification name" />
-            <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <input value={c.issuer} onChange={(ev) => updateEntry(i, "issuer", ev.target.value)} className="rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Issuer" />
               <input value={c.date} onChange={(ev) => updateEntry(i, "date", ev.target.value)} className="rounded-lg border bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" placeholder="Date" />
             </div>

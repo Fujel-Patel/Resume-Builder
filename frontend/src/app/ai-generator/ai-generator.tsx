@@ -376,7 +376,7 @@ export function AiGeneratorPage() {
     <DashboardShell title="AI Resume Generator">
       <div className="flex h-[calc(100vh-3.5rem)] flex-col">
         <div className="border-b bg-card px-4 py-3 lg:px-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2 lg:gap-4">
               {STEPS.map((s, i) => {
                 const isNavigable = s.id <= maxCompleted
@@ -577,7 +577,7 @@ export function AiGeneratorPage() {
 
             {step === 3 && parsedFrontend && optimizedFrontend && (
               <div className="mx-auto max-w-5xl space-y-5">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h2 className="text-lg font-semibold text-foreground">Review AI changes</h2>
                     <p className="text-sm text-muted-foreground">Review changes before applying them to your resume.</p>
@@ -594,7 +594,7 @@ export function AiGeneratorPage() {
                 <div className="space-y-4">
                   {diff(parsedFrontend.personal.title, optimizedFrontend.personal.title) && (
                     <CompareSection label="Job Title">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="rounded-lg border bg-card p-3">
                           <p className="text-[11px] text-muted-foreground mb-1">Original</p>
                           <p className="text-sm text-foreground">{parsedFrontend.personal.title || "(none)"}</p>
@@ -609,7 +609,7 @@ export function AiGeneratorPage() {
 
                   {diff(parsedFrontend.summary, optimizedFrontend.summary) && (
                     <CompareSection label="Professional Summary">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="rounded-lg border bg-card p-3">
                           <p className="text-[11px] text-muted-foreground mb-1">Original</p>
                           <p className="text-xs leading-relaxed text-foreground">{parsedFrontend.summary || "(none)"}</p>
@@ -624,7 +624,7 @@ export function AiGeneratorPage() {
 
                   {diffArr(parsedFrontend.skills, optimizedFrontend.skills) && (
                     <CompareSection label="Skills">
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="rounded-lg border bg-card p-3">
                           <p className="text-[11px] text-muted-foreground mb-2">Original</p>
                           <div className="flex flex-wrap gap-1.5">
@@ -667,7 +667,7 @@ export function AiGeneratorPage() {
                       } else if (hasExperienceDiff(orig, exp)) {
                         expSections.push(
                           <CompareSection key={`exp-${key}`} label={`Experience — ${exp.role} @ ${exp.company}`}>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div className="rounded-lg border bg-card p-3 space-y-2">
                                 <p className="text-[11px] text-muted-foreground">Original</p>
                                 {(diff(orig.role, exp.role) || diff(orig.company, exp.company)) && (
@@ -729,7 +729,7 @@ export function AiGeneratorPage() {
                       } else if (hasProjectDiff(orig, proj)) {
                         projSections.push(
                           <CompareSection key={`proj-${proj.name}`} label={`Project — ${proj.name}`}>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div className="rounded-lg border bg-card p-3 space-y-2">
                                 <p className="text-[11px] text-muted-foreground">Original</p>
                                 {diff(orig.name, proj.name) && (
@@ -794,7 +794,7 @@ export function AiGeneratorPage() {
 
             {step === 4 && optimizedFrontend && (
               <div className="mx-auto max-w-4xl space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <h2 className="text-lg font-semibold text-foreground">Export your optimized resume</h2>
                     <p className="text-sm text-muted-foreground">Choose a template and download your optimized resume.</p>
