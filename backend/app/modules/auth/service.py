@@ -101,20 +101,27 @@ async def create_refresh_token_for_user(
 async def verify_refresh_token_db(
     db: AsyncSession, token: str
 ) -> Optional[models.RefreshToken]:
+    """Verify refresh token and eagerly load the user in a single query."""
     token_hash = hash_refresh_token(token)
-    result = await db.execute(
-        select(models.RefreshToken).where(
+    stmt = (
+        select(models.RefreshToken, models.User)
+        .join(models.User, models.RefreshToken.user_id == models.User.id)
+        .where(
             models.RefreshToken.token_hash == token_hash,
             models.RefreshToken.expires_at > datetime.now(UTC),
         )
     )
-    db_token = result.scalars().first()
-    if db_token:
-        user = await get_user_by_id(db, db_token.user_id)
-        if not user or not user.is_active:
-            await db.delete(db_token)
-            await db.commit()
-            return None
+    result = await db.execute(stmt)
+    row = result.first()
+    if not row:
+        return None
+    db_token, user = row
+    if not user.is_active:
+        await db.delete(db_token)
+        await db.commit()
+        return None
+    # Attach the already-fetched user to avoid a redundant query later
+    db_token.user = user  # type: ignore[attr-defined]
     return db_token
 
 
@@ -129,11 +136,10 @@ async def delete_refresh_token(db: AsyncSession, token_hash: str) -> None:
 
 
 async def delete_all_refresh_tokens_for_user(db: AsyncSession, user_id: uuid.UUID) -> None:
-    result = await db.execute(
-        select(models.RefreshToken).where(models.RefreshToken.user_id == user_id)
+    from sqlalchemy import delete
+    await db.execute(
+        delete(models.RefreshToken).where(models.RefreshToken.user_id == user_id)
     )
-    for token in result.scalars().all():
-        await db.delete(token)
     await db.commit()
 
 

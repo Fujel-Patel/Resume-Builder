@@ -6,8 +6,6 @@ The NIM server expects the same request shape as the OpenAI Chat Completion API.
 
 from typing import Optional
 
-import httpx
-
 # No default endpoint – must be provided via `base_url`
 
 
@@ -56,13 +54,13 @@ async def complete(
     }
     if json_mode:
         payload["response_format"] = {"type": "json_object"}
-    async with httpx.AsyncClient(timeout=120) as client:
-        response = await client.post(url, headers=headers, json=payload)
-        response.raise_for_status()
-        data = response.json()
-        # OpenAI returns choices[0].message.content
-        choices = data.get("choices", [])
-        if choices:
-            message = choices[0].get("message", {})
-            return message.get("content", "")
-        return ""
+    from app.utils.http_client import get_client
+    client = get_client()
+    response = await client.post(url, headers=headers, json=payload, timeout=120)
+    response.raise_for_status()
+    data = response.json()
+    choices = data.get("choices", [])
+    if choices:
+        message = choices[0].get("message", {})
+        return message.get("content", "")
+    return ""

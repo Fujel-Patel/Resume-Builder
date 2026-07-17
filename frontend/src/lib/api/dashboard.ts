@@ -1,4 +1,5 @@
 import { api } from "./client"
+import type { UserOut } from "./auth"
 
 export type ResumeResponse = {
   id: string
@@ -45,6 +46,12 @@ export type DashboardData = {
   missingKeywords: string[]
 }
 
+type DashboardBatchResponse = {
+  user: UserOut
+  resumes: ResumeResponse[]
+  ats_history: ATSScanResponse[]
+}
+
 function formatDate(iso: string): string {
   const d = new Date(iso)
   return d.toLocaleDateString("en-US", {
@@ -55,10 +62,10 @@ function formatDate(iso: string): string {
 }
 
 export async function getDashboardData(): Promise<DashboardData> {
-  const [rawResumes, scans] = await Promise.all([
-    api.get<ResumeResponse[]>("/resumes"),
-    api.get<ATSScanResponse[]>("/ats/history"),
-  ])
+  // Single batch endpoint replaces 3 separate calls (users/me + resumes + ats/history)
+  const batch = await api.get<DashboardBatchResponse>("/resumes/dashboard")
+  const rawResumes = batch.resumes
+  const scans = batch.ats_history
 
   const resumes = [...new Map(rawResumes.map((r) => [r.id, r])).values()]
   const totalResumes = resumes.length

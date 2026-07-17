@@ -33,8 +33,10 @@ async def lifespan(app: FastAPI):
     logger.info("Starting up — environment={}", settings.APP_ENV)
     async with engine.connect() as conn:
         await conn.execute(text("SELECT 1"))
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # Only auto-create tables in development — production uses Alembic migrations
+    if settings.APP_ENV == "development":
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
     logger.info("Database ready")
     yield
     logger.info("Shutting down")
@@ -44,6 +46,7 @@ async def lifespan(app: FastAPI):
     except ImportError:
         pass
     await close_http_client()
+    await engine.dispose()
 
 
 app = FastAPI(

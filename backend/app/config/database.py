@@ -13,11 +13,15 @@ from sqlalchemy.orm import declarative_base
 
 from app.config.settings import settings
 
-# Create async engine
+# Create async engine with production-ready pool settings
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.APP_ENV == "development",
     pool_pre_ping=True,
+    pool_size=10,
+    max_overflow=20,
+    pool_timeout=30,
+    pool_recycle=1800,  # Recycle connections every 30 min — match Supabase idle timeout
     connect_args={"statement_cache_size": 0},
 )
 

@@ -92,6 +92,10 @@ export const initializeAuth = createAsyncThunk(
     const refreshed = await refreshApi()
     if (refreshed) {
       token = refreshed.access_token
+      // Backend returns user data in refresh response — skip a redundant /users/me call
+      if (refreshed.user) {
+        return { user: refreshed.user, access_token: token }
+      }
       try {
         const user = await getMeApi()
         return { user, access_token: token }

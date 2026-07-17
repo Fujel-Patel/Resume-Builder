@@ -38,9 +38,15 @@ export async function logoutApi(): Promise<void> {
   clearAccessToken()
 }
 
-export async function refreshApi(): Promise<TokenResponse | null> {
+export type RefreshResponse = {
+  access_token: string
+  token_type: string
+  user?: UserOut
+}
+
+export async function refreshApi(): Promise<RefreshResponse | null> {
   try {
-    const data = await api.post<TokenResponse>("/auth/refresh")
+    const data = await api.post<RefreshResponse>("/auth/refresh")
     setAccessToken(data.access_token)
     return data
   } catch {

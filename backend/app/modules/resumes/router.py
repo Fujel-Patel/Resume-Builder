@@ -30,6 +30,56 @@ def _cors_response(response: Response, request: Request) -> Response:
     return response
 
 
+# GET /resumes/dashboard — batch endpoint: user + resumes + ATS history in one call
+@router.get("/dashboard")
+async def get_dashboard_summary(
+    current_user: user_models.User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Single endpoint that returns everything the dashboard needs.
+
+    Eliminates 3 sequential frontend calls (users/me + resumes + ats/history)
+    by aggregating them server-side with parallel DB queries.
+    """
+    import asyncio
+    from sqlalchemy import select
+    from app.modules.ats import models as ats_models
+
+    resumes_task = service.list_resumes(db, current_user.id)
+    scans_task = db.execute(
+        select(ats_models.ATSScan)
+        .where(ats_models.ATSScan.user_id == current_user.id)
+        .order_by(ats_models.ATSScan.created_at.desc())
+        .limit(20)
+    )
+
+    resumes, scans_result = await asyncio.gather(resumes_task, scans_task)
+    scans = list(scans_result.scalars().all())
+
+    return success({
+        "user": {
+            "id": str(current_user.id),
+            "name": current_user.name,
+            "email": current_user.email,
+            "is_verified": current_user.is_verified,
+            "is_active": current_user.is_active,
+            "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
+            "updated_at": current_user.updated_at.isoformat() if current_user.updated_at else None,
+        },
+        "resumes": [_resume_to_dict(r) for r in resumes],
+        "ats_history": [
+            {
+                "id": str(s.id),
+                "resume_id": str(s.resume_id) if s.resume_id else None,
+                "overall_score": s.overall_score,
+                "score_report": s.score_report,
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+            }
+            for s in scans
+        ],
+    })
+
+
 # GET /resumes
 @router.get("")
 async def list_resumes(

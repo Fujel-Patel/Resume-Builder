@@ -109,7 +109,8 @@ async def refresh_token(
             detail={"code": "TOKEN_INVALID", "message": "Expired or revoked refresh token"},
         )
 
-    user = await service.get_user_by_id(db, db_token.user_id)
+    # User is already loaded via JOIN in verify_refresh_token_db — avoids a redundant query
+    user = getattr(db_token, "user", None)
     if not user or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -122,7 +123,20 @@ async def refresh_token(
     new_refresh, _ = await service.create_refresh_token_for_user(db, user)
     _set_refresh_cookie(response, new_refresh)
 
-    return success({"access_token": access_token, "token_type": "bearer"})
+    # Include user data so frontend can skip a redundant /users/me call
+    return success({
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": str(user.id),
+            "name": user.name,
+            "email": user.email,
+            "is_verified": user.is_verified,
+            "is_active": user.is_active,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+            "updated_at": user.updated_at.isoformat() if user.updated_at else None,
+        },
+    })
 
 
 # ---------------------------------------------------------------------------
