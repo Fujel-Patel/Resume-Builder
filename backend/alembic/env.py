@@ -26,7 +26,8 @@ target_metadata = Base.metadata
 # Use the app's DATABASE_URL (converting async driver to sync for Alembic)
 settings = Settings(_env_file=".env")
 db_url = settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
-config.set_main_option("sqlalchemy.url", db_url)
+# Escape '%' for configparser interpolation syntax
+config.set_main_option("sqlalchemy.url", db_url.replace("%", "%%"))
 
 
 def run_migrations_offline() -> None:

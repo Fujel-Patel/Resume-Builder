@@ -18,6 +18,7 @@ from app.middleware.auth import AuthMiddleware
 from app.middleware.error_handler import ErrorHandlerMiddleware, validation_exception_handler
 from app.middleware.request_logger import RequestLoggingMiddleware
 from app.utils.http_client import close_client as close_http_client
+from app.scripts.init_db import create_tables
 from app.modules.ai.router import router as ai_router
 from app.modules.ai_providers.router import router as ai_providers_router
 from app.modules.ats.router import router as ats_router
@@ -35,8 +36,7 @@ async def lifespan(app: FastAPI):
         await conn.execute(text("SELECT 1"))
     # Only auto-create tables in development — production uses Alembic migrations
     if settings.APP_ENV == "development":
-        async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+        await create_tables()
     logger.info("Database ready")
     yield
     logger.info("Shutting down")
