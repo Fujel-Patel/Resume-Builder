@@ -2,12 +2,11 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
-import { resetPasswordApi } from "@/lib/api/auth"
+import { resetPassword } from "@/lib/api/auth"
 import { ApiRequestError } from "@/lib/api/client"
 
 const PASSWORD_REQUIREMENTS = [
@@ -19,8 +18,6 @@ const PASSWORD_REQUIREMENTS = [
 ] as const
 
 export function ResetPasswordForm() {
-  const searchParams = useSearchParams()
-  const token = searchParams.get("token") ?? ""
 
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -49,14 +46,9 @@ export function ResetPasswordForm() {
     e.preventDefault()
     setError("")
     if (!validate()) return
-    if (!token) {
-      setError("Missing reset token")
-      toast.error("Missing reset token. Please request a new link.")
-      return
-    }
     setLoading(true)
     try {
-      await resetPasswordApi(token, password)
+      await resetPassword(password)
       setDone(true)
       toast.success("Password reset successfully!")
     } catch (e) {
@@ -66,22 +58,6 @@ export function ResetPasswordForm() {
     } finally {
       setLoading(false)
     }
-  }
-
-  if (!token) {
-    return (
-      <div className="space-y-4 text-center">
-        <div className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          Invalid or missing reset link. Please request a new one.
-        </div>
-        <Link
-          href="/forgot-password"
-          className="inline-block text-sm text-brand hover:underline"
-        >
-          Request a new reset link
-        </Link>
-      </div>
-    )
   }
 
   if (done) {

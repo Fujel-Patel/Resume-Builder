@@ -33,22 +33,6 @@ async def update_user(
     return user
 
 
-async def change_password(
-    db: AsyncSession,
-    user: models.User,
-    current_password: str,
-    new_password: str,
-) -> bool:
-    """Returns False if current_password is wrong."""
-    from app.utils.password import hash_password, verify_password
-    if not await verify_password(current_password, user.password_hash):
-        return False
-    user.password_hash = await hash_password(new_password)
-    db.add(user)
-    await db.commit()
-    return True
-
-
 async def delete_user(db: AsyncSession, user_id: uuid.UUID) -> bool:
     user = await get_user_by_id(db, user_id)
     if not user:

@@ -15,7 +15,6 @@ from app.config.database import Base, engine
 
 # Import ALL models so Base.metadata knows about every table
 import app.modules.users.models  # noqa: F401
-import app.modules.auth.models  # noqa: F401
 import app.modules.resumes.models  # noqa: F401
 import app.modules.ats.models  # noqa: F401
 import app.modules.ai.models  # noqa: F401

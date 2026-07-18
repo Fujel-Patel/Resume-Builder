@@ -14,20 +14,6 @@ class UserUpdate(BaseModel):
     model_config = ConfigDict(from_attributes=True, str_strip_whitespace=True)
 
 
-class PasswordChangeRequest(BaseModel):
-    """PATCH /users/me/password"""
-    current_password: str
-    new_password: str = Field(..., min_length=8)
-
-    model_config = ConfigDict(str_strip_whitespace=True)
-
-    @field_validator("new_password")
-    @classmethod
-    def validate_new_password(cls, v: str) -> str:
-        from app.modules.auth.schemas import _validate_password_strength
-        return _validate_password_strength(v)
-
-
 class DeleteAccountRequest(BaseModel):
     """DELETE /users/me — PRD requires confirmation text."""
     confirmation: str = Field(..., description="Must be exactly 'DELETE MY ACCOUNT'")
@@ -45,11 +31,6 @@ class UserResponse(BaseModel):
     name: str
     email: EmailStr
     avatar_url: Optional[str] = None
-    is_verified: bool
-    is_active: bool
-    status: Optional[str] = None
-    email_verified: Optional[bool] = None
-    verified_at: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 

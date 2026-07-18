@@ -1,7 +1,6 @@
 """FastAPI app entry point — middleware, routers, rate limiting."""
 
 import re
-import sys
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, Request
@@ -15,7 +14,6 @@ from app.config.database import engine
 from app.config.logging import setup_logging
 from app.config.settings import settings
 from app.limiter import limiter
-from app.middleware.auth import AuthMiddleware
 from app.middleware.body_size_limit import BodySizeLimitMiddleware
 from app.middleware.cache_control import CacheControlMiddleware
 from app.middleware.error_handler import ErrorHandlerMiddleware, validation_exception_handler
@@ -27,7 +25,6 @@ from app.scripts.init_db import create_tables
 from app.modules.ai.router import router as ai_router
 from app.modules.ai_providers.router import router as ai_providers_router
 from app.modules.ats.router import router as ats_router
-from app.modules.auth.router import router as auth_router
 from app.modules.resumes.router import router as resumes_router
 from app.modules.users.router import router as users_router
 
@@ -60,7 +57,7 @@ def _validate_secrets():
     if settings.APP_ENV != "production":
         return
     weak_keys = []
-    for name in ("SECRET_KEY", "JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET", "ENCRYPTION_KEY"):
+    for name in ("SECRET_KEY", "ENCRYPTION_KEY", "SUPABASE_JWT_SECRET"):
         val = getattr(settings, name, "")
         if len(val) < 32:
             weak_keys.append(name)
@@ -70,61 +67,8 @@ def _validate_secrets():
             "Set strong secrets in production .env. Aborting startup.",
             ", ".join(weak_keys),
         )
+        import sys
         sys.exit(1)
-
-
-async def _purge_expired_data():
-    """Background task: purge expired tokens + expired pending accounts."""
-    import asyncio
-    while True:
-        await asyncio.sleep(600)  # every 10 minutes
-        try:
-            from app.config.database import AsyncSessionLocal
-            from sqlalchemy import delete, select
-            from app.modules.auth.models import RefreshToken, EmailToken
-            from app.modules.users.models import User
-            from datetime import datetime, timezone
-
-            async with AsyncSessionLocal() as session:
-                now = datetime.now(timezone.utc)
-
-                # Purge expired refresh tokens
-                await session.execute(
-                    delete(RefreshToken).where(RefreshToken.expires_at < now)
-                )
-
-                # Purge expired/used email tokens
-                await session.execute(
-                    delete(EmailToken).where(
-                        (EmailToken.expires_at < now) | (EmailToken.used_at.isnot(None))
-                    )
-                )
-
-                # Purge expired pending accounts
-                result = await session.execute(
-                    select(User.id).where(
-                        User.status == "pending",
-                        User.pending_expires_at < now,
-                    )
-                )
-                expired_ids = [row[0] for row in result.all()]
-                if expired_ids:
-                    # Delete their email tokens first (FK)
-                    await session.execute(
-                        delete(EmailToken).where(EmailToken.user_id.in_(expired_ids))
-                    )
-                    await session.execute(
-                        delete(RefreshToken).where(RefreshToken.user_id.in_(expired_ids))
-                    )
-                    await session.execute(
-                        delete(User).where(User.id.in_(expired_ids))
-                    )
-                    logger.info("Purged {} expired pending accounts", len(expired_ids))
-
-                await session.commit()
-                logger.debug("Background purge completed")
-        except Exception:
-            logger.exception("Background purge failed")
 
 
 @asynccontextmanager
@@ -137,12 +81,8 @@ async def lifespan(app: FastAPI):
         await create_tables()
     logger.info("Database ready")
 
-    import asyncio
-    purge_task = asyncio.create_task(_purge_expired_data())
-
     yield
 
-    purge_task.cancel()
     logger.info("Shutting down")
     try:
         from app.services.pdf_service import shutdown_browser
@@ -170,10 +110,9 @@ app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 
 # ---------------------------------------------------------------------------
-# Middleware — order matters: ErrorHandler wraps Auth, CORS wraps everything
+# Middleware — order matters: ErrorHandler wraps CORS wraps everything
 # ---------------------------------------------------------------------------
 app.add_middleware(BodySizeLimitMiddleware)
-app.add_middleware(AuthMiddleware)
 app.add_middleware(ErrorHandlerMiddleware)
 app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(CacheControlMiddleware)
@@ -236,7 +175,6 @@ app.add_exception_handler(RequestValidationError, validation_exception_handler)
 # ---------------------------------------------------------------------------
 # Routers
 # ---------------------------------------------------------------------------
-app.include_router(auth_router,        prefix="/api/v1/auth",        tags=["auth"])
 app.include_router(users_router,       prefix="/api/v1/users",       tags=["users"])
 app.include_router(resumes_router,     prefix="/api/v1/resumes",     tags=["resumes"])
 app.include_router(ai_router,          prefix="/api/v1/ai",          tags=["ai"])

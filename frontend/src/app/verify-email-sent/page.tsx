@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { resendVerificationApi } from "@/lib/api/auth"
+import { resendVerification } from "@/lib/api/auth"
 import { Button } from "@/components/ui/button"
 import { Mail, ArrowLeft, CheckCircle, Loader2 } from "lucide-react"
 
@@ -26,7 +26,7 @@ function VerifyEmailSentContent() {
     setStatus("sending")
     setError("")
     try {
-      await resendVerificationApi(email)
+      await resendVerification(email)
       setStatus("sent")
       setCooldown(60)
     } catch (err: unknown) {

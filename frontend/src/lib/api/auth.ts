@@ -1,67 +1,65 @@
 import { api } from "./client"
-import { setAccessToken, clearAccessToken } from "@/lib/auth/token-manager"
+import { createClient } from "@/lib/supabase/client"
 
 export type UserOut = {
   id: string
   name: string
   email: string
-  is_verified: boolean
-  is_active: boolean
-  status?: string
-  email_verified?: boolean
-  verified_at?: string | null
+  avatar_url?: string | null
   created_at: string
   updated_at: string | null
 }
 
-type TokenResponse = {
-  access_token: string
-  token_type: string
-}
+// ── Supabase Auth functions ──────────────────────────────────────
 
-type SignupResponse = {
-  message: string
-  email: string
-}
-
-export async function signupApi(
-  name: string,
-  email: string,
-  password: string,
-): Promise<SignupResponse> {
-  return api.post<SignupResponse>("/auth/signup", { name, email, password })
-}
-
-export async function loginApi(
-  email: string,
-  password: string,
-): Promise<TokenResponse> {
-  const data = await api.post<TokenResponse>("/auth/login", { email, password })
-  setAccessToken(data.access_token)
+export async function signup(name: string, email: string, password: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: { name } },
+  })
+  if (error) throw error
   return data
 }
 
-export async function logoutApi(): Promise<void> {
-  await api.post("/auth/logout").catch(() => {})
-  clearAccessToken()
+export async function login(email: string, password: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
+  if (error) throw error
+  return data
 }
 
-export type RefreshResponse = {
-  access_token: string
-  token_type: string
-  user?: UserOut
+export async function logout() {
+  const supabase = createClient()
+  const { error } = await supabase.auth.signOut()
+  if (error) throw error
 }
 
-export async function refreshApi(): Promise<RefreshResponse | null> {
-  try {
-    const data = await api.post<RefreshResponse>("/auth/refresh")
-    setAccessToken(data.access_token)
-    return data
-  } catch {
-    clearAccessToken()
-    return null
-  }
+export async function forgotPassword(email: string) {
+  const supabase = createClient()
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${window.location.origin}/reset-password`,
+  })
+  if (error) throw error
 }
+
+export async function resetPassword(newPassword: string) {
+  const supabase = createClient()
+  const { error } = await supabase.auth.updateUser({ password: newPassword })
+  if (error) throw error
+}
+
+export async function resendVerification(email: string) {
+  const supabase = createClient()
+  const { error } = await supabase.auth.resend({ type: "signup", email })
+  if (error) throw error
+}
+
+// ── Backend API functions (profile data) ─────────────────────────
 
 export async function getMeApi(): Promise<UserOut> {
   return api.get<UserOut>("/users/me")
@@ -75,18 +73,10 @@ export async function deleteMeApi(confirmation: string): Promise<void> {
   await api.delete("/users/me", { confirmation })
 }
 
-export async function forgotPasswordApi(email: string): Promise<void> {
-  await api.post("/auth/forgot-password", { email })
-}
+// ── Legacy compatibility exports ─────────────────────────────────
 
-export async function resetPasswordApi(token: string, password: string): Promise<void> {
-  await api.post("/auth/reset-password", { token, password })
-}
-
-export async function verifyEmailApi(token: string): Promise<{ message: string; email_verified: boolean }> {
-  return api.post<{ message: string; email_verified: boolean }>("/auth/verify-email", { token })
-}
-
-export async function resendVerificationApi(email: string): Promise<{ message: string }> {
-  return api.post<{ message: string }>("/auth/resend-verification", { email })
+export async function getAccessToken(): Promise<string | null> {
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  return session?.access_token ?? null
 }

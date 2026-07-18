@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button"
 import { EnhancedCard } from "@/components/ui/enhanced-card"
 import { User, Mail, Save, Trash2, AlertTriangle, CheckCircle } from "lucide-react"
 import { useAppSelector, useAppDispatch } from "@/lib/hooks"
-import { updateMeApi, deleteMeApi, logoutApi } from "@/lib/api/auth"
-import { setUser, resetAuth } from "@/lib/features/auth/authSlice"
+import { updateMeApi, deleteMeApi } from "@/lib/api/auth"
+import { setUser, logoutUser } from "@/lib/features/auth/authSlice"
 
 export function ProfilePage() {
   const router = useRouter()
@@ -50,8 +50,7 @@ export function ProfilePage() {
     setDeleting(true)
     try {
       await deleteMeApi(deleteConfirm)
-      await logoutApi().catch(() => {})
-      dispatch(resetAuth())
+      await dispatch(logoutUser())
       toast.success("Account deleted successfully")
       router.push("/login")
     } catch {

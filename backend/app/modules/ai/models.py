@@ -16,7 +16,7 @@ class AIProvider(Base):
     __tablename__ = "ai_providers"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="CASCADE"), nullable=False, index=True)
     provider_name = Column(
         String(100), nullable=False
     )  # anthropic | gemini | nvidia-nim | custom

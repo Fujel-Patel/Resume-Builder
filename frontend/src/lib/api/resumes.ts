@@ -1,5 +1,5 @@
 import { api } from "./client"
-import { getAccessToken } from "@/lib/auth/token-manager"
+import { createClient } from "@/lib/supabase/client"
 import type { ResumeData } from "@/features/resume/types"
 
 type JsonDict = Record<string, unknown>
@@ -186,7 +186,9 @@ export async function duplicateResumeApi(id: string): Promise<ResumeResponse> {
 }
 
 export async function exportResume(id: string): Promise<void> {
-  const token = getAccessToken()
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token
   const res = await fetch(`${API_BASE}/resumes/${id}/export`, {
     method: "POST",
     headers: token ? { Authorization: `Bearer ${token}` } : {},

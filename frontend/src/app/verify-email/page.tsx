@@ -1,49 +1,60 @@
 "use client"
 
 import { Suspense, useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { verifyEmailApi } from "@/lib/api/auth"
+import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { CheckCircle, AlertCircle, Loader2 } from "lucide-react"
 
 function VerifyEmailContent() {
-  const searchParams = useSearchParams()
-  const token = searchParams.get("token")
-
-  const [status, setStatus] = useState<"loading" | "success" | "error">(
-    token ? "loading" : "error",
-  )
-  const [message, setMessage] = useState(
-    token ? "" : "No verification token provided. Check your email for the correct link.",
-  )
+  const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
+  const [message, setMessage] = useState("")
 
   useEffect(() => {
-    if (!token) return
-
     let cancelled = false
-    verifyEmailApi(token)
-      .then((res) => {
-        if (!cancelled) {
-          setStatus("success")
-          setMessage(res.message || "Email verified successfully!")
-        }
-      })
-      .catch((err) => {
+
+    async function handleVerification() {
+      const hash = window.location.hash
+      if (!hash) {
         if (!cancelled) {
           setStatus("error")
-          const msg =
-            err instanceof Error
-              ? err.message
-              : err && typeof err === "object" && "message" in err
-                ? (err as { message?: string }).message
-                : "Invalid or expired verification link. Please request a new one."
-          setMessage(msg || "Invalid or expired verification link. Please request a new one.")
+          setMessage("No verification token provided.")
         }
+        return
+      }
+
+      const params = new URLSearchParams(hash.substring(1))
+      const accessToken = params.get("access_token")
+      const refreshToken = params.get("refresh_token")
+
+      if (!accessToken || !refreshToken) {
+        if (!cancelled) {
+          setStatus("error")
+          setMessage("Invalid verification link.")
+        }
+        return
+      }
+
+      const supabase = createClient()
+      const { error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
       })
 
+      if (!cancelled) {
+        if (error) {
+          setStatus("error")
+          setMessage("Invalid or expired verification link.")
+        } else {
+          setStatus("success")
+          setMessage("Email verified successfully!")
+        }
+      }
+    }
+
+    handleVerification()
     return () => { cancelled = true }
-  }, [token])
+  }, [])
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
@@ -63,8 +74,8 @@ function VerifyEmailContent() {
             </div>
             <h1 className="text-lg font-semibold text-foreground">Email verified!</h1>
             <p className="text-sm text-muted-foreground">{message}</p>
-            <Link href="/login">
-              <Button variant="brand" className="w-full">Sign In</Button>
+            <Link href="/dashboard">
+              <Button variant="brand" className="w-full">Go to Dashboard</Button>
             </Link>
           </>
         )}

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Loader2, ArrowLeft, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
-import { forgotPasswordApi } from "@/lib/api/auth"
+import { forgotPassword } from "@/lib/api/auth"
 import { ApiRequestError } from "@/lib/api/client"
 
 export function ForgotPasswordForm() {
@@ -28,7 +28,7 @@ export function ForgotPasswordForm() {
     if (err) { setError(err); toast.error(err); return }
     setLoading(true)
     try {
-      await forgotPasswordApi(email)
+      await forgotPassword(email)
       setSent(true)
       toast.success("Reset link sent! Check your email.")
     } catch (e) {

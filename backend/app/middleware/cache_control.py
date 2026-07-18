@@ -8,8 +8,6 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 # (path_regex, Cache-Control value)
 _CACHE_RULES: list[tuple[str, str]] = [
-    # Auth endpoints — never cache
-    (r"^/api/v1/auth/", "no-store"),
     # Health checks — always revalidate
     (r"^/health$", "no-cache"),
     (r"^/ready$", "no-cache"),

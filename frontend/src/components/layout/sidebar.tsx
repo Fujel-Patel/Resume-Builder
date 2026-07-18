@@ -17,8 +17,7 @@ import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "./theme-toggle"
 import { useSidebar } from "@/contexts/sidebar-context"
 import { useAppDispatch } from "@/lib/hooks"
-import { resetAuth } from "@/lib/features/auth/authSlice"
-import { logoutApi } from "@/lib/api/auth"
+import { logoutUser } from "@/lib/features/auth/authSlice"
 import type { NavItem } from "@/types/design"
 
 const navItems: NavItem[] = [
@@ -95,9 +94,9 @@ export function Sidebar() {
             variant="ghost"
             className="w-full justify-start gap-3 text-sidebar-foreground/70"
             onClick={() => {
-              dispatch(resetAuth())
-              logoutApi()
-              router.push("/login")
+              dispatch(logoutUser()).then(() => {
+                router.push("/login")
+              })
             }}
           >
             <LogOut className="size-4" />

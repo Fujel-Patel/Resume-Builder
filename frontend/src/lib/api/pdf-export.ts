@@ -1,9 +1,12 @@
-import { getAccessToken } from "@/lib/auth/token-manager"
+import { createClient } from "@/lib/supabase/client"
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
 
 export async function exportResumeAsPdf(resumeId: string, templateId?: string): Promise<void> {
-  const token = getAccessToken()
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  const token = session?.access_token
+
   const params = templateId ? `?template_id=${encodeURIComponent(templateId)}` : ""
   const res = await fetch(`${API_BASE}/resumes/${resumeId}/export/pdf${params}`, {
     method: "POST",

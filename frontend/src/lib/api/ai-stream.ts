@@ -1,5 +1,4 @@
-import { getAccessToken, clearAccessToken } from "@/lib/auth/token-manager"
-import { refreshAccessToken } from "@/lib/auth/refresh"
+import { createClient } from "@/lib/supabase/client"
 import type { BackendResumeContent } from "./ai-suggest"
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
@@ -54,6 +53,13 @@ function parseSseBuffer(buffer: string): { events: SseEvent[]; remaining: string
   return { events, remaining }
 }
 
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session?.access_token) return {}
+  return { Authorization: `Bearer ${session.access_token}` }
+}
+
 export async function optimizeResumeStream(
   file: File,
   jobDescription: string,
@@ -64,11 +70,7 @@ export async function optimizeResumeStream(
   formData.append("file", file)
   formData.append("job_description", jobDescription)
 
-  const token = getAccessToken()
-  const headers: Record<string, string> = {}
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`
-  }
+  const headers = await getAuthHeaders()
 
   let res = await fetch(`${BASE_URL}/ai/optimize-resume/stream`, {
     method: "POST",
@@ -78,10 +80,11 @@ export async function optimizeResumeStream(
     signal,
   })
 
-  if (res.status === 401 && token) {
-    const newToken = await refreshAccessToken()
-    if (newToken) {
-      headers["Authorization"] = `Bearer ${newToken}`
+  if (res.status === 401) {
+    const supabase = createClient()
+    const { data: { session: newSession } } = await supabase.auth.refreshSession()
+    if (newSession?.access_token) {
+      headers["Authorization"] = `Bearer ${newSession.access_token}`
       res = await fetch(`${BASE_URL}/ai/optimize-resume/stream`, {
         method: "POST",
         headers,
@@ -90,7 +93,6 @@ export async function optimizeResumeStream(
         signal,
       })
     } else {
-      clearAccessToken()
       callbacks.onError?.("UNAUTHORIZED", "Session expired. Please log in again.")
       return
     }

@@ -1,13 +1,12 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import {
-  signupApi,
-  loginApi,
-  logoutApi,
+  signup as signupSupabase,
+  login as loginSupabase,
+  logout as logoutSupabase,
   getMeApi,
-  refreshApi,
   type UserOut,
 } from "@/lib/api/auth"
-import { setAccessToken, getAccessToken, clearAccessToken } from "@/lib/auth/token-manager"
+import { createClient } from "@/lib/supabase/client"
 import { ApiRequestError } from "@/lib/api/client"
 
 export type AuthError = {
@@ -28,7 +27,6 @@ function normalizeError(payload: unknown): AuthError {
 
 type AuthState = {
   user: UserOut | null
-  token: string | null
   loading: boolean
   error: AuthError | null
   signupEmail: string | null
@@ -36,7 +34,6 @@ type AuthState = {
 
 const initialState: AuthState = {
   user: null,
-  token: getAccessToken(),
   loading: true,
   error: null,
   signupEmail: null,
@@ -46,14 +43,21 @@ export const login = createAsyncThunk(
   "auth/login",
   async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
     try {
-      const tokenData = await loginApi(email, password)
+      await loginSupabase(email, password)
       const user = await getMeApi()
-      return { user, access_token: tokenData.access_token }
+      return { user }
     } catch (err: unknown) {
       if (err instanceof ApiRequestError) {
         return rejectWithValue({ message: err.message, code: err.code, fields: err.fields })
       }
+      // Map Supabase auth errors to our error format
       const message = err instanceof Error ? err.message : "Login failed"
+      if (message.includes("Invalid login credentials")) {
+        return rejectWithValue({ message: "Incorrect email or password", code: "INVALID_CREDENTIALS" })
+      }
+      if (message.includes("Email not confirmed")) {
+        return rejectWithValue({ message: "Please verify your email address", code: "EMAIL_NOT_VERIFIED" })
+      }
       return rejectWithValue({ message, code: "UNKNOWN_ERROR" })
     }
   },
@@ -66,13 +70,16 @@ export const signup = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      const result = await signupApi(name, email, password)
-      return { email: result.email, message: result.message }
+      await signupSupabase(name, email, password)
+      return { email, message: "Signup successful" }
     } catch (err: unknown) {
       if (err instanceof ApiRequestError) {
         return rejectWithValue({ message: err.message, code: err.code, fields: err.fields })
       }
       const message = err instanceof Error ? err.message : "Signup failed"
+      if (message.includes("already registered")) {
+        return rejectWithValue({ message: "Account with this email already exists", code: "CONFLICT" })
+      }
       return rejectWithValue({ message, code: "UNKNOWN_ERROR" })
     }
   },
@@ -81,36 +88,21 @@ export const signup = createAsyncThunk(
 export const initializeAuth = createAsyncThunk(
   "auth/initialize",
   async (_, { rejectWithValue }) => {
-    let token = getAccessToken()
     try {
-      if (token) {
-        const user = await getMeApi()
-        return { user, access_token: token }
-      }
+      const supabase = createClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return { user: null }
+
+      const user = await getMeApi()
+      return { user }
     } catch {
-      // token may be stale — try refresh
+      return { user: null }
     }
-    const refreshed = await refreshApi()
-    if (refreshed) {
-      token = refreshed.access_token
-      if (refreshed.user) {
-        return { user: refreshed.user, access_token: token }
-      }
-      try {
-        const user = await getMeApi()
-        return { user, access_token: token }
-      } catch {
-        clearAccessToken()
-        return rejectWithValue({ message: "Session expired", code: "SESSION_EXPIRED" })
-      }
-    }
-    clearAccessToken()
-    return { user: null, access_token: null }
   },
 )
 
 export const logout = createAsyncThunk("auth/logout", async () => {
-  await logoutApi()
+  await logoutSupabase()
 })
 
 const authSlice = createSlice({
@@ -122,10 +114,8 @@ const authSlice = createSlice({
     },
     resetAuth(state) {
       state.user = null
-      state.token = null
       state.error = null
       state.signupEmail = null
-      clearAccessToken()
     },
     clearSignupEmail(state) {
       state.signupEmail = null
@@ -148,8 +138,6 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false
         state.user = action.payload.user
-        state.token = action.payload.access_token
-        setAccessToken(action.payload.access_token)
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false
@@ -172,18 +160,13 @@ const authSlice = createSlice({
         state.loading = false
         if (action.payload.user) {
           state.user = action.payload.user
-          state.token = action.payload.access_token
         }
       })
-      .addCase(initializeAuth.rejected, (state, action) => {
+      .addCase(initializeAuth.rejected, (state) => {
         state.loading = false
-        state.error = normalizeError(action.payload)
-        clearAccessToken()
       })
       .addCase(logout.fulfilled, (state) => {
         state.user = null
-        state.token = null
-        clearAccessToken()
       })
   },
 })

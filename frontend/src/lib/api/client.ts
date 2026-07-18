@@ -1,5 +1,4 @@
-import { getAccessToken, clearAccessToken } from "@/lib/auth/token-manager"
-import { refreshAccessToken } from "@/lib/auth/refresh"
+import { createClient } from "@/lib/supabase/client"
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
 
@@ -35,12 +34,14 @@ async function _fetchWithAuth(
   path: string,
   init: RequestInit = {},
 ): Promise<Response> {
-  const token = getAccessToken()
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+
   const headers: Record<string, string> = {
     ...(init.headers as Record<string, string>),
   }
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`
+  if (session?.access_token) {
+    headers["Authorization"] = `Bearer ${session.access_token}`
   }
   if (!headers["Content-Type"] && !(init.body instanceof FormData)) {
     headers["Content-Type"] = "application/json"
@@ -52,17 +53,17 @@ async function _fetchWithAuth(
     credentials: "include",
   })
 
-  if (res.status === 401 && token) {
-    const newToken = await refreshAccessToken()
-    if (newToken) {
-      headers["Authorization"] = `Bearer ${newToken}`
+  // On 401, try refreshing session via Supabase
+  if (res.status === 401 && session) {
+    const { data: { session: newSession } } = await supabase.auth.refreshSession()
+    if (newSession?.access_token) {
+      headers["Authorization"] = `Bearer ${newSession.access_token}`
       res = await fetch(`${BASE_URL}${path}`, {
         ...init,
         headers,
         credentials: "include",
       })
     } else {
-      clearAccessToken()
       dispatchUnauthorized()
     }
   }
@@ -77,7 +78,6 @@ async function request<T>(
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
 
-  // Chain external signal with timeout controller
   if (options.signal) {
     if (options.signal.aborted) controller.abort()
     else options.signal.addEventListener("abort", () => controller.abort(), { once: true })
