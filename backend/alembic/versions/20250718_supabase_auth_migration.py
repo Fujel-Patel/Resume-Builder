@@ -31,7 +31,7 @@ def upgrade():
         "profiles",
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
         sa.Column("name", sa.String(255), nullable=False),
-        sa.Column("email", sa.String(255), nullable=False, index=True),
+        sa.Column("email", sa.String(255), nullable=False, index=True, unique=True),
         sa.Column("avatar_url", sa.Text(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
@@ -42,6 +42,17 @@ def upgrade():
         INSERT INTO profiles (id, name, email, avatar_url, created_at, updated_at)
         SELECT id, name, email, avatar_url, created_at, updated_at
         FROM users
+    """)
+
+    # ── 3b. Clean up orphaned rows (user_ids not in users table) ───
+    op.execute("""
+        DELETE FROM ats_scans WHERE user_id NOT IN (SELECT id FROM users)
+    """)
+    op.execute("""
+        DELETE FROM resumes WHERE user_id NOT IN (SELECT id FROM users)
+    """)
+    op.execute("""
+        DELETE FROM ai_providers WHERE user_id NOT IN (SELECT id FROM users)
     """)
 
     # ── 4. Drop old tables ──────────────────────────────────────────
@@ -55,20 +66,45 @@ def upgrade():
     op.execute("ALTER TABLE ats_scans ADD CONSTRAINT ats_scans_user_id_fkey FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE")
 
     # ── 6. Create Supabase Auth trigger for auto-profile creation ───
+    # Handles existing profiles by updating their id to match the new auth user
     op.execute("""
         CREATE OR REPLACE FUNCTION public.handle_new_user()
         RETURNS TRIGGER AS $$
+        DECLARE
+            existing_profile RECORD;
         BEGIN
-            INSERT INTO public.profiles (id, name, email)
-            VALUES (
-                NEW.id,
-                COALESCE(
-                    NEW.raw_user_meta_data->>'name',
-                    NEW.raw_user_meta_data->>'full_name',
-                    split_part(NEW.email, '@', 1)
-                ),
-                NEW.email
-            );
+            -- Check if a profile with this email already exists
+            SELECT id INTO existing_profile
+            FROM public.profiles
+            WHERE email = NEW.email
+            LIMIT 1;
+
+            IF FOUND THEN
+                -- Update existing profile's id to match the new auth user
+                -- This cascades FK updates to resumes, ai_providers, ats_scans
+                UPDATE public.profiles
+                SET id = NEW.id,
+                    name = COALESCE(
+                        NEW.raw_user_meta_data->>'name',
+                        NEW.raw_user_meta_data->>'full_name',
+                        name
+                    ),
+                    updated_at = now()
+                WHERE email = NEW.email;
+            ELSE
+                -- Create new profile
+                INSERT INTO public.profiles (id, name, email)
+                VALUES (
+                    NEW.id,
+                    COALESCE(
+                        NEW.raw_user_meta_data->>'name',
+                        NEW.raw_user_meta_data->>'full_name',
+                        split_part(NEW.email, '@', 1)
+                    ),
+                    NEW.email
+                );
+            END IF;
+
             RETURN NEW;
         END;
         $$ LANGUAGE plpgsql SECURITY DEFINER
