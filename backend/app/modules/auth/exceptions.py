@@ -15,6 +15,18 @@ class InvalidCredentialsException(HTTPException):
         )
 
 
+class UserNotFoundException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "code": "USER_NOT_FOUND",
+                "message": "No account found with this email address.",
+            },
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
 class AccountLockedException(HTTPException):
     def __init__(self):
         super().__init__(

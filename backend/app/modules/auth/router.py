@@ -18,6 +18,7 @@ from app.modules.auth.exceptions import (
     InvalidTokenException,
     ResendCooldownException,
     TooManyResendAttemptsException,
+    UserNotFoundException,
 )
 from app.types.common import success
 
@@ -120,10 +121,13 @@ async def login(
     if user and await service.is_account_locked(user):
         raise AccountLockedException()
 
-    # Always run the same code path to prevent timing attacks revealing email existence
-    if not user or not await service.check_password(body.password, user):
-        if user:
-            await service.increment_failed_login_attempts(db, user)
+    # User not found at all
+    if not user:
+        raise UserNotFoundException()
+
+    # Wrong password
+    if not await service.check_password(body.password, user):
+        await service.increment_failed_login_attempts(db, user)
         raise InvalidCredentialsException()
 
     # Block login for pending accounts

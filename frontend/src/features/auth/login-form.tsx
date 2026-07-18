@@ -15,6 +15,7 @@ function getLoginErrorMessage(error: AuthError | string | null): string | null {
   if (typeof error === "string") return error
   const { code, message } = error
   if (code === "INVALID_CREDENTIALS") return "Incorrect email or password. Please try again."
+  if (code === "USER_NOT_FOUND") return "No account found with this email address."
   if (code === "ACCOUNT_LOCKED") return message
   if (code === "EMAIL_NOT_VERIFIED") return message || "Please verify your email before signing in."
   if (code === "ACCOUNT_PENDING") return message || "Your account is pending email verification."
