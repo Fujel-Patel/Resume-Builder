@@ -1,4 +1,4 @@
-"""Shared get_current_user dependency — pyjwt only (no python-jose)."""
+"""Shared get_current_user dependency — enforces email verification."""
 
 import uuid
 from typing import Optional
@@ -20,10 +20,9 @@ _401 = HTTPException(
     headers={"WWW-Authenticate": "Bearer"},
 )
 
-_401_expired = HTTPException(
-    status_code=status.HTTP_401_UNAUTHORIZED,
-    detail={"code": "TOKEN_EXPIRED", "message": "Access token expired"},
-    headers={"WWW-Authenticate": "Bearer"},
+_403_unverified = HTTPException(
+    status_code=status.HTTP_403_FORBIDDEN,
+    detail={"code": "EMAIL_NOT_VERIFIED", "message": "Please verify your email address"},
 )
 
 
@@ -47,5 +46,9 @@ async def get_current_user(
     user = await user_service.get_user_by_id(db, user_id)
     if user is None or not user.is_active:
         raise _401
+
+    is_verified = getattr(user, "email_verified", False) or getattr(user, "is_verified", False)
+    if not is_verified:
+        raise _403_unverified
 
     return user

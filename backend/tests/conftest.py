@@ -9,8 +9,15 @@ from fastapi.testclient import TestClient
 from app.config.database import get_db
 from app.main import app
 from app.utils.auth import get_current_user
+from app.utils.cache import invalidate_user
 
 USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
+
+
+@pytest.fixture(autouse=True)
+def _clear_cache():
+    """Clear per-user cache before every test to prevent stale data."""
+    invalidate_user(str(USER_ID))
 
 # Suppress DB connection during tests
 @asynccontextmanager

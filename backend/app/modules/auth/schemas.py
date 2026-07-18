@@ -1,12 +1,39 @@
+"""Auth module schemas — request/response models with validation."""
+
 import re
 from datetime import datetime
-
 from typing import Optional
+from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+
+from app.config.settings import settings
 from .exceptions import WeakPasswordError, PasswordTooLongException
 
-from uuid import UUID
+
+_PASSWORD_SPECIAL_RE = re.compile(r"[!@#$%^&*(),.?\":{}|<>_\-+=\[\]\\/;]")
+
+
+def _validate_password_strength(v: str) -> str:
+    min_len = getattr(settings, "PASSWORD_MIN_LENGTH", 12)
+    max_bytes = getattr(settings, "PASSWORD_MAX_BYTES", 72)
+    if len(v) < min_len:
+        raise WeakPasswordError([f"Password must be at least {min_len} characters"])
+    byte_len = len(v.encode("utf-8"))
+    if byte_len > max_bytes:
+        raise PasswordTooLongException(byte_len)
+    missing = []
+    if not re.search(r"[A-Z]", v):
+        missing.append("uppercase letter")
+    if not re.search(r"[a-z]", v):
+        missing.append("lowercase letter")
+    if not re.search(r"\d", v):
+        missing.append("digit")
+    if not _PASSWORD_SPECIAL_RE.search(v):
+        missing.append("special character")
+    if missing:
+        raise WeakPasswordError([f"Password must contain at least one {m}" for m in missing])
+    return v
 
 
 class UserBase(BaseModel):
@@ -31,31 +58,7 @@ class UserCreate(UserBase):
     @field_validator("password")
     @classmethod
     def validate_password_strength(cls, v: str) -> str:
-        """Enforce password complexity and bcrypt 72‑byte limit.
-        Raises:
-        - :class:`PasswordTooLongException` if UTF‑8 byte length > 72.
-        - :class:`WeakPasswordError` for any other complexity violation.
-        """
-        # Character‑length minimum (still enforced for usability)
-        if len(v) < 8:
-            raise WeakPasswordError(["Password must be at least 8 characters"])
-        # Byte‑length check for bcrypt
-        byte_len = len(v.encode("utf-8"))
-        if byte_len > 72:
-            raise PasswordTooLongException(byte_len)
-        # Complexity checks – collect all missing requirements
-        missing = []
-        if not re.search(r"[A-Z]", v):
-            missing.append("uppercase letter")
-        if not re.search(r"[a-z]", v):
-            missing.append("lowercase letter")
-        if not re.search(r"\d", v):
-            missing.append("digit")
-        if not re.search(r"[!@#$%^&*(),.?\":{}|<>_\-+=\[\]\\/;]", v):
-            missing.append("special character")
-        if missing:
-            raise ValueError("Password must contain uppercase letter")
-        return v
+        return _validate_password_strength(v)
 
 
 class UserUpdate(BaseModel):
@@ -80,7 +83,9 @@ class UserInDB(UserInDBBase):
 
 
 class UserResponse(UserInDBBase):
-    pass
+    status: Optional[str] = None
+    email_verified: Optional[bool] = None
+    verified_at: Optional[datetime] = None
 
 
 class TokenResponse(BaseModel):
@@ -119,31 +124,16 @@ class ResetPasswordRequest(BaseModel):
     @field_validator("password")
     @classmethod
     def validate_password_strength(cls, v: str) -> str:
-        """Enforce password complexity and bcrypt 72‑byte limit on reset.
-        Raises:
-        - :class:`PasswordTooLongException` if UTF‑8 byte length > 72.
-        - :class:`WeakPasswordError` for any other complexity violation.
-        """
-        if len(v) < 8:
-            raise WeakPasswordError(["Password must be at least 8 characters"])
-        byte_len = len(v.encode("utf-8"))
-        if byte_len > 72:
-            raise PasswordTooLongException(byte_len)
-        missing = []
-        if not re.search(r"[A-Z]", v):
-            missing.append("uppercase letter")
-        if not re.search(r"[a-z]", v):
-            missing.append("lowercase letter")
-        if not re.search(r"\d", v):
-            missing.append("digit")
-        if not re.search(r"[!@#$%^&*(),.?\":{}|<>_\-+=\[\]\\/;]", v):
-            missing.append("special character")
-        if missing:
-            raise WeakPasswordError([f"Password must contain at least one {m}" for m in missing])
-        return v
+        return _validate_password_strength(v)
 
 
 class VerifyEmailRequest(BaseModel):
     token: str
+
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr
 
     model_config = ConfigDict(str_strip_whitespace=True)

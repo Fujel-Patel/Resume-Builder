@@ -213,15 +213,12 @@ function arr(d: unknown): JsonDict[] {
   return Array.isArray(d) ? (d as JsonDict[]) : []
 }
 
-export function toFrontendResumeData(r: ResumeResponse): ResumeData {
-  const d = r.data ?? {}
+export function toFrontendFromContent(d: JsonDict): ResumeData {
   const personal = (d.personal as JsonDict) ?? {}
-
-  const name = `${str(personal.first_name)} ${str(personal.last_name)}`.trim() || ""
 
   return {
     personal: {
-      name,
+      name: `${str(personal.first_name)} ${str(personal.last_name)}`.trim() || "",
       title: str(personal.job_title),
       email: str(personal.email),
       phone: str(personal.mobile),
@@ -244,7 +241,7 @@ export function toFrontendResumeData(r: ResumeResponse): ResumeData {
         role: str(e.role),
         startDate: parts[0] || "",
         endDate: parts[1] || "",
-        description: str(arr(e.bullets)[0]),
+        description: arr(e.bullets).join("\n"),
       }
     }),
     education: arr(d.education).map((e: JsonDict) => ({
@@ -268,4 +265,8 @@ export function toFrontendResumeData(r: ResumeResponse): ResumeData {
       content: str(s.content),
     })),
   }
+}
+
+export function toFrontendResumeData(r: ResumeResponse): ResumeData {
+  return toFrontendFromContent(r.data ?? {})
 }

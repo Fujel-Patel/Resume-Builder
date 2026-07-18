@@ -157,7 +157,7 @@ class TestGenerateResume:
 
 class TestOptimizeResume:
     @patch("app.modules.ai.service.ai_complete")
-    @patch("app.modules.ai.router.extract_text_from_bytes")
+    @patch("app.modules.ai.router.extract_text_from_bytes_async", new_callable=AsyncMock)
     def test_pdf(self, mock_extract, mock_ai, client, mock_db):
         mock_extract.return_value = "John Doe - Experienced Python developer"
         mock_ai.return_value = json.dumps({
@@ -182,7 +182,7 @@ class TestOptimizeResume:
         assert data["parsed"]["personal"]["first_name"] == "John"
 
     @patch("app.modules.ai.service.ai_complete")
-    @patch("app.modules.ai.router.extract_text_from_bytes")
+    @patch("app.modules.ai.router.extract_text_from_bytes_async", new_callable=AsyncMock)
     def test_docx(self, mock_extract, mock_ai, client, mock_db):
         mock_extract.return_value = "Jane Doe - Developer"
         mock_ai.return_value = json.dumps({
@@ -214,7 +214,7 @@ class TestOptimizeResume:
         )
         assert resp.status_code == 400
 
-    @patch("app.modules.ai.router.extract_text_from_bytes")
+    @patch("app.modules.ai.router.extract_text_from_bytes_async", new_callable=AsyncMock)
     def test_empty_extracted_text(self, mock_extract, client):
         mock_extract.return_value = ""
         resp = client.post(
@@ -227,7 +227,7 @@ class TestOptimizeResume:
 
 class TestOptimizeResumeStream:
     @patch("app.modules.ai.service.ai_complete")
-    @patch("app.modules.ai.router.extract_text_from_bytes")
+    @patch("app.modules.ai.router.extract_text_from_bytes_async", new_callable=AsyncMock)
     def test_stream_success(self, mock_extract, mock_ai, client, mock_db):
         mock_extract.return_value = "John Doe - Experienced Python developer"
         mock_ai.return_value = json.dumps({
@@ -279,7 +279,7 @@ class TestOptimizeResumeStream:
         )
         assert resp.status_code == 400
 
-    @patch("app.modules.ai.router.extract_text_from_bytes")
+    @patch("app.modules.ai.router.extract_text_from_bytes_async", new_callable=AsyncMock)
     def test_stream_empty_text_yields_error_event(self, mock_extract, client):
         mock_extract.return_value = ""
         resp = client.post(
@@ -293,7 +293,7 @@ class TestOptimizeResumeStream:
         assert "PARSE_ERROR" in resp.text
 
     @patch("app.modules.ai.service.ai_complete")
-    @patch("app.modules.ai.router.extract_text_from_bytes")
+    @patch("app.modules.ai.router.extract_text_from_bytes_async", new_callable=AsyncMock)
     def test_stream_invalid_json_yields_error_event(self, mock_extract, mock_ai, client, mock_db):
         mock_extract.return_value = "John Doe - Developer"
         mock_ai.return_value = "this is not json at all"
@@ -308,7 +308,7 @@ class TestOptimizeResumeStream:
         assert "AI_PROVIDER_ERROR" in resp.text
 
     @patch("app.modules.ai.service.ai_complete")
-    @patch("app.modules.ai.router.extract_text_from_bytes")
+    @patch("app.modules.ai.router.extract_text_from_bytes_async", new_callable=AsyncMock)
     def test_stream_ai_failure_yields_error_event(self, mock_extract, mock_ai, client, mock_db):
         mock_extract.return_value = "John Doe - Developer"
         mock_ai.side_effect = Exception("Provider timeout")

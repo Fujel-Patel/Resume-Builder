@@ -5,22 +5,23 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { DashboardShell } from "@/components/layout/dashboard-shell"
 import { Button } from "@/components/ui/button"
 import { EnhancedCard } from "@/components/ui/enhanced-card"
-import { Badge } from "@/components/ui/badge"
-import { FileUpload } from "@/components/ui/file-upload"
-import { ResumePreview } from "@/features/resume/resume-preview"
 import { useAiConfig } from "@/hooks/use-ai-config"
 import { cn } from "@/lib/utils"
 import {
-  Sparkles, FileText, Check, ArrowRight, Lightbulb, Download,
-  RotateCcw, ArrowLeft, ChevronRight, Target, Search,
-  X, Eye, RefreshCw, AlertCircle, Settings
+  Sparkles, FileText, Check, ArrowRight, Lightbulb,
+  RotateCcw, ArrowLeft, ChevronRight, Target, Eye, AlertCircle, Settings
 } from "lucide-react"
 import { type BackendResumeContent } from "@/lib/api/ai-suggest"
 import { optimizeResumeStream } from "@/lib/api/ai-stream"
 import { updateResumeApi } from "@/lib/api/resumes"
 import { isScannedPdf } from "@/lib/pdf-check"
 import { api } from "@/lib/api/client"
-import type { ResumeTemplate, ResumeData } from "@/features/resume/types"
+import type { ResumeTemplate } from "@/features/resume/types"
+import { toFrontend } from "./ai-generator-utils"
+import { JobInputStep } from "./job-input-step"
+import { ProcessingStep } from "./processing-step"
+import { CompareStep } from "./compare-step"
+import { ExportStep } from "./export-step"
 
 const STEPS = [
   { id: 1, label: "Job Description & Resume" },
@@ -34,106 +35,6 @@ const tips: Record<number, string> = {
   2: "Our AI is analyzing your resume against the job description. Optimization may take 10–30 seconds.",
   3: "Review the changes side-by-side. Green highlights show optimized content added by AI.",
   4: "Download your optimized resume in your preferred format. Your original is always preserved.",
-}
-
-const TEMPLATES: { id: ResumeTemplate; label: string; desc: string }[] = [
-  { id: "classic", label: "Classic", desc: "Traditional serif layout" },
-  { id: "modern", label: "Modern", desc: "Dark navy header, clean sans" },
-  { id: "minimal", label: "Minimal", desc: "Light, airy, compact" },
-  { id: "creative", label: "Creative", desc: "Two-column with dark sidebar" },
-]
-
-function toFrontend(d: BackendResumeContent | null): ResumeData | null {
-  if (!d || typeof d !== "object") return null
-  const p = (d.personal || {}) as Record<string, string>
-  return {
-    personal: {
-      name: `${p.first_name || ""} ${p.last_name || ""}`.trim() || "",
-      title: p.job_title || "",
-      email: p.email || "",
-      phone: p.mobile || "",
-      location: p.address || "",
-    },
-    links: {
-      linkedin: p.linkedin || "",
-      github: p.github || "",
-      portfolio: p.portfolio || "",
-      website: "",
-    },
-    summary: d.summary || "",
-    skills: d.skills || [],
-    skillGroups: d.skill_groups ?? null,
-    experience: (d.experience || []).map((e) => ({
-      company: e.company || "",
-      role: e.role || "",
-      startDate: (e.duration || "").split(" - ")[0] || "",
-      endDate: (e.duration || "").split(" - ")[1] || "",
-      description: (e.bullets || []).join("\n"),
-    })),
-    education: (d.education || []).map((e) => ({
-      school: e.institution || "",
-      degree: e.degree || "",
-      field: "",
-      startDate: e.year || "",
-      endDate: e.grade || "",
-    })),
-    projects: (d.projects || []).map((p) => ({
-      name: p.name || "",
-      description: p.description || "",
-    })),
-    certifications: (d.certifications || []).map((c) => ({
-      name: c.name || "",
-      issuer: c.issuer || "",
-      date: c.year || "",
-    })),
-    customSections: [],
-  }
-}
-
-function diff(a: string | undefined | null, b: string | undefined | null): boolean {
-  const av = a?.trim() || ""
-  const bv = b?.trim() || ""
-  return av !== bv
-}
-
-function diffArr<T>(a: T[] | undefined, b: T[] | undefined): boolean {
-  if (!a && !b) return false
-  if (!a || !b) return true
-  if (a.length !== b.length) return true
-  return JSON.stringify(a) !== JSON.stringify(b)
-}
-
-function experienceKey(e: { company: string; role: string }) {
-  return `${e.company}|||${e.role}`
-}
-
-function hasExperienceDiff(
-  orig: { company: string; role: string; startDate: string; endDate: string; description: string },
-  opt: { company: string; role: string; startDate: string; endDate: string; description: string },
-) {
-  return diff(orig.company, opt.company) || diff(orig.role, opt.role) ||
-    diff(orig.startDate, opt.startDate) || diff(orig.endDate, opt.endDate) ||
-    diff(orig.description, opt.description)
-}
-
-function hasProjectDiff(
-  orig: { name: string; description: string },
-  opt: { name: string; description: string },
-) {
-  return diff(orig.name, opt.name) || diff(orig.description, opt.description)
-}
-
-function CompareSection({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-lg border bg-card">
-      <div className="border-b px-4 py-2">
-        <p className="text-xs font-medium text-foreground">{label}</p>
-      </div>
-      <div className="p-4">
-        {children}
-      </div>
-    </div>
-  )
 }
 
 export function AiGeneratorPage() {
@@ -233,7 +134,7 @@ export function AiGeneratorPage() {
         advanceStep(3)
         router.replace("/ai-generator?step=3", { scroll: false })
       },
-      onError: (code, message) => {
+      onError: (_code, message) => {
         setError(message)
         setProcessing(false)
         setProgress(0)
@@ -246,9 +147,7 @@ export function AiGeneratorPage() {
   useEffect(() => {
     return () => {
       abortRef.current?.abort()
-      if (elapsedTimerRef.current) {
-        clearInterval(elapsedTimerRef.current)
-      }
+      if (elapsedTimerRef.current) clearInterval(elapsedTimerRef.current)
     }
   }, [])
 
@@ -450,425 +349,50 @@ export function AiGeneratorPage() {
                 </div>
               </EnhancedCard>
             )}
+
             {step === 1 && (
-              <div className="mx-auto max-w-3xl space-y-6">
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">Paste job description & upload resume</h2>
-                  <p className="text-sm text-muted-foreground">Provide both to get the best AI-optimized resume tailored for this role.</p>
-                </div>
-                <EnhancedCard>
-                  <textarea
-                    value={jobDesc}
-                    onChange={(e) => setJobDesc(e.target.value)}
-                    rows={8}
-                    className="w-full resize-none rounded-lg border bg-background p-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    placeholder="Paste the full job description here... Include required skills, qualifications, and responsibilities."
-                  />
-                  <div className="mt-3 flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground">{jobDesc.length} characters</p>
-                    <Button variant="brandOutline" size="sm">
-                      <Search className="size-3.5" />
-                      Suggest Keywords
-                    </Button>
-                  </div>
-                </EnhancedCard>
-                <div className="grid gap-5 lg:grid-cols-2">
-                  <div>
-                    {file ? (
-                      <div className="flex items-center justify-between rounded-lg border bg-card p-4">
-                        <div className="flex items-center gap-3">
-                          <div className="flex size-10 items-center justify-center rounded-lg bg-emerald-500/10">
-                            <Check className="size-5 text-emerald-500" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-foreground">{file.name}</p>
-                            <p className="text-xs text-muted-foreground">Ready for analysis</p>
-                          </div>
-                        </div>
-                        <button onClick={() => setFile(null)} className="text-muted-foreground hover:text-destructive transition-colors" aria-label="Remove file">
-                          <X className="size-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <FileUpload onFile={(f) => setFile(f)} />
-                    )}
-                  </div>
-                  {scannedWarning && (
-                    <div className="lg:col-span-2 flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
-                      <AlertCircle className="size-4 shrink-0 mt-0.5 text-amber-500" />
-                      <p className="text-xs text-muted-foreground">
-                        This PDF appears to be image-based (scanned). OCR processing will be attempted, but results may vary. For best results, use a text-based PDF or DOCX.
-                      </p>
-                    </div>
-                  )}
-                  <div>
-                    <p className="mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">Template</p>
-                    <div className="space-y-2">
-                      {TEMPLATES.map((t) => (
-                        <button
-                          key={t.id}
-                          onClick={() => setTemplate(t.id)}
-                          className={cn(
-                            "flex w-full items-center gap-3 rounded-lg border bg-card p-3 text-left transition-colors hover:border-foreground/20",
-                            template === t.id && "border-brand/50 ring-1 ring-brand/20"
-                          )}
-                        >
-                          <div className={cn(
-                            "flex size-9 items-center justify-center rounded-lg",
-                            template === t.id ? "bg-brand/10" : "bg-muted"
-                          )}>
-                            <FileText className={cn("size-4", template === t.id ? "text-brand" : "text-muted-foreground")} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-foreground">{t.label}</p>
-                            <p className="text-[11px] text-muted-foreground">{t.desc}</p>
-                          </div>
-                          {template === t.id && <Check className="size-3.5 text-brand" />}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <JobInputStep
+                jobDesc={jobDesc}
+                setJobDesc={setJobDesc}
+                file={file}
+                setFile={setFile}
+                template={template}
+                setTemplate={setTemplate}
+                scannedWarning={scannedWarning}
+                isConfigured={isConfigured}
+                aiConfigLoading={aiConfigLoading}
+              />
             )}
 
             {step === 2 && (
-              <div className="mx-auto max-w-md flex flex-col items-center justify-center py-16 text-center">
-                {error ? (
-                  <>
-                    <div className="flex size-20 items-center justify-center rounded-full bg-destructive/10">
-                      <AlertCircle className="size-8 text-destructive" />
-                    </div>
-                    <h2 className="mt-6 text-lg font-semibold text-foreground">Processing failed</h2>
-                    <p className="mt-2 text-sm text-muted-foreground max-w-xs">{error}</p>
-                    <Button variant="brand" className="mt-6" onClick={startProcessing}>
-                      <RefreshCw className="size-3.5" />
-                      Retry
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <div className="relative">
-                      <div className="absolute inset-0 animate-ping rounded-full bg-brand/20" />
-                      <div className="relative flex size-20 items-center justify-center rounded-full bg-brand/10">
-                        <Sparkles className="size-8 text-brand" />
-                      </div>
-                    </div>
-                    <h2 className="mt-6 text-lg font-semibold text-foreground">AI is processing your resume</h2>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      {elapsed > 0 ? `${stageLabel} (${elapsed}s)` : stageLabel}
-                    </p>
-                    <div className="mt-6 w-full max-w-xs">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs text-muted-foreground">Progress</span>
-                        <span className="text-xs font-medium text-foreground">{Math.min(progress, 100)}%</span>
-                      </div>
-                      <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
-                        <div
-                          className="h-full rounded-full bg-brand transition-all duration-300"
-                          style={{ width: `${Math.min(progress, 100)}%` }}
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
+              <ProcessingStep
+                error={error}
+                progress={progress}
+                stageLabel={stageLabel}
+                elapsed={elapsed}
+                onRetry={startProcessing}
+              />
             )}
 
             {step === 3 && parsedFrontend && optimizedFrontend && (
-              <div className="mx-auto max-w-5xl space-y-5">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-semibold text-foreground">Review AI changes</h2>
-                    <p className="text-sm text-muted-foreground">Review changes before applying them to your resume.</p>
-                  </div>
-                  <Badge variant="success">Optimized</Badge>
-                </div>
-
-                {error && (
-                  <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-                    {error}
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  {diff(parsedFrontend.personal.title, optimizedFrontend.personal.title) && (
-                    <CompareSection label="Job Title">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="rounded-lg border bg-card p-3">
-                          <p className="text-[11px] text-muted-foreground mb-1">Original</p>
-                          <p className="text-sm text-foreground">{parsedFrontend.personal.title || "(none)"}</p>
-                        </div>
-                        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
-                          <p className="text-[11px] text-emerald-600 mb-1">Optimized</p>
-                          <p className="text-sm font-medium text-foreground">{optimizedFrontend.personal.title || "(none)"}</p>
-                        </div>
-                      </div>
-                    </CompareSection>
-                  )}
-
-                  {diff(parsedFrontend.summary, optimizedFrontend.summary) && (
-                    <CompareSection label="Professional Summary">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="rounded-lg border bg-card p-3">
-                          <p className="text-[11px] text-muted-foreground mb-1">Original</p>
-                          <p className="text-xs leading-relaxed text-foreground">{parsedFrontend.summary || "(none)"}</p>
-                        </div>
-                        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
-                          <p className="text-[11px] text-emerald-600 mb-1">Optimized</p>
-                          <p className="text-xs leading-relaxed text-foreground">{optimizedFrontend.summary || "(none)"}</p>
-                        </div>
-                      </div>
-                    </CompareSection>
-                  )}
-
-                  {diffArr(parsedFrontend.skills, optimizedFrontend.skills) && (
-                    <CompareSection label="Skills">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="rounded-lg border bg-card p-3">
-                          <p className="text-[11px] text-muted-foreground mb-2">Original</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {parsedFrontend.skills.map((s) => (
-                              <span key={s} className="rounded-md bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">{s}</span>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
-                          <p className="text-[11px] text-emerald-600 mb-2">Optimized</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {optimizedFrontend.skills.map((s) => (
-                              <span key={s} className="rounded-md bg-emerald-500/10 px-2 py-0.5 text-[11px] text-emerald-700 font-medium">{s}</span>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </CompareSection>
-                  )}
-
-                  {(() => {
-                    const origExpMap = new Map(parsedFrontend.experience.map(e => [experienceKey(e), e]))
-                    const optExpMap = new Map(optimizedFrontend.experience.map(e => [experienceKey(e), e]))
-                    const expSections: React.ReactNode[] = []
-
-                    for (const exp of optimizedFrontend.experience) {
-                      const key = experienceKey(exp)
-                      const orig = origExpMap.get(key)
-                      if (!orig) {
-                        expSections.push(
-                          <CompareSection key={`exp-new-${key}`} label={`Experience — ${exp.role} @ ${exp.company}`}>
-                            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
-                              <p className="text-[11px] text-emerald-600 mb-1">Added by AI</p>
-                              <p className="text-xs leading-relaxed text-foreground whitespace-pre-wrap">
-                                {exp.description || "(no description)"}
-                              </p>
-                            </div>
-                          </CompareSection>,
-                        )
-                      } else if (hasExperienceDiff(orig, exp)) {
-                        expSections.push(
-                          <CompareSection key={`exp-${key}`} label={`Experience — ${exp.role} @ ${exp.company}`}>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div className="rounded-lg border bg-card p-3 space-y-2">
-                                <p className="text-[11px] text-muted-foreground">Original</p>
-                                {(diff(orig.role, exp.role) || diff(orig.company, exp.company)) && (
-                                  <p className="text-xs font-medium text-foreground">{orig.role} @ {orig.company}</p>
-                                )}
-                                {diff(orig.startDate, exp.startDate) || diff(orig.endDate, exp.endDate) ? (
-                                  <p className="text-[11px] text-muted-foreground">{orig.startDate} — {orig.endDate}</p>
-                                ) : null}
-                                <p className="text-xs leading-relaxed text-foreground whitespace-pre-wrap">{orig.description || "(none)"}</p>
-                              </div>
-                              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-2">
-                                <p className="text-[11px] text-emerald-600">Optimized</p>
-                                {(diff(orig.role, exp.role) || diff(orig.company, exp.company)) && (
-                                  <p className="text-xs font-medium text-foreground">{exp.role} @ {exp.company}</p>
-                                )}
-                                {diff(orig.startDate, exp.startDate) || diff(orig.endDate, exp.endDate) ? (
-                                  <p className="text-[11px] text-muted-foreground">{exp.startDate} — {exp.endDate}</p>
-                                ) : null}
-                                <p className="text-xs leading-relaxed text-foreground whitespace-pre-wrap">{exp.description || "(none)"}</p>
-                              </div>
-                            </div>
-                          </CompareSection>,
-                        )
-                      }
-                    }
-
-                    for (const exp of parsedFrontend.experience) {
-                      if (!optExpMap.has(experienceKey(exp))) {
-                        expSections.push(
-                          <CompareSection key={`exp-removed-${experienceKey(exp)}`} label={`Experience — ${exp.role} @ ${exp.company}`}>
-                            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-                              <p className="text-[11px] text-destructive mb-1">Removed by AI</p>
-                              <p className="text-xs leading-relaxed text-foreground whitespace-pre-wrap">{exp.description || "(none)"}</p>
-                            </div>
-                          </CompareSection>,
-                        )
-                      }
-                    }
-
-                    return expSections
-                  })()}
-
-                  {(() => {
-                    const origProjMap = new Map(parsedFrontend.projects.map(p => [p.name, p]))
-                    const optProjMap = new Map(optimizedFrontend.projects.map(p => [p.name, p]))
-                    const projSections: React.ReactNode[] = []
-
-                    for (const proj of optimizedFrontend.projects) {
-                      const orig = origProjMap.get(proj.name)
-                      if (!orig) {
-                        projSections.push(
-                          <CompareSection key={`proj-new-${proj.name}`} label={`Project — ${proj.name}`}>
-                            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
-                              <p className="text-[11px] text-emerald-600 mb-1">Added by AI</p>
-                              <p className="text-xs leading-relaxed text-foreground">{proj.description || "(no description)"}</p>
-                            </div>
-                          </CompareSection>,
-                        )
-                      } else if (hasProjectDiff(orig, proj)) {
-                        projSections.push(
-                          <CompareSection key={`proj-${proj.name}`} label={`Project — ${proj.name}`}>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div className="rounded-lg border bg-card p-3 space-y-2">
-                                <p className="text-[11px] text-muted-foreground">Original</p>
-                                {diff(orig.name, proj.name) && (
-                                  <p className="text-xs font-medium text-foreground">{orig.name}</p>
-                                )}
-                                <p className="text-xs leading-relaxed text-foreground">{orig.description || "(none)"}</p>
-                              </div>
-                              <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3 space-y-2">
-                                <p className="text-[11px] text-emerald-600">Optimized</p>
-                                {diff(orig.name, proj.name) && (
-                                  <p className="text-xs font-medium text-foreground">{proj.name}</p>
-                                )}
-                                <p className="text-xs leading-relaxed text-foreground">{proj.description || "(none)"}</p>
-                              </div>
-                            </div>
-                          </CompareSection>,
-                        )
-                      }
-                    }
-
-                    for (const proj of parsedFrontend.projects) {
-                      if (!optProjMap.has(proj.name)) {
-                        projSections.push(
-                          <CompareSection key={`proj-removed-${proj.name}`} label={`Project — ${proj.name}`}>
-                            <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-                              <p className="text-[11px] text-destructive mb-1">Removed by AI</p>
-                              <p className="text-xs leading-relaxed text-foreground">{proj.description || "(none)"}</p>
-                            </div>
-                          </CompareSection>,
-                        )
-                      }
-                    }
-
-                    return projSections
-                  })()}
-
-                  {!diff(parsedFrontend.personal.title, optimizedFrontend.personal.title) &&
-                    !diff(parsedFrontend.summary, optimizedFrontend.summary) &&
-                    !diffArr(parsedFrontend.skills, optimizedFrontend.skills) &&
-                    parsedFrontend.experience.every((e, i) => {
-                      const key = experienceKey(e)
-                      const opt = optimizedFrontend.experience.find(o => experienceKey(o) === key)
-                      return opt ? !hasExperienceDiff(e, opt) : false
-                    }) &&
-                    optimizedFrontend.experience.every((e) =>
-                      parsedFrontend.experience.some(o => experienceKey(o) === experienceKey(e)),
-                    ) &&
-                    parsedFrontend.projects.every((p) => {
-                      const opt = optimizedFrontend.projects.find(o => o.name === p.name)
-                      return opt ? !hasProjectDiff(p, opt) : false
-                    }) &&
-                    optimizedFrontend.projects.every((p) =>
-                      parsedFrontend.projects.some(o => o.name === p.name),
-                    ) && (
-                      <div className="rounded-lg border bg-muted/50 p-8 text-center">
-                        <p className="text-sm text-muted-foreground">No changes detected. Your resume is already well-optimized for this role.</p>
-                      </div>
-                    )}
-                </div>
-              </div>
+              <CompareStep
+                parsedFrontend={parsedFrontend}
+                optimizedFrontend={optimizedFrontend}
+                error={error}
+              />
             )}
 
             {step === 4 && optimizedFrontend && (
-              <div className="mx-auto max-w-4xl space-y-6">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <h2 className="text-lg font-semibold text-foreground">Export your optimized resume</h2>
-                    <p className="text-sm text-muted-foreground">Choose a template and download your optimized resume.</p>
-                  </div>
-                  <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1">
-                    <Check className="size-3.5 text-emerald-500" />
-                    <span className="text-xs font-medium text-emerald-500">Resume saved</span>
-                  </div>
-                </div>
-
-                {error && (
-                  <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-                    {error}
-                  </div>
-                )}
-
-                <div className="grid gap-6 lg:grid-cols-3">
-                  <div className="lg:col-span-1 space-y-4">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Template</p>
-                    <div className="space-y-2">
-                      {TEMPLATES.map((t) => (
-                        <button
-                          key={t.id}
-                          onClick={() => setTemplate(t.id)}
-                          className={cn(
-                            "flex w-full items-center gap-3 rounded-lg border bg-card p-3 text-left transition-colors hover:border-foreground/20",
-                            template === t.id && "border-brand/50 ring-1 ring-brand/20"
-                          )}
-                        >
-                          <div className={cn(
-                            "flex size-9 items-center justify-center rounded-lg",
-                            template === t.id ? "bg-brand/10" : "bg-muted"
-                          )}>
-                            <FileText className={cn("size-4", template === t.id ? "text-brand" : "text-muted-foreground")} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-foreground">{t.label}</p>
-                            <p className="text-[11px] text-muted-foreground">{t.desc}</p>
-                          </div>
-                          {template === t.id && <Check className="size-3.5 text-brand" />}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="space-y-2 pt-2">
-                      <Button variant="brand" className="w-full" onClick={handleDownloadPdf} disabled={!resumeId || downloading}>
-                        <Download className="size-4" />
-                        {downloading ? "Downloading..." : "Download PDF"}
-                      </Button>
-                      <Button variant="outline" className="w-full" onClick={() => resumeId && router.push(`/resume/new?id=${resumeId}`)} disabled={!resumeId}>
-                        <Eye className="size-4" />
-                        Open in Builder
-                      </Button>
-                      <Button variant="ghost" size="sm" className="w-full text-muted-foreground" onClick={handleStartOver}>
-                        <RotateCcw className="size-3.5" />
-                        Start Over
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="lg:col-span-2">
-                    <div className="overflow-hidden rounded-lg border shadow-sm">
-                      <div className="bg-muted px-4 py-2 border-b flex items-center justify-between">
-                        <p className="text-xs font-medium text-muted-foreground">Preview — {TEMPLATES.find((t) => t.id === template)?.label}</p>
-                      </div>
-                      <div className="bg-[#0A0A0A] p-4" style={{ minHeight: 400 }}>
-                        <div className="mx-auto max-w-[210mm] scale-[0.7] origin-top">
-                          <ResumePreview data={optimizedFrontend} template={template} />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <ExportStep
+                optimizedFrontend={optimizedFrontend}
+                template={template}
+                setTemplate={setTemplate}
+                resumeId={resumeId}
+                downloading={downloading}
+                error={error}
+                onStartOver={handleStartOver}
+                onDownloadPdf={handleDownloadPdf}
+              />
             )}
           </div>
 
@@ -898,12 +422,7 @@ export function AiGeneratorPage() {
 
         {step !== 2 && (
           <div className="flex items-center justify-between border-t bg-card px-4 py-3 lg:px-6">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={prevStep}
-              disabled={step === 1}
-            >
+            <Button variant="ghost" size="sm" onClick={prevStep} disabled={step === 1}>
               <ArrowLeft className="size-3.5" />
               Back
             </Button>

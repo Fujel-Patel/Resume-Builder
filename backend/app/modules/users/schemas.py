@@ -24,18 +24,8 @@ class PasswordChangeRequest(BaseModel):
     @field_validator("new_password")
     @classmethod
     def validate_new_password(cls, v: str) -> str:
-        import re
-        if len(v.encode("utf-8")) > 72:
-            raise ValueError("Password exceeds bcrypt limit of 72 bytes")
-        if not re.search(r"[A-Z]", v):
-            raise ValueError("Must contain at least one uppercase letter")
-        if not re.search(r"[a-z]", v):
-            raise ValueError("Must contain at least one lowercase letter")
-        if not re.search(r"\d", v):
-            raise ValueError("Must contain at least one digit")
-        if not re.search(r"[!@#$%^&*(),.?\":{}|<>_\-+=\[\]\\/;]", v):
-            raise ValueError("Must contain at least one special character")
-        return v
+        from app.modules.auth.schemas import _validate_password_strength
+        return _validate_password_strength(v)
 
 
 class DeleteAccountRequest(BaseModel):
@@ -57,6 +47,9 @@ class UserResponse(BaseModel):
     avatar_url: Optional[str] = None
     is_verified: bool
     is_active: bool
+    status: Optional[str] = None
+    email_verified: Optional[bool] = None
+    verified_at: Optional[datetime] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 

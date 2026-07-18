@@ -19,14 +19,16 @@ class Settings(BaseSettings):
     # App
     APP_ENV: str = "development"
     PORT: int = 8000
-    # FIX: removed secrets.token_hex(64) default — that generates a NEW key every
-    # restart, invalidating ALL active sessions. Must be set explicitly in .env
     SECRET_KEY: str
 
     # Database
     DATABASE_URL: str
+    DB_POOL_SIZE: int = 5
+    DB_MAX_OVERFLOW: int = 10
+    DB_POOL_TIMEOUT: int = 30
+    DB_POOL_RECYCLE: int = 1800
 
-    # JWT — two separate secrets per PRD security checklist
+    # JWT — two separate secrets per security checklist
     JWT_ACCESS_SECRET: str
     JWT_REFRESH_SECRET: str
     JWT_ACCESS_EXPIRE_MINUTES: int = 15
@@ -38,15 +40,37 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: Union[str, List[str]] = "http://localhost:3000"
     CLIENT_URL: str = "http://localhost:3000"
+    FRONTEND_URL: str = "http://localhost:3000"
+    VERCEL_PROJECT_NAME: str = ""
 
-    # Email
+    # Email / SMTP configuration
     SMTP_HOST: str = "smtp.resend.com"
     SMTP_PORT: int = 465
     SMTP_USER: str = "resend"
     SMTP_PASS: str = ""
     EMAIL_FROM: str = "noreply@generative-cv.com"
+    EMAIL_PROVIDER: str = ""  # smtp | resend | sendgrid | log (empty = auto-detect)
 
-    # Uploaded file storage for "default" template preservation
+    # Email provider API keys (optional)
+    RESEND_API_KEY: str = ""
+    SENDGRID_API_KEY: str = ""
+
+    # Email verification settings
+    VERIFICATION_TOKEN_EXPIRE_MINUTES: int = 15
+    VERIFICATION_MAX_ATTEMPTS: int = 5
+    RESEND_COOLDOWN_SECONDS: int = 60
+    RESEND_MAX_PER_DAY: int = 5
+    PENDING_ACCOUNT_EXPIRE_HOURS: int = 48
+
+    # Password requirements
+    PASSWORD_MIN_LENGTH: int = 12
+    PASSWORD_MAX_BYTES: int = 72
+
+    # Brute-force protection
+    MAX_LOGIN_ATTEMPTS: int = 5
+    LOCKOUT_MINUTES: int = 15
+
+    # Uploaded file storage
     UPLOAD_DIR: str = "./uploads"
 
     # Supabase / Storage
@@ -56,6 +80,9 @@ class Settings(BaseSettings):
 
     # PDF export via Playwright
     PDF_EXPORT_TIMEOUT_MS: int = 30000
+
+    # Observability (optional)
+    SENTRY_DSN: str = ""
 
 
 settings = Settings()

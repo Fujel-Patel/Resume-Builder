@@ -2,6 +2,9 @@
 
 Launches headless Chromium, renders a self-contained HTML string,
 and returns A4 PDF bytes.
+
+A lock ensures only one coroutine launches or uses the browser at a time,
+preventing race conditions under concurrent requests.
 """
 
 from __future__ import annotations
@@ -15,21 +18,26 @@ _BROWSER = None
 
 
 async def _get_browser():
-    """Lazily launch a persistent Chromium instance (reused across calls)."""
-    global _BROWSER  # noqa: PLW0603
-    if _BROWSER is None or not _BROWSER.is_connected():
-        from playwright.async_api import async_playwright
+    """Lazily launch a persistent Chromium instance (reused across calls).
 
-        p = await async_playwright().start()
-        _BROWSER = await p.chromium.launch(
-            headless=True,
-            args=[
-                "--no-sandbox",
-                "--disable-setuid-sandbox",
-                "--disable-dev-shm-usage",
-                "--disable-gpu",
-            ],
-        )
+    The lock prevents two coroutines from both seeing ``_BROWSER is None``
+    and launching duplicate instances.
+    """
+    global _BROWSER  # noqa: PLW0603
+    async with _BROWSER_LOCK:
+        if _BROWSER is None or not _BROWSER.is_connected():
+            from playwright.async_api import async_playwright
+
+            p = await async_playwright().start()
+            _BROWSER = await p.chromium.launch(
+                headless=True,
+                args=[
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--disable-gpu",
+                ],
+            )
     return _BROWSER
 
 
@@ -78,10 +86,11 @@ async def generate_pdf(
 async def shutdown_browser() -> None:
     """Cleanup — call on application shutdown."""
     global _BROWSER  # noqa: PLW0603
-    if _BROWSER:
-        try:
-            await _BROWSER.close()
-        except Exception:
-            logger.warning("Browser close error (ignored)")
-        finally:
-            _BROWSER = None
+    async with _BROWSER_LOCK:
+        if _BROWSER:
+            try:
+                await _BROWSER.close()
+            except Exception:
+                logger.warning("Browser close error (ignored)")
+            finally:
+                _BROWSER = None

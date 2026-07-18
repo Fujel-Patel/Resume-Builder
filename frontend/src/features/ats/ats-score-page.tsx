@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { DashboardShell } from "@/components/layout/dashboard-shell"
 import { Button } from "@/components/ui/button"
@@ -83,20 +83,24 @@ export function AtsScorePage() {
   const [history, setHistory] = useState<ScanResult[]>([])
   const [loadingHistory, setLoadingHistory] = useState(true)
 
-  const fetchHistory = useCallback(async () => {
+  const abortRef = useRef<AbortController | null>(null)
+
+  const fetchHistory = useCallback(async (signal?: AbortSignal) => {
     setLoadingHistory(true)
     try {
-      const data = await getHistoryApi(0, 10)
-      setHistory(data)
+      const data = await getHistoryApi(0, 10, signal)
+      if (!signal?.aborted) setHistory(data)
     } catch {
       // silent fail for history
     } finally {
-      setLoadingHistory(false)
+      if (!signal?.aborted) setLoadingHistory(false)
     }
   }, [])
 
   useEffect(() => {
-    fetchHistory()
+    const controller = new AbortController()
+    fetchHistory(controller.signal)
+    return () => controller.abort()
   }, [fetchHistory])
 
   const handleFile = (f: File) => {
@@ -116,12 +120,12 @@ export function AtsScorePage() {
   }
 
   const handleAnalyze = async () => {
-    if (activeTab === "upload" && !file) {
-      return
-    }
-    if (activeTab === "paste" && !resumeText.trim()) {
-      return
-    }
+    if (activeTab === "upload" && !file) return
+    if (activeTab === "paste" && !resumeText.trim()) return
+
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
 
     setAnalyzing(true)
     setError(null)
@@ -130,19 +134,27 @@ export function AtsScorePage() {
     try {
       let result: ScanResult
       if (activeTab === "upload") {
-        result = await scoreUploadApi(file!, jobDesc || undefined)
+        result = await scoreUploadApi(file!, jobDesc || undefined, controller.signal)
       } else {
-        result = await scoreResumeApi(resumeText, jobDesc || undefined)
+        result = await scoreResumeApi(resumeText, jobDesc || undefined, controller.signal)
       }
-      setScanResult(result)
-      fetchHistory()
+      if (!controller.signal.aborted) {
+        setScanResult(result)
+        fetchHistory()
+      }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "ATS scoring failed"
-      setError(msg)
+      if (!(err instanceof DOMException && err.name === "AbortError")) {
+        const msg = err instanceof Error ? err.message : "ATS scoring failed"
+        setError(msg)
+      }
     } finally {
-      setAnalyzing(false)
+      if (!controller.signal.aborted) setAnalyzing(false)
     }
   }
+
+  useEffect(() => {
+    return () => abortRef.current?.abort()
+  }, [])
 
   const loadHistoryScan = async (id: string) => {
     setAnalyzing(true)

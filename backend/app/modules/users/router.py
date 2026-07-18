@@ -8,6 +8,7 @@ from app.modules.users import models as user_models
 from app.modules.users import schemas, service
 from app.types.common import success
 from app.utils.auth import get_current_user
+from app.utils.cache import invalidate_user
 
 router = APIRouter()
 
@@ -26,6 +27,7 @@ async def update_me(
     updated = await service.update_user(db, current_user.id, body)
     if not updated:
         raise HTTPException(status_code=404, detail={"code": "NOT_FOUND", "message": "User not found"})
+    invalidate_user(str(current_user.id))
     return success(schemas.UserResponse.model_validate(updated).model_dump())
 
 

@@ -165,6 +165,15 @@ def extract_text(pdf_path: str | Path) -> str:
         doc.close()
 
 
+async def extract_text_from_bytes_async(content: bytes, ext: str = "pdf") -> str:
+    """Async wrapper around extract_text_from_bytes to avoid blocking the event loop.
+
+    The sync version is kept for backward compatibility with test mocks.
+    """
+    import asyncio
+    return await asyncio.to_thread(extract_text_from_bytes, content, ext)
+
+
 def extract_metadata(pdf_path: str | Path) -> Dict[str, Any]:
     """Return PDF metadata as a dict.
 

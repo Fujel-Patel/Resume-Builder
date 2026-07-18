@@ -41,9 +41,9 @@ async def change_password(
 ) -> bool:
     """Returns False if current_password is wrong."""
     from app.utils.password import hash_password, verify_password
-    if not verify_password(current_password, user.password_hash):
+    if not await verify_password(current_password, user.password_hash):
         return False
-    user.password_hash = hash_password(new_password)
+    user.password_hash = await hash_password(new_password)
     db.add(user)
     await db.commit()
     return True

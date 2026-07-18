@@ -28,6 +28,21 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
         except Exception as exc:
             logger.exception("Unhandled exception: {}", exc)
 
+            try:
+                import sentry_sdk
+                with sentry_sdk.new_scope() as scope:
+                    user_id = getattr(request.state, "user_id", None)
+                    if user_id:
+                        scope.set_user({"id": str(user_id)})
+                    scope.set_context("request", {
+                        "method": request.method,
+                        "url": str(request.url),
+                        "request_id": getattr(request.state, "request_id", None),
+                    })
+                    sentry_sdk.capture_exception(exc)
+            except ImportError:
+                pass
+
             # FastAPI HTTPException (has status_code + detail)
             if hasattr(exc, "status_code"):
                 detail = getattr(exc, "detail", "An error occurred")

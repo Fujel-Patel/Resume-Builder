@@ -18,7 +18,7 @@ class InvalidCredentialsException(HTTPException):
 class AccountLockedException(HTTPException):
     def __init__(self):
         super().__init__(
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail={
                 "code": "ACCOUNT_LOCKED",
                 "message": "Account locked due to too many failed attempts. Try again in 15 minutes.",
@@ -61,25 +61,68 @@ class InvalidFieldException(HTTPException):
         )
 
 
-# ADD THESE TWO CLASSES
+class EmailNotVerifiedException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "EMAIL_NOT_VERIFIED",
+                "message": "Please verify your email before logging in. Check your inbox for a verification link.",
+            },
+        )
+
+
+class AccountPendingException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "ACCOUNT_PENDING",
+                "message": "Please verify your email to activate your account.",
+            },
+        )
+
+
+class TooManyResendAttemptsException(HTTPException):
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={
+                "code": "TOO_MANY_RESEND_ATTEMPTS",
+                "message": "Too many verification emails sent. Please try again later.",
+            },
+        )
+
+
+class ResendCooldownException(HTTPException):
+    def __init__(self, seconds: int):
+        super().__init__(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={
+                "code": "RESEND_COOLDOWN",
+                "message": f"Please wait {seconds} seconds before requesting another verification email.",
+            },
+        )
+
+
+class EmailValidationException(HTTPException):
+    def __init__(self, message: str):
+        super().__init__(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "INVALID_EMAIL",
+                "message": message,
+            },
+        )
 
 
 class WeakPasswordError(ValueError):
-    """
-    Raised during Pydantic validation when password
-    does not meet complexity requirements.
-    """
-
     def __init__(self, errors: list[str]):
         self.errors = errors
         super().__init__(", ".join(errors))
 
 
 class PasswordTooLongException(ValueError):
-    """
-    bcrypt only supports first 72 bytes.
-    """
-
     def __init__(self, byte_length: int):
         self.byte_length = byte_length
         super().__init__(

@@ -1,4 +1,5 @@
-import { getAccessToken, setAccessToken, clearAccessToken } from "@/lib/auth/token-manager"
+import { getAccessToken, clearAccessToken } from "@/lib/auth/token-manager"
+import { refreshAccessToken } from "@/lib/auth/refresh"
 import type { BackendResumeContent } from "./ai-suggest"
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
@@ -51,18 +52,6 @@ function parseSseBuffer(buffer: string): { events: SseEvent[]; remaining: string
   }
 
   return { events, remaining }
-}
-
-async function refreshAccessToken(): Promise<string | null> {
-  const res = await fetch(`${BASE_URL}/auth/refresh`, {
-    method: "POST",
-    credentials: "include",
-  })
-  if (!res.ok) return null
-  const body = await res.json()
-  const token: string | undefined = body.data?.access_token
-  if (token) setAccessToken(token)
-  return token ?? null
 }
 
 export async function optimizeResumeStream(

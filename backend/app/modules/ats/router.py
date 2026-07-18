@@ -11,7 +11,7 @@ from app.modules.ats import service as ats_service
 from app.modules.users import models as user_models
 from app.types.common import success
 from app.utils.auth import get_current_user
-from app.utils.pdf_parser import extract_text_from_bytes
+from app.utils.pdf_parser import extract_text_from_bytes_async
 
 router = APIRouter()
 
@@ -84,6 +84,12 @@ async def score_ats_upload(
             detail={"code": "INVALID_REQUEST", "message": "Only PDF and DOCX files are accepted"},
         )
 
+    if file.size is not None and file.size > MAX_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "INVALID_REQUEST", "message": "File size exceeds 5MB limit"},
+        )
+
     content = await file.read()
     if len(content) > MAX_SIZE:
         raise HTTPException(
@@ -92,7 +98,7 @@ async def score_ats_upload(
         )
 
     ext = "pdf" if file.content_type == "application/pdf" else "docx"
-    resume_text = extract_text_from_bytes(content, ext)
+    resume_text = await extract_text_from_bytes_async(content, ext)
 
     if not resume_text.strip():
         if ext == "pdf":

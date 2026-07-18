@@ -19,6 +19,7 @@ from app.modules.ai.service import (
 from app.modules.users import models as user_models
 from app.types.common import success
 from app.utils.auth import get_current_user
+from app.utils.cache import user_get_or_set, invalidate_user
 from app.utils.encryption import decrypt, encrypt
 
 router = APIRouter()
@@ -148,13 +149,17 @@ async def list_providers(
     current_user: user_models.User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
-        select(AIProvider).where(AIProvider.user_id == current_user.id)
-    )
-    providers = result.scalars().all()
-    return success(
-        [AIProviderResponse.model_validate(p).model_dump() for p in providers]
-    )
+    uid = str(current_user.id)
+
+    async def _load():
+        result = await db.execute(
+            select(AIProvider).where(AIProvider.user_id == current_user.id)
+        )
+        providers = result.scalars().all()
+        return [AIProviderResponse.model_validate(p).model_dump() for p in providers]
+
+    providers = await user_get_or_set(uid, "ai_providers", _load)
+    return success(providers)
 
 
 @router.post("", status_code=status.HTTP_201_CREATED)
@@ -221,6 +226,7 @@ async def add_provider(
     db.add(provider)
     await db.commit()
     await db.refresh(provider)
+    invalidate_user(str(current_user.id))
     return success(AIProviderResponse.model_validate(provider).model_dump())
 
 
@@ -260,6 +266,7 @@ async def update_provider(
     db.add(provider)
     await db.commit()
     await db.refresh(provider)
+    invalidate_user(str(current_user.id))
     return success(AIProviderResponse.model_validate(provider).model_dump())
 
 
@@ -272,6 +279,7 @@ async def delete_provider(
     provider = await _get_provider(db, provider_id, current_user.id)
     await db.delete(provider)
     await db.commit()
+    invalidate_user(str(current_user.id))
     return success({"message": "AI provider removed"})
 
 

@@ -7,6 +7,9 @@ export type UserOut = {
   email: string
   is_verified: boolean
   is_active: boolean
+  status?: string
+  email_verified?: boolean
+  verified_at?: string | null
   created_at: string
   updated_at: string | null
 }
@@ -16,12 +19,17 @@ type TokenResponse = {
   token_type: string
 }
 
+type SignupResponse = {
+  message: string
+  email: string
+}
+
 export async function signupApi(
   name: string,
   email: string,
   password: string,
-): Promise<UserOut> {
-  return api.post<UserOut>("/auth/signup", { name, email, password })
+): Promise<SignupResponse> {
+  return api.post<SignupResponse>("/auth/signup", { name, email, password })
 }
 
 export async function loginApi(
@@ -73,4 +81,12 @@ export async function forgotPasswordApi(email: string): Promise<void> {
 
 export async function resetPasswordApi(token: string, password: string): Promise<void> {
   await api.post("/auth/reset-password", { token, password })
+}
+
+export async function verifyEmailApi(token: string): Promise<{ message: string; email_verified: boolean }> {
+  return api.post<{ message: string; email_verified: boolean }>("/auth/verify-email", { token })
+}
+
+export async function resendVerificationApi(email: string): Promise<{ message: string }> {
+  return api.post<{ message: string }>("/auth/resend-verification", { email })
 }

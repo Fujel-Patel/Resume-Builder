@@ -12,6 +12,7 @@ from app.modules.resumes import schemas, service
 from app.modules.users import models as user_models
 from app.types.common import success
 from app.utils.auth import get_current_user
+from app.utils.cache import user_get_or_set, invalidate_user
 
 router = APIRouter()
 
@@ -41,43 +42,46 @@ async def get_dashboard_summary(
     Eliminates 3 sequential frontend calls (users/me + resumes + ats/history)
     by aggregating them server-side with parallel DB queries.
     """
-    import asyncio
     from sqlalchemy import select
     from app.modules.ats import models as ats_models
 
-    resumes_task = service.list_resumes(db, current_user.id)
-    scans_task = db.execute(
-        select(ats_models.ATSScan)
-        .where(ats_models.ATSScan.user_id == current_user.id)
-        .order_by(ats_models.ATSScan.created_at.desc())
-        .limit(20)
-    )
+    uid = str(current_user.id)
 
-    resumes, scans_result = await asyncio.gather(resumes_task, scans_task)
-    scans = list(scans_result.scalars().all())
+    async def _load():
+        resumes_task = service.list_resumes(db, current_user.id)
+        scans_result = await db.execute(
+            select(ats_models.ATSScan)
+            .where(ats_models.ATSScan.user_id == current_user.id)
+            .order_by(ats_models.ATSScan.created_at.desc())
+            .limit(20)
+        )
+        resumes = await resumes_task
+        scans = list(scans_result.scalars().all())
+        return {
+            "user": {
+                "id": uid,
+                "name": current_user.name,
+                "email": current_user.email,
+                "is_verified": current_user.is_verified,
+                "is_active": current_user.is_active,
+                "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
+                "updated_at": current_user.updated_at.isoformat() if current_user.updated_at else None,
+            },
+            "resumes": [_resume_to_dict(r) for r in resumes],
+            "ats_history": [
+                {
+                    "id": str(s.id),
+                    "resume_id": str(s.resume_id) if s.resume_id else None,
+                    "overall_score": s.overall_score,
+                    "score_report": s.score_report,
+                    "created_at": s.created_at.isoformat() if s.created_at else None,
+                }
+                for s in scans
+            ],
+        }
 
-    return success({
-        "user": {
-            "id": str(current_user.id),
-            "name": current_user.name,
-            "email": current_user.email,
-            "is_verified": current_user.is_verified,
-            "is_active": current_user.is_active,
-            "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
-            "updated_at": current_user.updated_at.isoformat() if current_user.updated_at else None,
-        },
-        "resumes": [_resume_to_dict(r) for r in resumes],
-        "ats_history": [
-            {
-                "id": str(s.id),
-                "resume_id": str(s.resume_id) if s.resume_id else None,
-                "overall_score": s.overall_score,
-                "score_report": s.score_report,
-                "created_at": s.created_at.isoformat() if s.created_at else None,
-            }
-            for s in scans
-        ],
-    })
+    data = await user_get_or_set(uid, "dashboard", _load)
+    return success(data)
 
 
 # GET /resumes
@@ -98,6 +102,7 @@ async def create_resume(
     db: AsyncSession = Depends(get_db),
 ):
     resume = await service.create_resume(db, current_user.id, body)
+    invalidate_user(str(current_user.id))
     return success(_resume_to_dict(resume))
 
 
@@ -122,6 +127,7 @@ async def update_resume(
     db: AsyncSession = Depends(get_db),
 ):
     resume = await service.update_resume(db, resume_id, current_user.id, body)
+    invalidate_user(str(current_user.id))
     return success(_resume_to_dict(resume))
 
 
@@ -133,6 +139,7 @@ async def delete_resume(
     db: AsyncSession = Depends(get_db),
 ):
     await service.soft_delete_resume(db, resume_id, current_user.id)
+    invalidate_user(str(current_user.id))
     return success({"message": "Resume deleted"})
 
 
@@ -268,6 +275,12 @@ async def upload_scan(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": "INVALID_REQUEST", "message": "Only PDF and DOCX files are accepted"},
+        )
+
+    if file.size is not None and file.size > 5 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "INVALID_REQUEST", "message": "File size exceeds 5MB limit"},
         )
 
     content = await file.read()

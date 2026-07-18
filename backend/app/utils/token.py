@@ -1,8 +1,5 @@
-import hashlib
+"""Backward-compatible re-export — prefer ``app.utils.email.hash_email_token``."""
 
+from app.utils.email import hash_email_token as hash_token_sha256
 
-def hash_token_sha256(token: str) -> str:
-    """Return a deterministic SHA-256 hex digest of the given token.
-    Used for storing refresh tokens and email verification tokens securely.
-    """
-    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+__all__ = ["hash_token_sha256"]

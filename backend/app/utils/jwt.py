@@ -3,7 +3,7 @@
 import hashlib
 import hmac
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional
 
 import jwt
@@ -17,12 +17,13 @@ from app.config.settings import settings
 # ---------------------------------------------------------------------------
 
 def _exp(delta: Optional[timedelta], minutes: int = None, days: int = None) -> datetime:
+    now = datetime.now(timezone.utc)
     if delta:
-        return datetime.utcnow() + delta
+        return now + delta
     if minutes:
-        return datetime.utcnow() + timedelta(minutes=minutes)
+        return now + timedelta(minutes=minutes)
     if days:
-        return datetime.utcnow() + timedelta(days=days)
+        return now + timedelta(days=days)
     raise ValueError("Must supply delta, minutes, or days")
 
 

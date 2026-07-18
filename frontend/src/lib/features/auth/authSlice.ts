@@ -31,6 +31,7 @@ type AuthState = {
   token: string | null
   loading: boolean
   error: AuthError | null
+  signupEmail: string | null
 }
 
 const initialState: AuthState = {
@@ -38,6 +39,7 @@ const initialState: AuthState = {
   token: getAccessToken(),
   loading: true,
   error: null,
+  signupEmail: null,
 }
 
 export const login = createAsyncThunk(
@@ -64,9 +66,8 @@ export const signup = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      const user = await signupApi(name, email, password)
-      const tokenData = await loginApi(email, password)
-      return { user, access_token: tokenData.access_token }
+      const result = await signupApi(name, email, password)
+      return { email: result.email, message: result.message }
     } catch (err: unknown) {
       if (err instanceof ApiRequestError) {
         return rejectWithValue({ message: err.message, code: err.code, fields: err.fields })
@@ -92,7 +93,6 @@ export const initializeAuth = createAsyncThunk(
     const refreshed = await refreshApi()
     if (refreshed) {
       token = refreshed.access_token
-      // Backend returns user data in refresh response — skip a redundant /users/me call
       if (refreshed.user) {
         return { user: refreshed.user, access_token: token }
       }
@@ -124,7 +124,11 @@ const authSlice = createSlice({
       state.user = null
       state.token = null
       state.error = null
+      state.signupEmail = null
       clearAccessToken()
+    },
+    clearSignupEmail(state) {
+      state.signupEmail = null
     },
     setServerFieldErrors(state, action: { payload: Record<string, string[]> }) {
       if (state.error) {
@@ -154,12 +158,11 @@ const authSlice = createSlice({
       .addCase(signup.pending, (state) => {
         state.loading = true
         state.error = null
+        state.signupEmail = null
       })
       .addCase(signup.fulfilled, (state, action) => {
         state.loading = false
-        state.user = action.payload.user
-        state.token = action.payload.access_token
-        setAccessToken(action.payload.access_token)
+        state.signupEmail = action.payload.email
       })
       .addCase(signup.rejected, (state, action) => {
         state.loading = false
@@ -186,5 +189,5 @@ const authSlice = createSlice({
 })
 
 export { logout as logoutUser }
-export const { clearError, resetAuth, setUser, setServerFieldErrors } = authSlice.actions
+export const { clearError, resetAuth, setUser, setServerFieldErrors, clearSignupEmail } = authSlice.actions
 export default authSlice.reducer

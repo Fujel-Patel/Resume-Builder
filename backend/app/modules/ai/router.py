@@ -5,19 +5,19 @@ import re
 import time
 from collections.abc import AsyncGenerator
 
-from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
 from loguru import logger
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.config.database import get_db
+from app.config.database import get_db, AsyncSessionLocal
 from app.modules.ai import prompts, schemas as ai_schemas, service as ai_service
 from app.modules.resumes import schemas as resume_schemas
 from app.modules.resumes import service as resume_service
 from app.modules.users import models as user_models
 from app.types.common import success
 from app.utils.auth import get_current_user
-from app.utils.pdf_parser import extract_text_from_bytes
+from app.utils.pdf_parser import extract_text_from_bytes_async
 router = APIRouter()
 
 
@@ -321,11 +321,15 @@ def _sanitize_nim_output(data: dict) -> None:
 
 async def _optimize_resume_events(
     current_user: user_models.User,
-    db: AsyncSession,
-    file: UploadFile,
+    file_content: bytes,
+    file_ext: str,
     job_description: str,
 ) -> AsyncGenerator[str, None]:
-    """Async generator yielding SSE events for each stage of optimize-resume."""
+    """Async generator yielding SSE events for each stage of optimize-resume.
+
+    The DB session is NOT held during streaming — file content is pre-read
+    and the session is only created for the final save step.
+    """
     _t0 = time.perf_counter()
     stage_timers: dict[str, float] = {}
 
@@ -342,17 +346,17 @@ async def _optimize_resume_events(
     try:
         # --- Stage 1: Validation ---
         yield _emit("uploading", 0, "Validating file...")
-        content = await file.read()
-        if len(content) > MAX_SIZE:
+        if len(file_content) > MAX_SIZE:
             yield _sse_error("INVALID_REQUEST", "File size exceeds 5MB limit")
             return
-        ext = "pdf" if file.content_type == "application/pdf" else "docx"
+        content = file_content
+        ext = file_ext
         stage_timers["upload"] = time.perf_counter() - _t0
 
         # --- Stage 2: Extraction ---
         _tx = time.perf_counter()
         yield _emit("extracting", 10, "Extracting text from resume...")
-        resume_text = extract_text_from_bytes(content, ext)
+        resume_text = await extract_text_from_bytes_async(content, ext)
         stage_timers["extraction"] = time.perf_counter() - _tx
 
         if not resume_text.strip():
@@ -383,9 +387,10 @@ async def _optimize_resume_events(
         yield _emit("optimizing", 25, "Optimizing resume content...")
         _tx = time.perf_counter()
         try:
-            raw = await ai_service.ai_complete(
-                str(current_user.id), combined_prompt, db, max_tokens=8192, json_mode=True
-            )
+            async with AsyncSessionLocal() as db_session:
+                raw = await ai_service.ai_complete(
+                    str(current_user.id), combined_prompt, db_session, max_tokens=8192, json_mode=True
+                )
         except Exception as e:
             logger.error("SSE_AI_FAILURE | user={} | error={}", current_user.id, e)
             yield _sse_error("AI_PROVIDER_ERROR", f"AI request failed: {e}")
@@ -436,13 +441,14 @@ async def _optimize_resume_events(
             _sanitize_nim_output(optimized)
 
             title = optimized.get("personal", {}).get("job_title", "") or "Optimized Resume"
-            content = resume_schemas.ResumeContent(**optimized)
+            resume_content = resume_schemas.ResumeContent(**optimized)
             resume_in = resume_schemas.ResumeCreate(
                 title=title,
                 template_id="modern",
-                content=content,
+                content=resume_content,
             )
-            resume = await resume_service.create_resume(db, current_user.id, resume_in)
+            async with AsyncSessionLocal() as db_session:
+                resume = await resume_service.create_resume(db_session, current_user.id, resume_in)
         except Exception as e:
             logger.error("SSE_DB_FAILURE | user={} | error={}", current_user.id, e)
             yield _sse_error("RESUME_CREATE_ERROR", f"Failed to save resume: {e}")
@@ -477,7 +483,6 @@ async def _optimize_resume_events(
 async def optimize_resume_stream(
     request: Request,
     current_user: user_models.User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
 ):
     form = await request.form()
     file = form.get("file")
@@ -495,8 +500,12 @@ async def optimize_resume_stream(
             detail={"code": "INVALID_REQUEST", "message": "Only PDF and DOCX files are accepted"},
         )
 
+    # Read file content BEFORE streaming so the DB session is not held during AI call
+    content = await file.read()
+    ext = "pdf" if file.content_type == "application/pdf" else "docx"
+
     return StreamingResponse(
-        _optimize_resume_events(current_user, db, file, job_description),
+        _optimize_resume_events(current_user, content, ext, job_description),
         media_type="text/event-stream",
         headers={
             "X-Accel-Buffering": "no",
@@ -530,6 +539,12 @@ async def optimize_resume(
             detail={"code": "INVALID_REQUEST", "message": "Only PDF and DOCX files are accepted"},
         )
 
+    if file.size is not None and file.size > MAX_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "INVALID_REQUEST", "message": "File size exceeds 5MB limit"},
+        )
+
     content = await file.read()
     if len(content) > MAX_SIZE:
         raise HTTPException(
@@ -540,7 +555,7 @@ async def optimize_resume(
     ext = "pdf" if file.content_type == "application/pdf" else "docx"
 
     _t1 = time.perf_counter()
-    resume_text = extract_text_from_bytes(content, ext)
+    resume_text = await extract_text_from_bytes_async(content, ext)
     _t2 = time.perf_counter()
 
     if not resume_text.strip():

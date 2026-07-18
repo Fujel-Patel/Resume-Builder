@@ -1,4 +1,5 @@
-import { getAccessToken, setAccessToken, clearAccessToken } from "@/lib/auth/token-manager"
+import { getAccessToken, clearAccessToken } from "@/lib/auth/token-manager"
+import { refreshAccessToken } from "@/lib/auth/refresh"
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
 
@@ -22,46 +23,72 @@ export class ApiRequestError extends Error {
   }
 }
 
-async function refreshAccessToken(): Promise<string | null> {
-  const res = await fetch(`${BASE_URL}/auth/refresh`, {
-    method: "POST",
-    credentials: "include",
-  })
-  if (!res.ok) return null
-  const body = await res.json()
-  const token: string | undefined = body.data?.access_token
-  if (token) setAccessToken(token)
-  return token ?? null
+function dispatchUnauthorized() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("auth:unauthorized"))
+  }
 }
 
 const REQUEST_TIMEOUT = 300_000 // 5 minutes
+
+async function _fetchWithAuth(
+  path: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  const token = getAccessToken()
+  const headers: Record<string, string> = {
+    ...(init.headers as Record<string, string>),
+  }
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`
+  }
+  if (!headers["Content-Type"] && !(init.body instanceof FormData)) {
+    headers["Content-Type"] = "application/json"
+  }
+
+  let res = await fetch(`${BASE_URL}${path}`, {
+    ...init,
+    headers,
+    credentials: "include",
+  })
+
+  if (res.status === 401 && token) {
+    const newToken = await refreshAccessToken()
+    if (newToken) {
+      headers["Authorization"] = `Bearer ${newToken}`
+      res = await fetch(`${BASE_URL}${path}`, {
+        ...init,
+        headers,
+        credentials: "include",
+      })
+    } else {
+      clearAccessToken()
+      dispatchUnauthorized()
+    }
+  }
+
+  return res
+}
 
 async function request<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
-  const token = getAccessToken()
-  const headers: Record<string, string> = {
-    ...(options.headers as Record<string, string>),
-  }
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`
-  }
-  if (!headers["Content-Type"] && !(options.body instanceof FormData)) {
-    headers["Content-Type"] = "application/json"
-  }
-
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
 
+  // Chain external signal with timeout controller
+  if (options.signal) {
+    if (options.signal.aborted) controller.abort()
+    else options.signal.addEventListener("abort", () => controller.abort(), { once: true })
+  }
+
+  const { signal: _externalSignal, ...initOptions } = options
+  void _externalSignal
+
   let res: Response
   try {
-    res = await fetch(`${BASE_URL}${path}`, {
-      ...options,
-      headers,
-      credentials: "include",
-      signal: controller.signal,
-    })
+    res = await _fetchWithAuth(path, { ...initOptions, signal: controller.signal })
   } catch (err) {
     clearTimeout(timeout)
     if (err instanceof DOMException && err.name === "AbortError") {
@@ -72,23 +99,7 @@ async function request<T>(
     }
     throw err
   }
-
-  if (res.status === 401 && token) {
-    const newToken = await refreshAccessToken()
-    if (newToken) {
-      headers["Authorization"] = `Bearer ${newToken}`
-      res = await fetch(`${BASE_URL}${path}`, {
-        ...options,
-        headers,
-        credentials: "include",
-      })
-    } else {
-      clearAccessToken()
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("auth:unauthorized"))
-      }
-    }
-  }
+  clearTimeout(timeout)
 
   const body = await res.json().catch(() => ({}))
 
@@ -112,56 +123,33 @@ async function request<T>(
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>(path, { method: "GET" }),
-  post: <T>(path: string, data?: unknown) =>
+  get: <T>(path: string, opts?: { signal?: AbortSignal }) =>
+    request<T>(path, { method: "GET", signal: opts?.signal }),
+  post: <T>(path: string, data?: unknown, opts?: { signal?: AbortSignal }) =>
     request<T>(path, {
       method: "POST",
       body: data ? JSON.stringify(data) : undefined,
+      signal: opts?.signal,
     }),
-  patch: <T>(path: string, data?: unknown) =>
+  patch: <T>(path: string, data?: unknown, opts?: { signal?: AbortSignal }) =>
     request<T>(path, {
       method: "PATCH",
       body: data ? JSON.stringify(data) : undefined,
+      signal: opts?.signal,
     }),
   delete: <T>(path: string, data?: unknown) =>
     request<T>(path, {
       method: "DELETE",
       body: data ? JSON.stringify(data) : undefined,
     }),
-  upload: <T>(path: string, formData: FormData) =>
+  upload: <T>(path: string, formData: FormData, opts?: { signal?: AbortSignal }) =>
     request<T>(path, {
       method: "POST",
       body: formData,
+      signal: opts?.signal,
     }),
   download: async (path: string): Promise<Blob> => {
-    const token = getAccessToken()
-    const headers: Record<string, string> = {}
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`
-    }
-
-    let res = await fetch(`${BASE_URL}${path}`, {
-      method: "POST",
-      headers,
-      credentials: "include",
-    })
-
-    if (res.status === 401 && token) {
-      const newToken = await refreshAccessToken()
-      if (newToken) {
-        headers["Authorization"] = `Bearer ${newToken}`
-        res = await fetch(`${BASE_URL}${path}`, {
-          method: "POST",
-          headers,
-          credentials: "include",
-        })
-      } else {
-        clearAccessToken()
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new CustomEvent("auth:unauthorized"))
-        }
-      }
-    }
+    const res = await _fetchWithAuth(path, { method: "POST" })
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
@@ -176,34 +164,7 @@ export const api = {
     return res.blob()
   },
   fetchHtml: async (path: string): Promise<string> => {
-    const token = getAccessToken()
-    const headers: Record<string, string> = {}
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`
-    }
-
-    let res = await fetch(`${BASE_URL}${path}`, {
-      method: "GET",
-      headers,
-      credentials: "include",
-    })
-
-    if (res.status === 401 && token) {
-      const newToken = await refreshAccessToken()
-      if (newToken) {
-        headers["Authorization"] = `Bearer ${newToken}`
-        res = await fetch(`${BASE_URL}${path}`, {
-          method: "GET",
-          headers,
-          credentials: "include",
-        })
-      } else {
-        clearAccessToken()
-        if (typeof window !== "undefined") {
-          window.dispatchEvent(new CustomEvent("auth:unauthorized"))
-        }
-      }
-    }
+    const res = await _fetchWithAuth(path, { method: "GET" })
 
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))

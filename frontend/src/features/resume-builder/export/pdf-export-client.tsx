@@ -1,5 +1,3 @@
-import html2canvas from "html2canvas"
-import { jsPDF } from "jspdf"
 import { createRoot } from "react-dom/client"
 import type { ResumeData } from "@/types/resume"
 import type { ResumePageData } from "../engine/types"
@@ -18,6 +16,10 @@ export async function exportResumeAsPdfClient(
   _scale: number,
   onProgress?: (percent: number) => void
 ): Promise<void> {
+  const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
+    import("html2canvas"),
+    import("jspdf"),
+  ])
   const pdf = new jsPDF({
     orientation: "portrait",
     unit: "mm",

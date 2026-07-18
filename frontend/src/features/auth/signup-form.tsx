@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,6 +18,8 @@ function getSignupErrorMessage(error: AuthError | string | null): string | null 
   if (code === "CONFLICT") return "An account with this email already exists. Try signing in instead."
   if (code === "VALIDATION_ERROR") return "Please check your input and try again."
   if (code === "RATE_LIMIT_EXCEEDED") return "Too many requests. Please wait a moment and try again."
+  if (code === "INVALID_EMAIL") return message
+  if (code === "DISPOSABLE_EMAIL") return message
   if (code === "UNKNOWN_ERROR" && !message) return "Something went wrong. Please try again."
   return message
 }
@@ -26,7 +27,7 @@ function getSignupErrorMessage(error: AuthError | string | null): string | null 
 export function SignupForm() {
   const router = useRouter()
   const dispatch = useAppDispatch()
-  const { loading, error, user } = useAppSelector((s) => s.auth)
+  const { loading, error, signupEmail } = useAppSelector((s) => s.auth)
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -37,8 +38,10 @@ export function SignupForm() {
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    if (user) router.push("/dashboard")
-  }, [user, router])
+    if (signupEmail) {
+      router.push(`/verify-email-sent?email=${encodeURIComponent(signupEmail)}`)
+    }
+  }, [signupEmail, router])
 
   useEffect(() => {
     dispatch(clearError())
@@ -66,8 +69,8 @@ export function SignupForm() {
     }
     if (!password) {
       errs.password = "Password is required"
-    } else if (password.length < 8) {
-      errs.password = "Must be at least 8 characters"
+    } else if (password.length < 12) {
+      errs.password = "Must be at least 12 characters"
     } else if (!/[A-Z]/.test(password)) {
       errs.password = "Must contain an uppercase letter"
     } else if (!/[a-z]/.test(password)) {
@@ -173,7 +176,7 @@ export function SignupForm() {
             onChange={(e) => setPassword(e.target.value)}
             aria-invalid={!!getFieldError("password")}
             aria-describedby={getFieldError("password") ? "signup-password-error" : undefined}
-            placeholder="At least 8 characters"
+            placeholder="At least 12 characters"
             className="pr-10"
             maxLength={72}
           />
@@ -193,7 +196,7 @@ export function SignupForm() {
           </p>
         ) : (
           <p className="mt-1 text-xs text-muted-foreground">
-            At least 8 chars, uppercase, lowercase, digit &amp; special character
+            At least 12 chars, uppercase, lowercase, digit &amp; special character
           </p>
         )}
       </div>
@@ -238,9 +241,9 @@ export function SignupForm() {
 
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
-        <Link href="/login" className="font-medium text-brand hover:underline">
+        <a href="/login" className="font-medium text-brand hover:underline">
           Sign in
-        </Link>
+        </a>
       </p>
     </form>
   )

@@ -1,7 +1,7 @@
 """Resume service — CRUD for resumes + resume_data."""
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from fastapi import HTTPException, status
@@ -156,7 +156,7 @@ async def soft_delete_resume(
 ) -> None:
     resume = await get_resume(db, resume_id, user_id)
     resume.is_deleted = True
-    resume.deleted_at = datetime.utcnow()
+    resume.deleted_at = datetime.now(timezone.utc)
     db.add(resume)
     await db.commit()
 
@@ -210,10 +210,11 @@ async def scan_resume(
         tmp_path = Path(tmp.name)
 
     try:
+        import asyncio
         if suffix == ".pdf":
-            raw_text = extract_text(tmp_path)
+            raw_text = await asyncio.to_thread(extract_text, tmp_path)
         else:
-            raw_text = extract_text_from_docx(tmp_path)
+            raw_text = await asyncio.to_thread(extract_text_from_docx, tmp_path)
     finally:
         tmp_path.unlink(missing_ok=True)
 

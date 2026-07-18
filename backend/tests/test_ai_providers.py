@@ -1,9 +1,8 @@
 import uuid
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
-import pytest
 
-from tests.conftest import USER_ID, make_provider_mock, mock_result
+from tests.conftest import make_provider_mock, mock_result
 
 BASE = "/api/v1/settings/ai"
 
@@ -54,7 +53,7 @@ class TestCreateProvider:
         })
         assert resp.status_code == 409
         body = resp.json()
-        assert body["detail"]["code"] == "CONFLICT"
+        assert body["error"]["code"] == "CONFLICT"
 
     def test_invalid_provider_name(self, client, mock_db):
         resp = client.post(BASE, json={

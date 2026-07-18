@@ -1,7 +1,7 @@
 import uuid
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
-from tests.conftest import USER_ID, make_scan_mock, mock_result
+from tests.conftest import make_scan_mock, mock_result
 
 BASE = "/api/v1/ats"
 
@@ -55,7 +55,7 @@ class TestScoreResume:
 
 class TestScoreUpload:
     @patch("app.modules.ats.service.ai_service.ai_complete")
-    @patch("app.modules.ats.router.extract_text_from_bytes")
+    @patch("app.modules.ats.router.extract_text_from_bytes_async", new_callable=AsyncMock)
     def test_pdf(self, mock_extract, mock_ai, client, mock_db):
         mock_extract.return_value = "Extracted PDF text - Python developer"
         mock_ai.return_value = (
@@ -75,7 +75,7 @@ class TestScoreUpload:
         assert data["overall_score"] == 90
 
     @patch("app.modules.ats.service.ai_service.ai_complete")
-    @patch("app.modules.ats.router.extract_text_from_bytes")
+    @patch("app.modules.ats.router.extract_text_from_bytes_async", new_callable=AsyncMock)
     def test_docx(self, mock_extract, mock_ai, client, mock_db):
         mock_extract.return_value = "Extracted DOCX text"
         mock_ai.return_value = (
@@ -103,7 +103,7 @@ class TestScoreUpload:
         resp = client.post(f"{BASE}/score-upload")
         assert resp.status_code == 400
 
-    @patch("app.modules.ats.router.extract_text_from_bytes")
+    @patch("app.modules.ats.router.extract_text_from_bytes_async", new_callable=AsyncMock)
     def test_empty_extracted_text(self, mock_extract, client):
         mock_extract.return_value = ""
         resp = client.post(
