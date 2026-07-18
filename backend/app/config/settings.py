@@ -44,9 +44,9 @@ class Settings(BaseSettings):
     VERCEL_PROJECT_NAME: str = ""
 
     # Email / SMTP configuration
-    SMTP_HOST: str = "smtp.resend.com"
-    SMTP_PORT: int = 465
-    SMTP_USER: str = "resend"
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_USER: str = ""
     SMTP_PASS: str = ""
     EMAIL_FROM: str = "noreply@generative-cv.com"
     EMAIL_PROVIDER: str = ""  # smtp | resend | sendgrid | log (empty = auto-detect)

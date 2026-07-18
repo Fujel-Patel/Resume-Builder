@@ -85,14 +85,17 @@ async def signup(request: Request, user_create: schemas.UserCreate, db: AsyncSes
 
     from app.services.email_sender import send_email
     from app.services.email_templates import verification_email_html
+    from loguru import logger as _log
     verify_url = _frontend_verify_url(token)
     expire_minutes = getattr(settings, "VERIFICATION_TOKEN_EXPIRE_MINUTES", 15)
     html_body = verification_email_html(verify_url, expires_in_minutes=expire_minutes)
-    await send_email(
+    sent = await send_email(
         to_email=user.email,
         subject=f"Verify your email — {_BRAND_NAME}",
         html_body=html_body,
     )
+    if not sent:
+        _log.error("Failed to send verification email to {}", user.email)
 
     return success({
         "message": "Please check your email to verify your account.",
@@ -246,11 +249,14 @@ async def forgot_password(
         base = getattr(settings, "FRONTEND_URL", settings.CLIENT_URL)
         reset_url = f"{base}/reset-password?token={token}"
         html_body = password_reset_email_html(reset_url)
-        await send_email(
+        sent = await send_email(
             to_email=user.email,
             subject=f"Reset your password — {_BRAND_NAME}",
             html_body=html_body,
         )
+        if not sent:
+            from loguru import logger as _log
+            _log.error("Failed to send password reset email to {}", user.email)
 
     return success({"message": "If an account exists for this email, a reset link has been sent"})
 

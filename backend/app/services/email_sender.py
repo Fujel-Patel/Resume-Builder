@@ -80,8 +80,8 @@ class ResendProvider(EmailProvider):
     ) -> bool:
         api_key = getattr(settings, "RESEND_API_KEY", "")
         if not api_key:
-            logger.warning("RESEND_API_KEY not set, falling back to SMTP")
-            return await SMTPProvider().send(to_email, subject, html_body, text_body)
+            logger.error("RESEND_API_KEY is not set — cannot send email")
+            return False
         try:
             async with httpx.AsyncClient(timeout=15) as client:
                 payload: dict = {
@@ -123,8 +123,8 @@ class SendGridProvider(EmailProvider):
     ) -> bool:
         api_key = getattr(settings, "SENDGRID_API_KEY", "")
         if not api_key:
-            logger.warning("SENDGRID_API_KEY not set, falling back to SMTP")
-            return await SMTPProvider().send(to_email, subject, html_body, text_body)
+            logger.error("SENDGRID_API_KEY is not set — cannot send email")
+            return False
         try:
             async with httpx.AsyncClient(timeout=15) as client:
                 content: list[dict] = [{"type": "text/html", "value": html_body}]
