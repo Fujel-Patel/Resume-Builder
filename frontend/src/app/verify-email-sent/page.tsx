@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { Suspense, useState, useEffect, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { resendVerificationApi } from "@/lib/api/auth"
 import { Button } from "@/components/ui/button"
 import { Mail, ArrowLeft, CheckCircle, Loader2 } from "lucide-react"
 
-export default function VerifyEmailSentPage() {
+function VerifyEmailSentContent() {
   const searchParams = useSearchParams()
   const email = searchParams.get("email") || ""
 
@@ -126,5 +126,19 @@ export default function VerifyEmailSentPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function VerifyEmailSentPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen items-center justify-center bg-background">
+          <Loader2 className="size-6 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <VerifyEmailSentContent />
+    </Suspense>
   )
 }
