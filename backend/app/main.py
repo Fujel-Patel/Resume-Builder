@@ -192,6 +192,8 @@ origins = list({
 _cors_regex = None
 if settings.VERCEL_PROJECT_NAME:
     _cors_regex = rf"https://{re.escape(settings.VERCEL_PROJECT_NAME)}(-[a-zA-Z0-9]{{1,}})?\.vercel\.app"
+elif settings.APP_ENV != "development":
+    _cors_regex = r"https://[a-zA-Z0-9_-]+(-[a-zA-Z0-9]{1,})?\.vercel\.app"
 
 app.add_middleware(
     CORSMiddleware,
