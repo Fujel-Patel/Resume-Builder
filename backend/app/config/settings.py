@@ -45,7 +45,7 @@ class Settings(BaseSettings):
 
     # Email / SMTP configuration
     SMTP_HOST: str = "smtp.gmail.com"
-    SMTP_PORT: int = 587
+    SMTP_PORT: int = 465
     SMTP_USER: str = ""
     SMTP_PASS: str = ""
     EMAIL_FROM: str = "noreply@generative-cv.com"

@@ -5,7 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Eye, EyeOff, Loader2 } from "lucide-react"
+import { Eye, EyeOff, Loader2, MailWarning } from "lucide-react"
 import { toast } from "sonner"
 import { useAppDispatch, useAppSelector } from "@/lib/hooks"
 import { login, clearError, type AuthError } from "@/lib/features/auth/authSlice"
@@ -24,6 +24,11 @@ function getLoginErrorMessage(error: AuthError | string | null): string | null {
   if (code === "CONFLICT") return "An account with this email already exists."
   if (code === "UNKNOWN_ERROR" && !message) return "Something went wrong. Please try again."
   return message
+}
+
+function needsVerification(error: AuthError | string | null): boolean {
+  if (!error || typeof error === "string") return false
+  return error.code === "EMAIL_NOT_VERIFIED" || error.code === "ACCOUNT_PENDING"
 }
 
 export function LoginForm() {
@@ -46,7 +51,6 @@ export function LoginForm() {
 
   useEffect(() => {
     if (!error) return
-    console.debug("[login-form] auth error:", JSON.stringify(error))
     const msg = getLoginErrorMessage(error)
     if (msg) toast.error(msg)
   }, [error])
@@ -80,6 +84,7 @@ export function LoginForm() {
   }
 
   const errorMessage = getLoginErrorMessage(error)
+  const showResendLink = needsVerification(error) && email.trim()
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
@@ -93,9 +98,20 @@ export function LoginForm() {
       {typeof errorMessage === "string" && (
         <div
           role="alert"
-          className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive space-y-2"
         >
-          {errorMessage}
+          <div className="flex items-start gap-2">
+            <MailWarning className="mt-0.5 size-4 shrink-0" />
+            <span>{errorMessage}</span>
+          </div>
+          {showResendLink && (
+            <Link
+              href={`/verify-email-sent?email=${encodeURIComponent(email.trim())}`}
+              className="block text-xs font-medium text-destructive underline underline-offset-2 hover:text-destructive/80"
+            >
+              Resend verification email
+            </Link>
+          )}
         </div>
       )}
 
