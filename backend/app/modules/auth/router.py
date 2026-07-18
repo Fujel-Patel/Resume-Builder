@@ -339,11 +339,17 @@ async def resend_verification(
     body: schemas.ResendVerificationRequest,
     db: AsyncSession = Depends(get_db),
 ):
+    from loguru import logger as _log
+    _log.info("Resend verification requested for {}", body.email)
+
     user = await service.get_user_by_email(db, body.email)
 
     # Always return success to prevent email enumeration
-    if not user or user.status == "active" and user.email_verified:
+    if not user or (user.status == "active" and user.email_verified):
+        _log.info("Resend skipped — user not found or already verified (email={})", body.email)
         return success({"message": "If an account exists, a verification email has been sent"})
+
+    _log.info("Resend verification for user {} (status={}, email_verified={})", user.email, user.status, user.email_verified)
 
     # Check rate limits
     allowed, cooldown = await service.can_resend_verification(user)
@@ -365,10 +371,12 @@ async def resend_verification(
     verify_url = _frontend_verify_url(token)
     expire_minutes = getattr(settings, "VERIFICATION_TOKEN_EXPIRE_MINUTES", 15)
     html_body = verification_email_html(verify_url, expires_in_minutes=expire_minutes)
-    await send_email(
+    sent = await send_email(
         to_email=user.email,
         subject=f"Verify your email — {_BRAND_NAME}",
         html_body=html_body,
     )
+    if not sent:
+        _log.error("Failed to send verification email to {}", user.email)
 
     return success({"message": "If an account exists, a verification email has been sent"})
