@@ -24,34 +24,34 @@ _401 = HTTPException(
     headers={"WWW-Authenticate": "Bearer"},
 )
 
-_403_unverified = HTTPException(
-    status_code=status.HTTP_403_FORBIDDEN,
-    detail={"code": "EMAIL_NOT_VERIFIED", "message": "Please verify your email address"},
-)
+_jwks_client: Optional[jwt.PyJWKClient] = None
+
+
+def _get_jwks_client() -> jwt.PyJWKClient:
+    """Lazily initialize the JWKS client for Supabase token verification."""
+    global _jwks_client
+    if _jwks_client is None:
+        jwks_url = f"{settings.SUPABASE_URL.rstrip('/')}/auth/v1/.well-known/jwks.json"
+        _jwks_client = jwt.PyJWKClient(jwks_url, cache_keys=True)
+        logger.info("JWKS client initialized: %s", jwks_url)
+    return _jwks_client
 
 
 def _decode_supabase_token(token: str) -> Optional[dict]:
-    """Decode and validate a Supabase JWT. Returns payload or None."""
+    """Decode and validate a Supabase JWT using JWKS. Returns payload or None."""
     try:
-        import base64, json
-        # Decode header to see what's being sent
-        try:
-            header_b64 = token.split(".")[0]
-            # Fix padding
-            padded = header_b64 + "=" * (-len(header_b64) % 4)
-            header = json.loads(base64.urlsafe_b64decode(padded))
-            logger.warning("JWT header: %s | token_len=%d | first_20_chars=%s", header, len(token), token[:20])
-        except Exception as e:
-            logger.warning("JWT header parse failed: %s | token_first_40=%s", e, token[:40])
-
+        signing_key = _get_jwks_client().get_signing_key_from_jwt(token)
         return jwt.decode(
             token,
-            settings.SUPABASE_JWT_SECRET,
-            algorithms=["HS256"],
+            signing_key.key,
+            algorithms=["ES256", "HS256"],
             audience="authenticated",
         )
     except jwt.InvalidTokenError as exc:
         logger.warning("JWT decode failed: %s", exc)
+        return None
+    except Exception as exc:
+        logger.warning("JWKS error: %s", exc)
         return None
 
 
@@ -61,29 +61,23 @@ async def get_current_user(
 ) -> user_models.User:
     """Extract and validate Supabase JWT from Authorization header."""
     if credentials is None:
-        logger.warning("Auth: no credentials provided")
         raise _401
 
     payload = _decode_supabase_token(credentials.credentials)
     if payload is None:
-        logger.warning("Auth: JWT decode returned None (secret mismatch or bad token)")
         raise _401
 
     sub: Optional[str] = payload.get("sub")
     if not sub:
-        logger.warning("Auth: JWT missing 'sub' claim")
         raise _401
 
     try:
         user_id = uuid.UUID(sub)
     except ValueError:
-        logger.warning("Auth: invalid UUID in 'sub': %s", sub)
         raise _401
 
     user = await user_service.get_user_by_id(db, user_id)
     if user is None:
-        logger.warning("Auth: no profile found for user_id=%s — did the migration run?", user_id)
         raise _401
 
-    logger.info("Auth: user authenticated user_id=%s", user_id)
     return user
