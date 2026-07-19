@@ -17,7 +17,10 @@ export async function signup(name: string, email: string, password: string) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { name } },
+    options: {
+      data: { name },
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin}/verify-email`,
+    },
   })
   if (error) throw error
   return data
@@ -55,7 +58,13 @@ export async function resetPassword(newPassword: string) {
 
 export async function resendVerification(email: string) {
   const supabase = createClient()
-  const { error } = await supabase.auth.resend({ type: "signup", email })
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email,
+    options: {
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin}/verify-email`,
+    },
+  })
   if (error) throw error
 }
 

@@ -80,6 +80,9 @@ function VerifyEmailSentContent() {
           <p className="text-center text-sm text-muted-foreground">
             Click the link in the email to verify your account. The link expires in 15 minutes.
           </p>
+          <p className="text-center text-xs text-muted-foreground">
+            Didn&apos;t receive it? Check your spam/junk folder.
+          </p>
 
           {error && (
             <div
