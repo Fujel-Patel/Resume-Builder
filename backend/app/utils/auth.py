@@ -33,6 +33,17 @@ _403_unverified = HTTPException(
 def _decode_supabase_token(token: str) -> Optional[dict]:
     """Decode and validate a Supabase JWT. Returns payload or None."""
     try:
+        import base64, json
+        # Decode header to see what's being sent
+        try:
+            header_b64 = token.split(".")[0]
+            # Fix padding
+            padded = header_b64 + "=" * (-len(header_b64) % 4)
+            header = json.loads(base64.urlsafe_b64decode(padded))
+            logger.warning("JWT header: %s | token_len=%d | first_20_chars=%s", header, len(token), token[:20])
+        except Exception as e:
+            logger.warning("JWT header parse failed: %s | token_first_40=%s", e, token[:40])
+
         return jwt.decode(
             token,
             settings.SUPABASE_JWT_SECRET,
