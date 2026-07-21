@@ -44,47 +44,71 @@ function VerifyEmailContent() {
     let cancelled = false
 
     async function handleVerification() {
-      const hash = window.location.hash
-      if (!hash) {
-        if (!cancelled) {
-          setStatus("error")
-          setMessage("No verification token provided.")
-        }
-        return
-      }
-
-      const params = new URLSearchParams(hash.substring(1))
-      const accessToken = params.get("access_token")
-      const refreshToken = params.get("refresh_token")
-
-      if (!accessToken || !refreshToken) {
-        if (!cancelled) {
-          setStatus("error")
-          setMessage("Invalid verification link.")
-        }
-        return
-      }
-
       const supabase = createClient()
-      const { data, error } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      })
+      const url = new URL(window.location.href)
 
-      if (!cancelled) {
-        if (error) {
-          // Check if error indicates already verified
-          if (error.message?.includes("already") || error.message?.includes("Email already confirmed")) {
-            setStatus("already_verified")
+      // Method 1: PKCE code flow (?code=...)
+      const code = url.searchParams.get("code")
+      if (code) {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+        if (!cancelled) {
+          if (error) {
+            if (error.message?.includes("already") || error.message?.includes("Email already confirmed")) {
+              setStatus("already_verified")
+            } else {
+              setStatus("error")
+              setMessage("Invalid or expired verification link.")
+            }
           } else {
-            setStatus("error")
-            setMessage("Invalid or expired verification link.")
+            setVerifiedEmail(data.user?.email ?? "")
+            setStatus("success")
+            setMessage("Email verified successfully!")
           }
-        } else {
-          const user = data.user
-          setVerifiedEmail(user?.email ?? "")
+        }
+        return
+      }
+
+      // Method 2: Hash fragment tokens (#access_token=...&refresh_token=...)
+      const hash = window.location.hash
+      if (hash && hash.length > 1) {
+        const params = new URLSearchParams(hash.substring(1))
+        const accessToken = params.get("access_token")
+        const refreshToken = params.get("refresh_token")
+
+        if (accessToken && refreshToken) {
+          const { data, error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
+
+          if (!cancelled) {
+            if (error) {
+              if (error.message?.includes("already") || error.message?.includes("Email already confirmed")) {
+                setStatus("already_verified")
+              } else {
+                setStatus("error")
+                setMessage("Invalid or expired verification link.")
+              }
+            } else {
+              setVerifiedEmail(data.user?.email ?? "")
+              setStatus("success")
+              setMessage("Email verified successfully!")
+            }
+          }
+          return
+        }
+      }
+
+      // Method 3: Check if user already has a session (might have verified via another tab)
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!cancelled) {
+        if (session?.user?.email_confirmed_at) {
+          setVerifiedEmail(session.user.email ?? "")
           setStatus("success")
           setMessage("Email verified successfully!")
+        } else {
+          setStatus("error")
+          setMessage("No verification token found. Please click the link in your email again.")
         }
       }
     }
