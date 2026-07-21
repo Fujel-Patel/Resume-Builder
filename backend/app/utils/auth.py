@@ -94,6 +94,10 @@ async def get_current_user(
 
     user = await user_service.get_user_by_id(db, user_id)
     if user is None:
-        raise _401
+        # Auto-create profile for verified user (trigger may not have fired yet)
+        email: str = payload.get("email", "")
+        raw_meta = payload.get("raw_user_meta_data") or {}
+        name: str = raw_meta.get("name") or raw_meta.get("full_name") or email.split("@")[0]
+        user = await user_service.create_user(db, user_id, name, email)
 
     return user

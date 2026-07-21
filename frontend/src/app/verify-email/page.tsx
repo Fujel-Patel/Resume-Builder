@@ -15,6 +15,11 @@ function VerifyEmailContent() {
   const [cooldown, setCooldown] = useState(0)
   const [verifiedEmail, setVerifiedEmail] = useState("")
 
+  // Email can come from URL (?email=) or from the session after verification
+  const resendEmail = verifiedEmail || (typeof window !== "undefined"
+    ? new URLSearchParams(window.location.search).get("email") || ""
+    : "")
+
   useEffect(() => {
     if (cooldown <= 0) return
     const timer = setTimeout(() => setCooldown((c) => c - 1), 1000)
@@ -22,11 +27,11 @@ function VerifyEmailContent() {
   }, [cooldown])
 
   const handleResend = useCallback(async () => {
-    if (!verifiedEmail || cooldown > 0) return
+    if (!resendEmail || cooldown > 0) return
     setResendStatus("sending")
     setResendError("")
     try {
-      await resendVerification(verifiedEmail)
+      await resendVerification(resendEmail)
       setResendStatus("sent")
       setCooldown(60)
     } catch (err: unknown) {
@@ -38,7 +43,7 @@ function VerifyEmailContent() {
         setResendError("Failed to send email. Please try again.")
       }
     }
-  }, [verifiedEmail, cooldown])
+  }, [resendEmail, cooldown])
 
   useEffect(() => {
     let cancelled = false

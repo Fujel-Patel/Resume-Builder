@@ -5,12 +5,14 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { resendVerification } from "@/lib/api/auth"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Mail, ArrowLeft, CheckCircle, Loader2 } from "lucide-react"
 
 function VerifyEmailSentContent() {
   const searchParams = useSearchParams()
-  const email = searchParams.get("email") || ""
+  const emailParam = searchParams.get("email") || ""
 
+  const [email, setEmail] = useState(emailParam)
   const [status, setStatus] = useState<"idle" | "sending" | "sent">("idle")
   const [error, setError] = useState("")
   const [cooldown, setCooldown] = useState(0)
@@ -22,11 +24,12 @@ function VerifyEmailSentContent() {
   }, [cooldown])
 
   const handleResend = useCallback(async () => {
-    if (!email || cooldown > 0) return
+    const trimmed = email.trim().toLowerCase()
+    if (!trimmed || cooldown > 0) return
     setStatus("sending")
     setError("")
     try {
-      await resendVerification(email)
+      await resendVerification(trimmed)
       setStatus("sent")
       setCooldown(60)
     } catch (err: unknown) {
@@ -46,22 +49,6 @@ function VerifyEmailSentContent() {
     }
   }, [email, cooldown])
 
-  if (!email) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <div className="w-full max-w-sm space-y-6 text-center">
-          <h1 className="text-lg font-semibold text-foreground">Check your email</h1>
-          <p className="text-sm text-muted-foreground">
-            We sent a verification link to your email address.
-          </p>
-          <Link href="/login">
-            <Button variant="brand" className="w-full">Back to Login</Button>
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm space-y-6">
@@ -70,16 +57,26 @@ function VerifyEmailSentContent() {
             <Mail className="size-7 text-brand" />
           </div>
           <h1 className="text-lg font-semibold text-foreground">Check your email</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            We sent a verification link to
-          </p>
-          <p className="mt-0.5 text-sm font-medium text-foreground">{email}</p>
+          {emailParam ? (
+            <>
+              <p className="mt-1 text-sm text-muted-foreground">
+                We sent a verification link to
+              </p>
+              <p className="mt-0.5 text-sm font-medium text-foreground">{emailParam}</p>
+            </>
+          ) : (
+            <p className="mt-1 text-sm text-muted-foreground">
+              Enter your email to resend the verification link
+            </p>
+          )}
         </div>
 
         <div className="space-y-3">
-          <p className="text-center text-sm text-muted-foreground">
-            Click the link in the email to verify your account. The link expires in 15 minutes.
-          </p>
+          {status !== "sent" && (
+            <p className="text-center text-sm text-muted-foreground">
+              Click the link in the email to verify your account. The link expires in 15 minutes.
+            </p>
+          )}
           <p className="text-center text-xs text-muted-foreground">
             Didn&apos;t receive it? Check your spam/junk folder.
           </p>
@@ -103,9 +100,26 @@ function VerifyEmailSentContent() {
             </div>
           )}
 
+          {!emailParam && status !== "sent" && (
+            <div>
+              <label htmlFor="resend-email" className="mb-1.5 block text-sm font-medium text-foreground">
+                Email address
+              </label>
+              <Input
+                id="resend-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                maxLength={255}
+                autoComplete="email"
+              />
+            </div>
+          )}
+
           <Button
             onClick={handleResend}
-            disabled={cooldown > 0 || status === "sending"}
+            disabled={cooldown > 0 || status === "sending" || (!emailParam && !email.trim())}
             variant="outline"
             className="w-full"
           >

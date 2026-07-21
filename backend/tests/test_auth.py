@@ -230,24 +230,30 @@ class TestGetCurrentUser:
     @pytest.mark.asyncio
     @patch("app.utils.auth.user_service")
     @patch("app.utils.auth._decode_supabase_token")
-    async def test_user_not_in_db_raises_401(self, mock_decode, mock_svc):
-        """Valid JWT but user not in profiles table should raise 401."""
+    async def test_user_not_in_db_auto_creates_profile(self, mock_decode, mock_svc):
+        """Valid JWT but user not in profiles table should auto-create profile."""
         from app.utils.auth import get_current_user
         from fastapi.security import HTTPAuthorizationCredentials
-        from unittest.mock import AsyncMock
+        from unittest.mock import AsyncMock, MagicMock
 
+        user_id = uuid.uuid4()
         mock_decode.return_value = {
-            "sub": str(uuid.uuid4()),
+            "sub": str(user_id),
             "email": "ghost@example.com",
             "email_verified": True,
+            "raw_user_meta_data": {"name": "Ghost User"},
         }
+        mock_user = MagicMock()
         mock_svc.get_user_by_id = AsyncMock(return_value=None)
+        mock_svc.create_user = AsyncMock(return_value=mock_user)
         db = MagicMock()
         creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials="fake-token")
 
-        with pytest.raises(HTTPException) as exc_info:
-            await get_current_user(credentials=creds, db=db)
-        assert exc_info.value.status_code == 401
+        result = await get_current_user(credentials=creds, db=db)
+        assert result == mock_user
+        mock_svc.create_user.assert_awaited_once_with(
+            db, user_id, "Ghost User", "ghost@example.com"
+        )
 
 
 # ── Tests: edge cases ────────────────────────────────────────────

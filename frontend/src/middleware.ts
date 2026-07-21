@@ -31,21 +31,18 @@ export async function middleware(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   if (code && (request.nextUrl.pathname === "/verify-email" || request.nextUrl.pathname === "/reset-password")) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    const url = request.nextUrl.clone();
-    url.searchParams.delete("code");
     if (!error) {
-      // Success — redirect without the code param, session is now set in cookies
+      // Success — redirect to appropriate page, session cookies are set
       if (request.nextUrl.pathname === "/verify-email") {
-        url.pathname = "/dashboard";
+        return NextResponse.redirect(new URL("/dashboard", request.url));
       } else {
         // reset-password: keep on the page, session is now active for password update
-        url.pathname = "/reset-password";
+        return NextResponse.redirect(new URL("/reset-password", request.url));
       }
     } else {
-      // Exchange failed — redirect to page without code so client can show appropriate error
-      url.pathname = request.nextUrl.pathname;
+      // Exchange failed — redirect to verify-email-sent for resend UX
+      return NextResponse.redirect(new URL("/verify-email-sent", request.url));
     }
-    return NextResponse.redirect(url);
   }
 
   // Refresh session if expired — required for Server Components

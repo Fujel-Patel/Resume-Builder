@@ -33,6 +33,16 @@ async def update_user(
     return user
 
 
+async def create_user(
+    db: AsyncSession, user_id: uuid.UUID, name: str, email: str
+) -> models.User:
+    user = models.User(id=user_id, name=name, email=email)
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
 async def delete_user(db: AsyncSession, user_id: uuid.UUID) -> bool:
     user = await get_user_by_id(db, user_id)
     if not user:
