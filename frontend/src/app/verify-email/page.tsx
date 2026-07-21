@@ -43,77 +43,30 @@ function VerifyEmailContent() {
   useEffect(() => {
     let cancelled = false
 
-    async function handleVerification() {
+    async function checkSession() {
       const supabase = createClient()
-      const url = new URL(window.location.href)
 
-      // Method 1: PKCE code flow (?code=...)
-      const code = url.searchParams.get("code")
-      if (code) {
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
-        if (!cancelled) {
-          if (error) {
-            if (error.message?.includes("already") || error.message?.includes("Email already confirmed")) {
-              setStatus("already_verified")
-            } else {
-              setStatus("error")
-              setMessage("Invalid or expired verification link.")
-            }
-          } else {
-            setVerifiedEmail(data.user?.email ?? "")
-            setStatus("success")
-            setMessage("Email verified successfully!")
-          }
-        }
-        return
-      }
-
-      // Method 2: Hash fragment tokens (#access_token=...&refresh_token=...)
-      const hash = window.location.hash
-      if (hash && hash.length > 1) {
-        const params = new URLSearchParams(hash.substring(1))
-        const accessToken = params.get("access_token")
-        const refreshToken = params.get("refresh_token")
-
-        if (accessToken && refreshToken) {
-          const { data, error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          })
-
-          if (!cancelled) {
-            if (error) {
-              if (error.message?.includes("already") || error.message?.includes("Email already confirmed")) {
-                setStatus("already_verified")
-              } else {
-                setStatus("error")
-                setMessage("Invalid or expired verification link.")
-              }
-            } else {
-              setVerifiedEmail(data.user?.email ?? "")
-              setStatus("success")
-              setMessage("Email verified successfully!")
-            }
-          }
-          return
-        }
-      }
-
-      // Method 3: Check if user already has a session (might have verified via another tab)
+      // PKCE code exchange is handled by middleware server-side.
+      // By the time this page loads, the session cookies are already set.
       const { data: { session } } = await supabase.auth.getSession()
-      if (!cancelled) {
-        if (session?.user?.email_confirmed_at) {
-          setVerifiedEmail(session.user.email ?? "")
-          setStatus("success")
-          setMessage("Email verified successfully!")
-        } else {
-          setStatus("error")
-          setMessage("No verification token found. Please click the link in your email again.")
-        }
+
+      if (cancelled) return
+
+      if (session?.user?.email_confirmed_at) {
+        setVerifiedEmail(session.user.email ?? "")
+        setStatus("success")
+        setMessage("Email verified successfully!")
+      } else if (session?.user) {
+        // Has session but email not confirmed — shouldn't happen after middleware exchange
+        setStatus("already_verified")
+      } else {
+        // No session at all — link was invalid or expired
+        setStatus("error")
+        setMessage("Invalid or expired verification link. Please resend the verification email.")
       }
     }
 
-    handleVerification()
+    checkSession()
     return () => { cancelled = true }
   }, [])
 

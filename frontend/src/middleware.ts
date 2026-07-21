@@ -25,6 +25,29 @@ export async function middleware(request: NextRequest) {
     }
   );
 
+  // Handle PKCE code exchange for email verification and password reset
+  // The code_verifier cookie is unreliable on client-side redirects from email links,
+  // so we exchange the code server-side here where cookies are guaranteed to work.
+  const code = request.nextUrl.searchParams.get("code");
+  if (code && (request.nextUrl.pathname === "/verify-email" || request.nextUrl.pathname === "/reset-password")) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const url = request.nextUrl.clone();
+    url.searchParams.delete("code");
+    if (!error) {
+      // Success — redirect without the code param, session is now set in cookies
+      if (request.nextUrl.pathname === "/verify-email") {
+        url.pathname = "/dashboard";
+      } else {
+        // reset-password: keep on the page, session is now active for password update
+        url.pathname = "/reset-password";
+      }
+    } else {
+      // Exchange failed — redirect to page without code so client can show appropriate error
+      url.pathname = request.nextUrl.pathname;
+    }
+    return NextResponse.redirect(url);
+  }
+
   // Refresh session if expired — required for Server Components
   const {
     data: { user },
@@ -71,5 +94,7 @@ export const config = {
     "/ats-score/:path*",
     "/profile/:path*",
     "/settings/:path*",
+    "/verify-email",
+    "/reset-password",
   ],
 };

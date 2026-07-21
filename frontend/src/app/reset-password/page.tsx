@@ -16,40 +16,47 @@ function ResetPasswordContent() {
     let cancelled = false
 
     async function handleReset() {
-      const hash = window.location.hash
-      if (!hash) {
-        if (!cancelled) {
-          setStatus("error")
-          setMessage("Invalid reset link. Please request a new one.")
-        }
-        return
-      }
-
-      const params = new URLSearchParams(hash.substring(1))
-      const accessToken = params.get("access_token")
-      const refreshToken = params.get("refresh_token")
-
-      if (!accessToken || !refreshToken) {
-        if (!cancelled) {
-          setStatus("error")
-          setMessage("Invalid reset link. Please request a new one.")
-        }
-        return
-      }
-
       const supabase = createClient()
-      const { error } = await supabase.auth.setSession({
-        access_token: accessToken,
-        refresh_token: refreshToken,
-      })
 
-      if (!cancelled) {
-        if (error) {
-          setStatus("error")
-          setMessage("Invalid or expired reset link. Please request a new one.")
-        } else {
-          setStatus("ready")
+      // First check if middleware already established a session via PKCE code exchange
+      const { data: { session } } = await supabase.auth.getSession()
+
+      if (cancelled) return
+
+      if (session) {
+        setStatus("ready")
+        return
+      }
+
+      // Fallback: check hash fragment for implicit flow tokens (legacy)
+      const hash = window.location.hash
+      if (hash && hash.length > 1) {
+        const params = new URLSearchParams(hash.substring(1))
+        const accessToken = params.get("access_token")
+        const refreshToken = params.get("refresh_token")
+
+        if (accessToken && refreshToken) {
+          const { error } = await supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken,
+          })
+
+          if (!cancelled) {
+            if (error) {
+              setStatus("error")
+              setMessage("Invalid or expired reset link. Please request a new one.")
+            } else {
+              setStatus("ready")
+            }
+          }
+          return
         }
+      }
+
+      // No session, no tokens — invalid link
+      if (!cancelled) {
+        setStatus("error")
+        setMessage("Invalid reset link. Please request a new one.")
       }
     }
 
