@@ -43,10 +43,21 @@ export async function middleware(request: NextRequest) {
     request.nextUrl.pathname.startsWith(r)
   );
 
-  if (isProtected && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
+  if (isProtected) {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      return NextResponse.redirect(url);
+    }
+
+    // Block unverified users — sign out and redirect to verify-email-sent
+    if (!user.email_confirmed_at) {
+      await supabase.auth.signOut();
+      const url = request.nextUrl.clone();
+      url.pathname = "/verify-email-sent";
+      url.searchParams.set("email", user.email ?? "");
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;

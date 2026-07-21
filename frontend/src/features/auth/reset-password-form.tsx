@@ -1,43 +1,54 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, CheckCircle2 } from "lucide-react"
+import { Loader2 } from "lucide-react"
 import { toast } from "sonner"
-import { resetPassword } from "@/lib/api/auth"
+import { resetPassword, logout } from "@/lib/api/auth"
 import { ApiRequestError } from "@/lib/api/client"
 
+const PASSWORD_SPECIAL_CHARS = /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/;]/
+
 const PASSWORD_REQUIREMENTS = [
-  "At least 8 characters",
-  "One uppercase letter",
-  "One lowercase letter",
-  "One digit",
-  "One special character",
+  { label: "At least 8 characters", test: (p: string) => p.length >= 8 },
+  { label: "One uppercase letter", test: (p: string) => /[A-Z]/.test(p) },
+  { label: "One lowercase letter", test: (p: string) => /[a-z]/.test(p) },
+  { label: "One digit", test: (p: string) => /\d/.test(p) },
+  { label: "One special character", test: (p: string) => PASSWORD_SPECIAL_CHARS.test(p) },
 ] as const
 
 export function ResetPasswordForm() {
-
+  const router = useRouter()
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [done, setDone] = useState(false)
 
   const validate = () => {
     const errs: Record<string, string> = {}
-    if (!password) errs.password = "Password is required"
-    else if (password.length < 8) errs.password = "Must be at least 8 characters"
-    else if (!/[A-Z]/.test(password)) errs.password = "Must contain an uppercase letter"
-    else if (!/[a-z]/.test(password)) errs.password = "Must contain a lowercase letter"
-    else if (!/\d/.test(password)) errs.password = "Must contain a digit"
-    else if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/;]/.test(password))
+    if (!password) {
+      errs.password = "Password is required"
+    } else if (password.length < 8) {
+      errs.password = "Must be at least 8 characters"
+    } else if (!/[A-Z]/.test(password)) {
+      errs.password = "Must contain an uppercase letter"
+    } else if (!/[a-z]/.test(password)) {
+      errs.password = "Must contain a lowercase letter"
+    } else if (!/\d/.test(password)) {
+      errs.password = "Must contain a digit"
+    } else if (!PASSWORD_SPECIAL_CHARS.test(password)) {
       errs.password = "Must contain a special character"
+    }
 
     if (!confirmPassword) errs.confirmPassword = "Please confirm your password"
     else if (password !== confirmPassword) errs.confirmPassword = "Passwords do not match"
+
     setErrors(errs)
     return Object.keys(errs).length === 0
   }
@@ -49,37 +60,16 @@ export function ResetPasswordForm() {
     setLoading(true)
     try {
       await resetPassword(password)
-      setDone(true)
-      toast.success("Password reset successfully!")
-    } catch (e) {
-      const msg = e instanceof ApiRequestError ? e.message : "Something went wrong"
+      await logout()
+      toast.success("Password updated. Please log in.")
+      router.push("/login")
+    } catch (err: unknown) {
+      const msg = err instanceof ApiRequestError ? err.message : "Something went wrong"
       setError(msg)
       toast.error(msg)
     } finally {
       setLoading(false)
     }
-  }
-
-  if (done) {
-    return (
-      <div className="space-y-5 text-center">
-        <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-500/10">
-          <CheckCircle2 className="size-6 text-emerald-500" />
-        </div>
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Password reset</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Your password has been updated successfully.
-          </p>
-        </div>
-        <Link
-          href="/login"
-          className="inline-flex h-10 w-full items-center justify-center rounded-lg bg-brand px-4 text-sm font-medium text-black hover:bg-brand-dark"
-        >
-          Sign in with new password
-        </Link>
-      </div>
-    )
   }
 
   return (
@@ -104,14 +94,29 @@ export function ResetPasswordForm() {
         <label htmlFor="reset-password" className="mb-1.5 block text-sm font-medium text-foreground">
           New password
         </label>
-        <Input
-          id="reset-password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          aria-invalid={!!errors.password}
-          placeholder="New password"
-        />
+        <div className="relative">
+          <Input
+            id="reset-password"
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            aria-invalid={!!errors.password}
+            aria-describedby={errors.password ? "reset-password-error" : undefined}
+            placeholder="New password"
+            className="pr-10"
+            maxLength={72}
+            autoComplete="new-password"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            tabIndex={-1}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? "Hide" : "Show"}
+          </button>
+        </div>
         {errors.password ? (
           <p id="reset-password-error" className="mt-1 text-xs text-destructive" role="alert">
             {errors.password}
@@ -119,24 +124,13 @@ export function ResetPasswordForm() {
         ) : (
           <ul className="mt-1.5 space-y-0.5">
             {PASSWORD_REQUIREMENTS.map((req) => {
-              const met =
-                req === "At least 8 characters"
-                  ? password.length >= 8
-                  : req === "One uppercase letter"
-                    ? /[A-Z]/.test(password)
-                    : req === "One lowercase letter"
-                      ? /[a-z]/.test(password)
-                      : req === "One digit"
-                        ? /\d/.test(password)
-                        : req === "One special character"
-                          ? /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/;]/.test(password)
-                          : false
+              const met = req.test(password)
               return (
                 <li
-                  key={req}
+                  key={req.label}
                   className={`text-xs ${met ? "text-emerald-500" : "text-muted-foreground"}`}
                 >
-                  {met ? "✓" : "○"} {req}
+                  {met ? "✓" : "○"} {req.label}
                 </li>
               )
             })}
@@ -148,14 +142,29 @@ export function ResetPasswordForm() {
         <label htmlFor="reset-confirm" className="mb-1.5 block text-sm font-medium text-foreground">
           Confirm new password
         </label>
-        <Input
-          id="reset-confirm"
-          type="password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          aria-invalid={!!errors.confirmPassword}
-          placeholder="Confirm new password"
-        />
+        <div className="relative">
+          <Input
+            id="reset-confirm"
+            type={showConfirm ? "text" : "password"}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            aria-invalid={!!errors.confirmPassword}
+            aria-describedby={errors.confirmPassword ? "reset-confirm-error" : undefined}
+            placeholder="Confirm new password"
+            className="pr-10"
+            maxLength={72}
+            autoComplete="new-password"
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirm(!showConfirm)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+            tabIndex={-1}
+            aria-label={showConfirm ? "Hide password" : "Show password"}
+          >
+            {showConfirm ? "Hide" : "Show"}
+          </button>
+        </div>
         {errors.confirmPassword && (
           <p id="reset-confirm-error" className="mt-1 text-xs text-destructive" role="alert">
             {errors.confirmPassword}
@@ -167,6 +176,12 @@ export function ResetPasswordForm() {
         {loading && <Loader2 className="size-4 animate-spin" />}
         {loading ? "Resetting..." : "Reset password"}
       </Button>
+
+      <p className="text-center text-sm text-muted-foreground">
+        <Link href="/forgot-password" className="text-brand hover:underline">
+          Need a new reset link?
+        </Link>
+      </p>
     </form>
   )
 }

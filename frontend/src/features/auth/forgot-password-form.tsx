@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Loader2, ArrowLeft, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
 import { forgotPassword } from "@/lib/api/auth"
-import { ApiRequestError } from "@/lib/api/client"
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("")
@@ -16,8 +15,9 @@ export function ForgotPasswordForm() {
   const [sent, setSent] = useState(false)
 
   const validate = () => {
-    if (!email) return "Email is required"
-    if (!/\S+@\S+\.\S+/.test(email)) return "Invalid email address"
+    const trimmed = email.trim().toLowerCase()
+    if (!trimmed) return "Email is required"
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return "Invalid email address"
     return ""
   }
 
@@ -28,13 +28,11 @@ export function ForgotPasswordForm() {
     if (err) { setError(err); toast.error(err); return }
     setLoading(true)
     try {
-      await forgotPassword(email)
+      await forgotPassword(email.trim().toLowerCase())
       setSent(true)
-      toast.success("Reset link sent! Check your email.")
-    } catch (e) {
-      const msg = e instanceof ApiRequestError ? e.message : "Something went wrong"
-      setError(msg)
-      toast.error(msg)
+    } catch {
+      // Always show generic success — never reveal whether email exists
+      setSent(true)
     } finally {
       setLoading(false)
     }
@@ -49,8 +47,11 @@ export function ForgotPasswordForm() {
         <div>
           <h1 className="text-xl font-semibold text-foreground">Check your email</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            If an account exists for <strong className="text-foreground">{email}</strong>,
+            If an account exists with <strong className="text-foreground">{email.trim().toLowerCase()}</strong>,
             a password reset link has been sent.
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Check your spam/junk folder if you don&apos;t see it.
           </p>
         </div>
         <Link
@@ -92,6 +93,7 @@ export function ForgotPasswordForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
+          autoComplete="email"
         />
       </div>
 

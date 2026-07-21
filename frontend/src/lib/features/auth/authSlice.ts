@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
 import {
   signup as signupSupabase,
-  login as loginSupabase,
   logout as logoutSupabase,
   getMeApi,
   type UserOut,
@@ -43,21 +42,39 @@ export const login = createAsyncThunk(
   "auth/login",
   async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
     try {
-      await loginSupabase(email, password)
+      const supabase = createClient()
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (signInError) {
+        const msg = signInError.message
+        if (msg.includes("Invalid login credentials")) {
+          return rejectWithValue({ message: "Incorrect email or password", code: "INVALID_CREDENTIALS" })
+        }
+        if (msg.includes("Email not confirmed")) {
+          return rejectWithValue({ message: "Please verify your email before signing in", code: "EMAIL_NOT_VERIFIED" })
+        }
+        return rejectWithValue({ message: msg, code: "UNKNOWN_ERROR" })
+      }
+
+      // Explicit check: block unverified users even if Supabase allowed the session
+      if (!data.user.email_confirmed_at) {
+        await supabase.auth.signOut()
+        return rejectWithValue({
+          message: "Please verify your email before signing in",
+          code: "EMAIL_NOT_VERIFIED",
+        })
+      }
+
       const user = await getMeApi()
       return { user }
     } catch (err: unknown) {
       if (err instanceof ApiRequestError) {
         return rejectWithValue({ message: err.message, code: err.code, fields: err.fields })
       }
-      // Map Supabase auth errors to our error format
       const message = err instanceof Error ? err.message : "Login failed"
-      if (message.includes("Invalid login credentials")) {
-        return rejectWithValue({ message: "Incorrect email or password", code: "INVALID_CREDENTIALS" })
-      }
-      if (message.includes("Email not confirmed")) {
-        return rejectWithValue({ message: "Please verify your email address", code: "EMAIL_NOT_VERIFIED" })
-      }
       return rejectWithValue({ message, code: "UNKNOWN_ERROR" })
     }
   },
@@ -70,7 +87,23 @@ export const signup = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      await signupSupabase(name, email, password)
+      const data = await signupSupabase(name, email, password)
+
+      // Handle duplicate email cases:
+      // - Confirmed account exists → Supabase returns user with identities empty
+      // - Unconfirmed account exists → Supabase creates nothing but doesn't error
+      const supabaseUser = data.user
+      if (supabaseUser && supabaseUser.identities && supabaseUser.identities.length === 0) {
+        return rejectWithValue({
+          message: "An account with this email already exists. Please sign in.",
+          code: "CONFLICT",
+        })
+      }
+      if (supabaseUser && supabaseUser.confirmed_at && !supabaseUser.email_confirmed_at) {
+        // Edge case: user exists but confirmed_at differs from email_confirmed_at
+        // Shouldn't happen but handle gracefully
+      }
+
       return { email, message: "Signup successful" }
     } catch (err: unknown) {
       if (err instanceof ApiRequestError) {
@@ -78,7 +111,11 @@ export const signup = createAsyncThunk(
       }
       const message = err instanceof Error ? err.message : "Signup failed"
       if (message.includes("already registered")) {
-        return rejectWithValue({ message: "Account with this email already exists", code: "CONFLICT" })
+        return rejectWithValue({ message: "An account with this email already exists. Please sign in.", code: "CONFLICT" })
+      }
+      if (message.includes("already been registered")) {
+        // Supabase resend confirmation silently for unconfirmed accounts
+        return rejectWithValue({ message: "Verification email resent", code: "VERIFICATION_RESENT" })
       }
       return rejectWithValue({ message, code: "UNKNOWN_ERROR" })
     }
@@ -87,11 +124,17 @@ export const signup = createAsyncThunk(
 
 export const initializeAuth = createAsyncThunk(
   "auth/initialize",
-  async (_, { rejectWithValue }) => {
+  async () => {
     try {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) return { user: null }
+
+      // Block unverified sessions on app load
+      if (!session.user.email_confirmed_at) {
+        await supabase.auth.signOut()
+        return { user: null }
+      }
 
       const user = await getMeApi()
       return { user }
@@ -154,7 +197,13 @@ const authSlice = createSlice({
       })
       .addCase(signup.rejected, (state, action) => {
         state.loading = false
-        state.error = normalizeError(action.payload)
+        const err = normalizeError(action.payload)
+        // Don't set error for VERIFICATION_RESENT — signup form handles it as toast
+        if (err.code === "VERIFICATION_RESENT") {
+          state.signupEmail = null
+        } else {
+          state.error = err
+        }
       })
       .addCase(initializeAuth.fulfilled, (state, action) => {
         state.loading = false

@@ -15,13 +15,12 @@ function getLoginErrorMessage(error: AuthError | string | null): string | null {
   if (typeof error === "string") return error
   const { code, message } = error
   if (code === "INVALID_CREDENTIALS") return "Incorrect email or password. Please try again."
-  if (code === "USER_NOT_FOUND") return "No account found with this email address."
+  if (code === "USER_NOT_FOUND") return "Incorrect email or password. Please try again."
   if (code === "ACCOUNT_LOCKED") return message
-  if (code === "EMAIL_NOT_VERIFIED") return message || "Please verify your email before signing in."
-  if (code === "ACCOUNT_PENDING") return message || "Your account is pending email verification."
+  if (code === "EMAIL_NOT_VERIFIED") return "Please verify your email before signing in."
+  if (code === "ACCOUNT_PENDING") return "Please verify your email before signing in."
   if (code === "RATE_LIMIT_EXCEEDED") return "Too many requests. Please wait a moment and try again."
   if (code === "VALIDATION_ERROR") return "Please check your input and try again."
-  if (code === "CONFLICT") return "An account with this email already exists."
   if (code === "UNKNOWN_ERROR" && !message) return "Something went wrong. Please try again."
   return message
 }
@@ -57,7 +56,7 @@ export function LoginForm() {
 
   const validate = () => {
     const errs: Record<string, string> = {}
-    const sanitizedEmail = email.trim()
+    const sanitizedEmail = email.trim().toLowerCase()
     if (!sanitizedEmail) {
       errs.email = "Email is required"
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sanitizedEmail)) {
@@ -71,7 +70,7 @@ export function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
-    dispatch(login({ email: email.trim(), password }))
+    dispatch(login({ email: email.trim().toLowerCase(), password }))
   }
 
   const getFieldError = (field: string): string | undefined => {
@@ -106,7 +105,7 @@ export function LoginForm() {
           </div>
           {showResendLink && (
             <Link
-              href={`/verify-email-sent?email=${encodeURIComponent(email.trim())}`}
+              href={`/verify-email-sent?email=${encodeURIComponent(email.trim().toLowerCase())}`}
               className="block text-xs font-medium text-destructive underline underline-offset-2 hover:text-destructive/80"
             >
               Resend verification email
@@ -128,6 +127,7 @@ export function LoginForm() {
           aria-describedby={getFieldError("email") ? "login-email-error" : undefined}
           placeholder="you@example.com"
           maxLength={255}
+          autoComplete="email"
         />
         {getFieldError("email") && (
           <p id="login-email-error" className="mt-1 text-xs text-destructive" role="alert">
@@ -159,6 +159,7 @@ export function LoginForm() {
             placeholder="Enter your password"
             className="pr-10"
             maxLength={128}
+            autoComplete="current-password"
           />
           <button
             type="button"

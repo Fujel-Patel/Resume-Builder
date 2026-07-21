@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
       "sonner",
     ],
   },
-  serverExternalPackages: ["pdfjs-dist"],
+  transpilePackages: ["html2canvas"],
 };
 
 export default nextConfig;

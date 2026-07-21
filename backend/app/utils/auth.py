@@ -24,6 +24,11 @@ _401 = HTTPException(
     headers={"WWW-Authenticate": "Bearer"},
 )
 
+_403_EMAIL_NOT_VERIFIED = HTTPException(
+    status_code=status.HTTP_403_FORBIDDEN,
+    detail={"code": "EMAIL_NOT_VERIFIED", "message": "Email not verified"},
+)
+
 _jwks_client: Optional[jwt.PyJWKClient] = None
 
 
@@ -55,17 +60,28 @@ def _decode_supabase_token(token: str) -> Optional[dict]:
         return None
 
 
+def _check_email_verified(payload: dict) -> None:
+    """Raise 403 if the Supabase JWT indicates the email is not confirmed."""
+    if not payload.get("email_verified"):
+        raise _403_EMAIL_NOT_VERIFIED
+
+
 async def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer),
     db: AsyncSession = Depends(get_db),
 ) -> user_models.User:
-    """Extract and validate Supabase JWT from Authorization header."""
+    """Extract and validate Supabase JWT from Authorization header.
+
+    Rejects unverified users (email_verified claim must be True).
+    """
     if credentials is None:
         raise _401
 
     payload = _decode_supabase_token(credentials.credentials)
     if payload is None:
         raise _401
+
+    _check_email_verified(payload)
 
     sub: Optional[str] = payload.get("sub")
     if not sub:

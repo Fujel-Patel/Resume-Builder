@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Eye, EyeOff, Loader2 } from "lucide-react"
@@ -9,13 +10,13 @@ import { toast } from "sonner"
 import { useAppDispatch, useAppSelector } from "@/lib/hooks"
 import { signup, clearError, type AuthError } from "@/lib/features/auth/authSlice"
 
-const PASSWORD_SPECIAL_CHARS = /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/;]/
+const PASSWORD_SPECIAL_CHARS = /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/;]/u
 
 function getSignupErrorMessage(error: AuthError | string | null): string | null {
   if (!error) return null
   if (typeof error === "string") return error
   const { code, message } = error
-  if (code === "CONFLICT") return "An account with this email already exists. Try signing in instead."
+  if (code === "CONFLICT") return "An account with this email already exists. Please sign in."
   if (code === "VALIDATION_ERROR") return "Please check your input and try again."
   if (code === "RATE_LIMIT_EXCEEDED") return "Too many requests. Please wait a moment and try again."
   if (code === "INVALID_EMAIL") return message
@@ -23,6 +24,32 @@ function getSignupErrorMessage(error: AuthError | string | null): string | null 
   if (code === "UNKNOWN_ERROR" && !message) return "Something went wrong. Please try again."
   return message
 }
+
+function getPasswordStrength(password: string): number {
+  let score = 0
+  if (password.length >= 8) score++
+  if (password.length >= 12) score++
+  if (/[A-Z]/.test(password)) score++
+  if (/[a-z]/.test(password)) score++
+  if (/\d/.test(password)) score++
+  if (PASSWORD_SPECIAL_CHARS.test(password)) score++
+  return Math.min(score, 4)
+}
+
+function getStrengthLabel(score: number): { label: string; color: string } {
+  if (score <= 1) return { label: "Weak", color: "text-destructive" }
+  if (score === 2) return { label: "Fair", color: "text-orange-500" }
+  if (score === 3) return { label: "Good", color: "text-emerald-500" }
+  return { label: "Strong", color: "text-emerald-500" }
+}
+
+const PASSWORD_RULES = [
+  { label: "At least 8 characters", test: (p: string) => p.length >= 8 },
+  { label: "One uppercase letter", test: (p: string) => /[A-Z]/.test(p) },
+  { label: "One lowercase letter", test: (p: string) => /[a-z]/.test(p) },
+  { label: "One digit", test: (p: string) => /\d/.test(p) },
+  { label: "One special character", test: (p: string) => PASSWORD_SPECIAL_CHARS.test(p) },
+] as const
 
 export function SignupForm() {
   const router = useRouter()
@@ -61,7 +88,7 @@ export function SignupForm() {
     } else if (trimmedName.length > 255) {
       errs.name = "Name must be under 255 characters"
     }
-    const sanitizedEmail = email.trim()
+    const sanitizedEmail = email.trim().toLowerCase()
     if (!sanitizedEmail) {
       errs.email = "Email is required"
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sanitizedEmail)) {
@@ -69,8 +96,8 @@ export function SignupForm() {
     }
     if (!password) {
       errs.password = "Password is required"
-    } else if (password.length < 12) {
-      errs.password = "Must be at least 12 characters"
+    } else if (password.length < 8) {
+      errs.password = "Must be at least 8 characters"
     } else if (!/[A-Z]/.test(password)) {
       errs.password = "Must contain an uppercase letter"
     } else if (!/[a-z]/.test(password)) {
@@ -93,7 +120,7 @@ export function SignupForm() {
     e.preventDefault()
     if (!validate()) return
     const sanitizedName = name.trim().replace(/<[^>]*>/g, "")
-    dispatch(signup({ name: sanitizedName, email: email.trim(), password }))
+    dispatch(signup({ name: sanitizedName, email: email.trim().toLowerCase(), password }))
   }
 
   const getFieldError = (field: string): string | undefined => {
@@ -103,6 +130,8 @@ export function SignupForm() {
   }
 
   const errorMessage = getSignupErrorMessage(error)
+  const strengthScore = getPasswordStrength(password)
+  const strength = getStrengthLabel(strengthScore)
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
@@ -156,6 +185,7 @@ export function SignupForm() {
           aria-describedby={getFieldError("email") ? "signup-email-error" : undefined}
           placeholder="you@example.com"
           maxLength={255}
+          autoComplete="email"
         />
         {getFieldError("email") && (
           <p id="signup-email-error" className="mt-1 text-xs text-destructive" role="alert">
@@ -165,9 +195,14 @@ export function SignupForm() {
       </div>
 
       <div>
-        <label htmlFor="signup-password" className="mb-1.5 block text-sm font-medium text-foreground">
-          Password
-        </label>
+        <div className="mb-1.5 flex items-center justify-between">
+          <label htmlFor="signup-password" className="text-sm font-medium text-foreground">
+            Password
+          </label>
+          {password.length > 0 && (
+            <span className={`text-xs font-medium ${strength.color}`}>{strength.label}</span>
+          )}
+        </div>
         <div className="relative">
           <Input
             id="signup-password"
@@ -176,9 +211,10 @@ export function SignupForm() {
             onChange={(e) => setPassword(e.target.value)}
             aria-invalid={!!getFieldError("password")}
             aria-describedby={getFieldError("password") ? "signup-password-error" : undefined}
-            placeholder="At least 12 characters"
+            placeholder="At least 8 characters"
             className="pr-10"
             maxLength={72}
+            autoComplete="new-password"
           />
           <button
             type="button"
@@ -195,9 +231,19 @@ export function SignupForm() {
             {getFieldError("password")}
           </p>
         ) : (
-          <p className="mt-1 text-xs text-muted-foreground">
-            At least 12 chars, uppercase, lowercase, digit &amp; special character
-          </p>
+          <ul className="mt-1.5 space-y-0.5">
+            {PASSWORD_RULES.map((rule) => {
+              const met = rule.test(password)
+              return (
+                <li
+                  key={rule.label}
+                  className={`text-xs ${met ? "text-emerald-500" : "text-muted-foreground"}`}
+                >
+                  {met ? "✓" : "○"} {rule.label}
+                </li>
+              )
+            })}
+          </ul>
         )}
       </div>
 
@@ -216,6 +262,7 @@ export function SignupForm() {
             placeholder="Confirm your password"
             className="pr-10"
             maxLength={72}
+            autoComplete="new-password"
           />
           <button
             type="button"
@@ -241,9 +288,9 @@ export function SignupForm() {
 
       <p className="text-center text-sm text-muted-foreground">
         Already have an account?{" "}
-        <a href="/login" className="font-medium text-brand hover:underline">
+        <Link href="/login" className="font-medium text-brand hover:underline">
           Sign in
-        </a>
+        </Link>
       </p>
     </form>
   )
