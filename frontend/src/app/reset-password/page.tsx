@@ -15,54 +15,21 @@ function ResetPasswordContent() {
   useEffect(() => {
     let cancelled = false
 
-    async function handleReset() {
+    async function checkSession() {
       const supabase = createClient()
-
-      // Check if middleware already established a session via PKCE code exchange.
-      // When the user clicks the reset link, middleware intercepts the ?code= param,
-      // exchanges it for a session server-side, and redirects back here with cookies set.
       const { data: { session } } = await supabase.auth.getSession()
 
       if (cancelled) return
 
       if (session) {
         setStatus("ready")
-        return
-      }
-
-      // Fallback: check hash fragment for implicit flow tokens (legacy Supabase links)
-      const hash = window.location.hash
-      if (hash && hash.length > 1) {
-        const params = new URLSearchParams(hash.substring(1))
-        const accessToken = params.get("access_token")
-        const refreshToken = params.get("refresh_token")
-
-        if (accessToken && refreshToken) {
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          })
-
-          if (!cancelled) {
-            if (error) {
-              setStatus("error")
-              setMessage("This reset link has expired or is invalid. Please request a new one.")
-            } else {
-              setStatus("ready")
-            }
-          }
-          return
-        }
-      }
-
-      // No session, no tokens — user navigated here directly or link was invalid
-      if (!cancelled) {
+      } else {
         setStatus("error")
         setMessage("This reset link has expired or is invalid. Please request a new one.")
       }
     }
 
-    handleReset()
+    checkSession()
     return () => { cancelled = true }
   }, [])
 

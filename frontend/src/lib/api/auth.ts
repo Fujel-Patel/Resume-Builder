@@ -19,7 +19,7 @@ export async function signup(name: string, email: string, password: string) {
     password,
     options: {
       data: { name },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin}/verify-email`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin}/auth/callback?type=signup`,
     },
   })
   if (error) throw error
@@ -45,7 +45,7 @@ export async function logout() {
 export async function forgotPassword(email: string) {
   const supabase = createClient()
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin}/reset-password`,
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin}/auth/callback?type=recovery`,
   })
   if (error) throw error
 }
@@ -77,7 +77,7 @@ export async function resendVerification(email: string) {
     type: "signup",
     email,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin}/verify-email`,
+      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin}/auth/callback?type=signup`,
     },
   })
   if (error) throw error

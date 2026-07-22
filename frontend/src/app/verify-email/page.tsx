@@ -8,17 +8,12 @@ import { Button } from "@/components/ui/button"
 import { CheckCircle, AlertCircle, Loader2, Mail } from "lucide-react"
 
 function VerifyEmailContent() {
-  const [status, setStatus] = useState<"loading" | "success" | "error" | "already_verified">("loading")
+  const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
   const [message, setMessage] = useState("")
   const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "sent">("idle")
   const [resendError, setResendError] = useState("")
   const [cooldown, setCooldown] = useState(0)
-  const [verifiedEmail, setVerifiedEmail] = useState("")
-
-  // Email can come from URL (?email=) or from the session after verification
-  const resendEmail = verifiedEmail || (typeof window !== "undefined"
-    ? new URLSearchParams(window.location.search).get("email") || ""
-    : "")
+  const [userEmail, setUserEmail] = useState("")
 
   useEffect(() => {
     if (cooldown <= 0) return
@@ -27,11 +22,11 @@ function VerifyEmailContent() {
   }, [cooldown])
 
   const handleResend = useCallback(async () => {
-    if (!resendEmail || cooldown > 0) return
+    if (!userEmail || cooldown > 0) return
     setResendStatus("sending")
     setResendError("")
     try {
-      await resendVerification(resendEmail)
+      await resendVerification(userEmail)
       setResendStatus("sent")
       setCooldown(60)
     } catch (err: unknown) {
@@ -43,29 +38,27 @@ function VerifyEmailContent() {
         setResendError("Failed to send email. Please try again.")
       }
     }
-  }, [resendEmail, cooldown])
+  }, [userEmail, cooldown])
 
   useEffect(() => {
     let cancelled = false
 
     async function checkSession() {
       const supabase = createClient()
-
-      // PKCE code exchange is handled by middleware server-side.
-      // By the time this page loads, the session cookies are already set.
       const { data: { session } } = await supabase.auth.getSession()
 
       if (cancelled) return
 
       if (session?.user?.email_confirmed_at) {
-        setVerifiedEmail(session.user.email ?? "")
+        setUserEmail(session.user.email ?? "")
         setStatus("success")
         setMessage("Email verified successfully!")
       } else if (session?.user) {
-        // Has session but email not confirmed — shouldn't happen after middleware exchange
-        setStatus("already_verified")
+        // Session exists but email not confirmed — shouldn't happen after PKCE exchange
+        setUserEmail(session.user.email ?? "")
+        setStatus("error")
+        setMessage("Email verification is pending. Please check your inbox.")
       } else {
-        // No session at all — link was invalid or expired
         setStatus("error")
         setMessage("Invalid or expired verification link. Please resend the verification email.")
       }
@@ -99,27 +92,12 @@ function VerifyEmailContent() {
           </>
         )}
 
-        {status === "already_verified" && (
-          <>
-            <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-emerald-500/10">
-              <CheckCircle className="size-7 text-emerald-500" />
-            </div>
-            <h1 className="text-lg font-semibold text-foreground">Already verified</h1>
-            <p className="text-sm text-muted-foreground">
-              Your email has already been verified. Please sign in.
-            </p>
-            <Link href="/login">
-              <Button variant="brand" className="w-full">Go to Login</Button>
-            </Link>
-          </>
-        )}
-
         {status === "error" && (
           <>
             <div className="mx-auto flex size-14 items-center justify-center rounded-full bg-destructive/10">
               <AlertCircle className="size-7 text-destructive" />
             </div>
-            <h1 className="text-lg font-semibold text-foreground">Verification failed</h1>
+            <h1 className="text-lg font-semibold text-foreground">Verification needed</h1>
             <p className="text-sm text-muted-foreground">{message}</p>
 
             {resendError && (
@@ -144,7 +122,7 @@ function VerifyEmailContent() {
             <div className="space-y-2">
               <Button
                 onClick={handleResend}
-                disabled={cooldown > 0 || resendStatus === "sending"}
+                disabled={cooldown > 0 || resendStatus === "sending" || !userEmail}
                 variant="brand"
                 className="w-full"
               >

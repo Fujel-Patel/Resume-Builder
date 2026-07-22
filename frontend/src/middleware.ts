@@ -25,24 +25,25 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Handle PKCE code exchange for email verification and password reset.
-  // The code_verifier cookie is unreliable on client-side redirects from email links,
-  // so we exchange the code server-side here where cookies are guaranteed to work.
+  // Handle PKCE code exchange for legacy email verification and password reset links.
+  // New links use /auth/callback (handled by Route Handler), but old links may still
+  // point to /verify-email or /reset-password directly.
   const code = request.nextUrl.searchParams.get("code");
   if (code && (request.nextUrl.pathname === "/verify-email" || request.nextUrl.pathname === "/reset-password")) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      if (request.nextUrl.pathname === "/verify-email") {
-        return NextResponse.redirect(new URL("/dashboard", request.url));
-      }
-      // reset-password: keep on the page with session active for password update
-      return NextResponse.redirect(new URL("/reset-password", request.url));
+      const redirectUrl = request.nextUrl.pathname === "/verify-email" ? "/dashboard" : "/reset-password";
+      const response = NextResponse.redirect(new URL(redirectUrl, request.url));
+      // Copy session cookies from supabaseResponse to the redirect response
+      supabaseResponse.cookies.getAll().forEach(({ name, value, ...opts }) =>
+        response.cookies.set(name, value, opts)
+      );
+      return response;
     }
     // Exchange failed — link was invalid or expired
     if (request.nextUrl.pathname === "/verify-email") {
       return NextResponse.redirect(new URL("/verify-email-sent", request.url));
     }
-    // reset-password: expired/invalid link — send back to request a new one
     return NextResponse.redirect(new URL("/forgot-password", request.url));
   }
 
