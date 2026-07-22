@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import List, Union
 
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, SettingsConfigDict, validator
 
 BASE_DIR = Path(__file__).resolve().parents[2]  # backend/app/config → backend
 
@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     # AES-256 encryption for stored AI API keys
     ENCRYPTION_KEY: str
 
-    # CORS
+    # CORS – can be a list or a comma‑separated string in .env
     CORS_ORIGINS: Union[str, List[str]] = "http://localhost:3000"
     CLIENT_URL: str = "http://localhost:3000"
     FRONTEND_URL: str = "http://localhost:3000"
@@ -54,6 +54,22 @@ class Settings(BaseSettings):
 
     # Observability (optional)
     SENTRY_DSN: str = ""
+
+    # ---------------------------------------------------------------------
+    # Validators
+    # ---------------------------------------------------------------------
+    @validator("CORS_ORIGINS", pre=True)
+    def _split_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
+        """Always return a list of origins.
+        Accepts:
+          * a Python list (already good)
+          * a comma‑separated string like "https://a.com,https://b.com"
+        Empty entries are ignored.
+        """
+        if isinstance(v, list):
+            return v
+        # Split on commas, strip whitespace, drop empties
+        return [origin.strip() for origin in v.split(",") if origin.strip()]
 
 
 settings = Settings()
