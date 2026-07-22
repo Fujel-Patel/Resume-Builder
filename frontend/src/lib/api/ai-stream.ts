@@ -1,7 +1,5 @@
-import { createClient } from "@/lib/supabase/client"
 import type { BackendResumeContent } from "./ai-suggest"
-
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
+import { API_BASE_URL } from "./client"
 
 export type StreamProgress = {
   stage: string
@@ -54,10 +52,21 @@ function parseSseBuffer(buffer: string): { events: SseEvent[]; remaining: string
 }
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
+  const { createClient } = await import("@/lib/supabase/client")
   const supabase = createClient()
   const { data: { session } } = await supabase.auth.getSession()
   if (!session?.access_token) return {}
   return { Authorization: `Bearer ${session.access_token}` }
+}
+
+async function refreshAndGetHeaders(): Promise<Record<string, string> | null> {
+  const { createClient } = await import("@/lib/supabase/client")
+  const supabase = createClient()
+  const { data: { session: newSession } } = await supabase.auth.refreshSession()
+  if (newSession?.access_token) {
+    return { Authorization: `Bearer ${newSession.access_token}` }
+  }
+  return null
 }
 
 export async function optimizeResumeStream(
@@ -72,7 +81,7 @@ export async function optimizeResumeStream(
 
   const headers = await getAuthHeaders()
 
-  let res = await fetch(`${BASE_URL}/ai/optimize-resume/stream`, {
+  let res = await fetch(`${API_BASE_URL}/ai/optimize-resume/stream`, {
     method: "POST",
     headers,
     body: formData,
@@ -81,13 +90,11 @@ export async function optimizeResumeStream(
   })
 
   if (res.status === 401) {
-    const supabase = createClient()
-    const { data: { session: newSession } } = await supabase.auth.refreshSession()
-    if (newSession?.access_token) {
-      headers["Authorization"] = `Bearer ${newSession.access_token}`
-      res = await fetch(`${BASE_URL}/ai/optimize-resume/stream`, {
+    const newHeaders = await refreshAndGetHeaders()
+    if (newHeaders) {
+      res = await fetch(`${API_BASE_URL}/ai/optimize-resume/stream`, {
         method: "POST",
-        headers,
+        headers: newHeaders,
         body: formData,
         credentials: "include",
         signal,

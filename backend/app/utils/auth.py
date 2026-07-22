@@ -7,6 +7,7 @@ from typing import Optional
 
 import jwt
 from fastapi import Depends, Header, HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.database import get_db
@@ -58,7 +59,14 @@ async def get_current_user(
     if user is None:
         email = str(payload.get("email") or "")
         name = _extract_name(payload, email)
-        user = await user_service.create_user(db, user_id, name, email)
+        try:
+            user = await user_service.create_user(db, user_id, name, email)
+        except IntegrityError:
+            # Race: another request created the profile between our read and write.
+            await db.rollback()
+            user = await user_service.get_user_by_id(db, user_id)
+            if user is None:
+                raise _401
 
     return user
 

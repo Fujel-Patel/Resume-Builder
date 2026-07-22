@@ -1,29 +1,14 @@
-import { createClient } from "@/lib/supabase/client"
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
+import { api } from "./client"
 
 export async function exportResumeAsPdf(resumeId: string, templateId?: string): Promise<void> {
-  const supabase = createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const token = session?.access_token
+  const path = templateId
+    ? `/resumes/${resumeId}/export/pdf?template_id=${encodeURIComponent(templateId)}`
+    : `/resumes/${resumeId}/export/pdf`
 
-  const params = templateId ? `?template_id=${encodeURIComponent(templateId)}` : ""
-  const res = await fetch(`${API_BASE}/resumes/${resumeId}/export/pdf${params}`, {
-    method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-    credentials: "include",
-  })
-  if (!res.ok) {
-    const body = await res.json().catch(() => null)
-    const msg = body?.error?.message || body?.detail?.message || `Export failed (${res.status})`
-    throw new Error(msg)
-  }
-  const blob = await res.blob()
+  const blob = await api.download(path)
 
-  // Parse filename from Content-Disposition header, or fallback
-  const disposition = res.headers.get("Content-Disposition") || ""
-  const match = disposition.match(/filename="?(.+?)"?\s*(?:;|$)/i)
-  const filename = match ? match[1] : `resume-${resumeId.slice(0, 8)}.pdf`
+  const ext = "pdf"
+  const filename = `resume-${resumeId.slice(0, 8)}.${ext}`
 
   const url = URL.createObjectURL(blob)
   const a = document.createElement("a")

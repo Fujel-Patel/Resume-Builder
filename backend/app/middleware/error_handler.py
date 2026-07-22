@@ -60,6 +60,7 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
                         423: "ACCOUNT_LOCKED",
                         429: "RATE_LIMIT_EXCEEDED",
                         500: "INTERNAL_ERROR",
+                        503: "SERVICE_UNAVAILABLE",
                     }
                     code = status_code_map.get(exc.status_code, "INTERNAL_ERROR")
                     message = str(detail)

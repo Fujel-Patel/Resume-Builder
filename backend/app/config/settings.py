@@ -35,14 +35,13 @@ class Settings(BaseSettings):
     # CORS – can be a list or a comma‑separated string in .env
     CORS_ORIGINS: Union[str, List[str]] = "http://localhost:3000"
     CLIENT_URL: str = "http://localhost:3000"
-    FRONTEND_URL: str = "http://localhost:3000"
     VERCEL_PROJECT_NAME: str = ""
 
-    # Supabase Auth
+    # Supabase Auth (SUPABASE_URL / SUPABASE_SERVICE_KEY needed for DELETE /me admin call)
     SUPABASE_URL: str = ""
     SUPABASE_ANON_KEY: str = ""
     SUPABASE_SERVICE_KEY: str = ""
-    SUPABASE_JWT_SECRET: str = ""
+    SUPABASE_JWT_SECRET: str
 
     # Supabase Storage
     STORAGE_BUCKET: str = "resume-uploads"

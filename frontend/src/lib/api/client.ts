@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client"
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
+/** Single source of truth for the backend API base URL. */
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
 
 type ApiError = {
   code: string
@@ -47,7 +48,7 @@ async function _fetchWithAuth(
     headers["Content-Type"] = "application/json"
   }
 
-  let res = await fetch(`${BASE_URL}${path}`, {
+  let res = await fetch(`${API_BASE_URL}${path}`, {
     ...init,
     headers,
     credentials: "include",
@@ -58,7 +59,7 @@ async function _fetchWithAuth(
     const { data: { session: newSession } } = await supabase.auth.refreshSession()
     if (newSession?.access_token) {
       headers["Authorization"] = `Bearer ${newSession.access_token}`
-      res = await fetch(`${BASE_URL}${path}`, {
+      res = await fetch(`${API_BASE_URL}${path}`, {
         ...init,
         headers,
         credentials: "include",

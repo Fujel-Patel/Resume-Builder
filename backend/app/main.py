@@ -162,6 +162,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
             400: "INVALID_REQUEST", 401: "UNAUTHORIZED", 403: "FORBIDDEN",
             404: "NOT_FOUND", 409: "CONFLICT", 422: "VALIDATION_ERROR",
             423: "ACCOUNT_LOCKED", 429: "RATE_LIMIT_EXCEEDED", 500: "INTERNAL_ERROR",
+            503: "SERVICE_UNAVAILABLE",
         }
         code = status_code_map.get(exc.status_code, "INTERNAL_ERROR")
         message = str(detail)

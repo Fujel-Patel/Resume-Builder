@@ -1,5 +1,4 @@
 import { api } from "./client"
-import { createClient } from "@/lib/supabase/client"
 import type { ResumeData } from "@/features/resume/types"
 
 type JsonDict = Record<string, unknown>
@@ -166,8 +165,6 @@ export async function saveSection(
   return resumeId
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"
-
 export async function listResumesApi(): Promise<ResumeResponse[]> {
   return api.get<ResumeResponse[]>("/resumes")
 }
@@ -186,16 +183,7 @@ export async function duplicateResumeApi(id: string): Promise<ResumeResponse> {
 }
 
 export async function exportResume(id: string): Promise<void> {
-  const supabase = createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const token = session?.access_token
-  const res = await fetch(`${API_BASE}/resumes/${id}/export`, {
-    method: "POST",
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
-    credentials: "include",
-  })
-  if (!res.ok) throw new Error("Export failed")
-  const blob = await res.blob()
+  const blob = await api.download(`/resumes/${id}/export`)
   const ext = blob.type.includes("wordprocessingml") ? "docx" : "pdf"
   const url = URL.createObjectURL(blob)
   const a = document.createElement("a")
