@@ -22,7 +22,7 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
     const supabase = createClient()
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((event) => {
+    } =     supabase.auth.onAuthStateChange((event) => {
       // Keep Redux in sync across tabs and after callback session establishment
       if (event === "SIGNED_OUT") {
         store.dispatch(resetAuth())
@@ -30,6 +30,7 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
       }
       if (
         event === "SIGNED_IN" ||
+        event === "INITIAL_SESSION" ||
         event === "TOKEN_REFRESHED" ||
         event === "USER_UPDATED" ||
         event === "PASSWORD_RECOVERY"
