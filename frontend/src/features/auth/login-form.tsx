@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Eye, EyeOff, Loader2, MailWarning } from "lucide-react"
@@ -33,6 +33,7 @@ function needsVerification(error: AuthError | string | null): boolean {
 
 export function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const dispatch = useAppDispatch()
   const { loading, error, user } = useAppSelector((s) => s.auth)
 
@@ -42,12 +43,22 @@ export function LoginForm() {
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    if (user) router.push("/dashboard")
-  }, [user, router])
+    if (user) {
+      const from = searchParams.get("from")
+      router.push(from && from.startsWith("/") && !from.startsWith("//") ? from : "/dashboard")
+    }
+  }, [user, router, searchParams])
 
   useEffect(() => {
     dispatch(clearError())
   }, [dispatch])
+
+  useEffect(() => {
+    const callbackError = searchParams.get("error")
+    if (callbackError === "auth_callback_error") {
+      toast.error("Authentication failed. Please try signing in again.")
+    }
+  }, [searchParams])
 
   useEffect(() => {
     if (!error) return

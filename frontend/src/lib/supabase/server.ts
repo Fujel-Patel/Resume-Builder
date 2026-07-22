@@ -1,8 +1,15 @@
-import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+/**
+ * Supabase server client for Server Components, Route Handlers, and Server Actions.
+ *
+ * Cookie mutations outside a Route Handler / Server Action are no-ops
+ * (Next.js restriction) — middleware is responsible for session refresh.
+ */
+
+import { createServerClient } from "@supabase/ssr"
+import { cookies } from "next/headers"
 
 export async function createClient() {
-  const cookieStore = await cookies();
+  const cookieStore = await cookies()
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,18 +17,18 @@ export async function createClient() {
     {
       cookies: {
         getAll() {
-          return cookieStore.getAll();
+          return cookieStore.getAll()
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
+            cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, options)
-            );
+            })
           } catch {
-            // Called from a Server Component — ignore
+            // Called from a Server Component — middleware will refresh the session.
           }
         },
       },
-    }
-  );
+    },
+  )
 }

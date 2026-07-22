@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useDispatch } from "react-redux"
 import { resetAuth } from "@/lib/features/auth/authSlice"
+import { logout as logoutSupabase } from "@/lib/api/auth"
 import {
   Dialog,
   DialogContent,
@@ -23,6 +24,8 @@ export function UnauthorizedOverlay() {
   useEffect(() => {
     const handler = () => {
       dispatch(resetAuth())
+      // Best-effort sign-out so stale cookies don't bounce the user back
+      void logoutSupabase().catch(() => {})
       setOpen(true)
     }
     window.addEventListener("auth:unauthorized", handler)

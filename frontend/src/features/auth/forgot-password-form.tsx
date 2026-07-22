@@ -1,19 +1,28 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2, ArrowLeft, CheckCircle2 } from "lucide-react"
+import { Loader2, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
 import { forgotPassword } from "@/lib/api/auth"
 import { forgotPasswordSchema } from "@/schemas/auth"
+import { normalizeAuthError } from "@/lib/auth/errors"
 
 export function ForgotPasswordForm() {
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [sent, setSent] = useState(false)
+
+  useEffect(() => {
+    if (searchParams.get("error") === "link_invalid") {
+      setError("That reset link is invalid or has expired. Request a new one below.")
+    }
+  }, [searchParams])
 
   const validate = (): string | null => {
     const result = forgotPasswordSchema.safeParse({ email })
@@ -35,19 +44,17 @@ export function ForgotPasswordForm() {
       await forgotPassword(email.trim().toLowerCase())
       setSent(true)
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : ""
+      const normalized = normalizeAuthError(err)
 
-      // Supabase rate-limits password reset requests (e.g. once per 60s).
-      // Show a user-friendly message for rate limit errors.
-      if (message.includes("security purposes") || message.includes("rate limit")) {
-        setError("Please wait a moment before requesting another reset link.")
-        toast.error("Please wait a moment before requesting another reset link.")
+      if (normalized.code === "RATE_LIMIT_EXCEEDED") {
+        setError(normalized.message)
+        toast.error(normalized.message)
         setLoading(false)
         return
       }
 
-      // For all other errors (including "email not found"), always show
-      // generic success to prevent email enumeration attacks.
+      // Anti-enumeration: always show success for other errors
+      // (including "user not found") so attackers can't probe emails.
       setSent(true)
     } finally {
       setLoading(false)
@@ -68,7 +75,8 @@ export function ForgotPasswordForm() {
             a password reset link has been sent.
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            The link expires in 1 hour. Check your spam/junk folder if you don&apos;t see it.
+            The link expires in about 1 hour. Check spam/junk if you don&apos;t see it.
+            The link will open the secure reset page after verification.
           </p>
         </div>
         <Link
@@ -94,9 +102,10 @@ export function ForgotPasswordForm() {
       {error && (
         <div
           role="alert"
-          className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive flex items-start gap-2"
         >
-          {error}
+          <AlertCircle className="mt-0.5 size-4 shrink-0" />
+          <span>{error}</span>
         </div>
       )}
 

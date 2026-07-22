@@ -7,28 +7,27 @@ import {
 } from "@/lib/api/auth"
 import { createClient } from "@/lib/supabase/client"
 import { ApiRequestError } from "@/lib/api/client"
+import { normalizeAuthError, type NormalizedAuthError } from "@/lib/auth/errors"
 
-export type AuthError = {
-  message: string
-  code: string
+export type AuthError = NormalizedAuthError & {
   fields?: Record<string, string[]>
 }
 
-function normalizeError(payload: unknown): AuthError {
-  if (payload && typeof payload === "object" && "message" in payload) {
+function toAuthError(payload: unknown): AuthError {
+  if (payload && typeof payload === "object" && "message" in payload && "code" in payload) {
     return payload as AuthError
   }
-  if (typeof payload === "string") {
-    return { message: payload, code: "UNKNOWN_ERROR" }
-  }
-  return { message: "Something went wrong", code: "UNKNOWN_ERROR" }
+  return normalizeAuthError(payload)
 }
 
 type AuthState = {
   user: UserOut | null
   loading: boolean
   error: AuthError | null
+  /** Set after successful signup so the UI can show "check your email". */
   signupEmail: string | null
+  /** True once initializeAuth has settled (success or failure). */
+  initialized: boolean
 }
 
 const initialState: AuthState = {
@@ -36,11 +35,15 @@ const initialState: AuthState = {
   loading: true,
   error: null,
   signupEmail: null,
+  initialized: false,
 }
 
 export const login = createAsyncThunk(
   "auth/login",
-  async ({ email, password }: { email: string; password: string }, { rejectWithValue }) => {
+  async (
+    { email, password }: { email: string; password: string },
+    { rejectWithValue },
+  ) => {
     try {
       const supabase = createClient()
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
@@ -49,33 +52,30 @@ export const login = createAsyncThunk(
       })
 
       if (signInError) {
-        const msg = signInError.message
-        if (msg.includes("Invalid login credentials")) {
-          return rejectWithValue({ message: "Incorrect email or password", code: "INVALID_CREDENTIALS" })
-        }
-        if (msg.includes("Email not confirmed")) {
-          return rejectWithValue({ message: "Please verify your email before signing in", code: "EMAIL_NOT_VERIFIED" })
-        }
-        return rejectWithValue({ message: msg, code: "UNKNOWN_ERROR" })
+        return rejectWithValue(normalizeAuthError(signInError))
       }
 
-      // Explicit check: block unverified users even if Supabase allowed the session
+      // Supabase may allow sessions for unconfirmed users depending on project
+      // settings. Always treat email_confirmed_at as the source of truth.
       if (!data.user.email_confirmed_at) {
         await supabase.auth.signOut()
         return rejectWithValue({
           message: "Please verify your email before signing in",
           code: "EMAIL_NOT_VERIFIED",
-        })
+        } satisfies AuthError)
       }
 
       const user = await getMeApi()
       return { user }
     } catch (err: unknown) {
       if (err instanceof ApiRequestError) {
-        return rejectWithValue({ message: err.message, code: err.code, fields: err.fields })
+        return rejectWithValue({
+          message: err.message,
+          code: err.code,
+          fields: err.fields,
+        } satisfies AuthError)
       }
-      const message = err instanceof Error ? err.message : "Login failed"
-      return rejectWithValue({ message, code: "UNKNOWN_ERROR" })
+      return rejectWithValue(normalizeAuthError(err))
     }
   },
 )
@@ -89,64 +89,94 @@ export const signup = createAsyncThunk(
     try {
       const data = await signupSupabase(name, email, password)
 
-      // Handle duplicate email cases:
-      // - Confirmed account exists → Supabase returns user with identities empty
-      // - Unconfirmed account exists → Supabase creates nothing but doesn't error
+      // Supabase anti-enumeration: existing confirmed users return a user with
+      // empty identities array and no error.
       const supabaseUser = data.user
-      if (supabaseUser && supabaseUser.identities && supabaseUser.identities.length === 0) {
+      if (
+        supabaseUser &&
+        Array.isArray(supabaseUser.identities) &&
+        supabaseUser.identities.length === 0
+      ) {
         return rejectWithValue({
           message: "An account with this email already exists. Please sign in.",
           code: "CONFLICT",
-        })
-      }
-      if (supabaseUser && supabaseUser.confirmed_at && !supabaseUser.email_confirmed_at) {
-        // Edge case: user exists but confirmed_at differs from email_confirmed_at
-        // Shouldn't happen but handle gracefully
+        } satisfies AuthError)
       }
 
-      return { email, message: "Signup successful" }
+      // If email confirmation is disabled, session is returned immediately.
+      // Still send the user through the normal "check email" UX when no session,
+      // which is the production default (confirmations enabled).
+      return { email, hasSession: !!data.session }
     } catch (err: unknown) {
       if (err instanceof ApiRequestError) {
-        return rejectWithValue({ message: err.message, code: err.code, fields: err.fields })
+        return rejectWithValue({
+          message: err.message,
+          code: err.code,
+          fields: err.fields,
+        } satisfies AuthError)
       }
-      const message = err instanceof Error ? err.message : "Signup failed"
-      if (message.includes("already registered")) {
-        return rejectWithValue({ message: "An account with this email already exists. Please sign in.", code: "CONFLICT" })
-      }
-      if (message.includes("already been registered")) {
-        // Supabase resend confirmation silently for unconfirmed accounts
-        return rejectWithValue({ message: "Verification email resent", code: "VERIFICATION_RESENT" })
-      }
-      return rejectWithValue({ message, code: "UNKNOWN_ERROR" })
+      return rejectWithValue(normalizeAuthError(err))
     }
   },
 )
 
-export const initializeAuth = createAsyncThunk(
-  "auth/initialize",
-  async () => {
+export const initializeAuth = createAsyncThunk("auth/initialize", async () => {
+  try {
+    const supabase = createClient()
+    // getUser() validates the JWT with Supabase (more secure than getSession alone)
+    const {
+      data: { user: authUser },
+      error,
+    } = await supabase.auth.getUser()
+
+    if (error || !authUser) {
+      return { user: null }
+    }
+
+    if (!authUser.email_confirmed_at) {
+      await supabase.auth.signOut()
+      return { user: null }
+    }
+
+    const user = await getMeApi()
+    return { user }
+  } catch {
+    return { user: null }
+  }
+})
+
+export const logout = createAsyncThunk("auth/logout", async () => {
+  await logoutSupabase()
+})
+
+/**
+ * Called when onAuthStateChange fires (multi-tab sync, token refresh, sign-out).
+ * Loads profile only when a verified user session exists.
+ */
+export const syncSession = createAsyncThunk(
+  "auth/syncSession",
+  async (_: void, { rejectWithValue }) => {
     try {
       const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return { user: null }
+      const {
+        data: { user: authUser },
+      } = await supabase.auth.getUser()
 
-      // Block unverified sessions on app load
-      if (!session.user.email_confirmed_at) {
-        await supabase.auth.signOut()
+      if (!authUser) {
+        return { user: null }
+      }
+
+      if (!authUser.email_confirmed_at) {
         return { user: null }
       }
 
       const user = await getMeApi()
       return { user }
-    } catch {
-      return { user: null }
+    } catch (err) {
+      return rejectWithValue(normalizeAuthError(err))
     }
   },
 )
-
-export const logout = createAsyncThunk("auth/logout", async () => {
-  await logoutSupabase()
-})
 
 const authSlice = createSlice({
   name: "auth",
@@ -181,10 +211,11 @@ const authSlice = createSlice({
       .addCase(login.fulfilled, (state, action) => {
         state.loading = false
         state.user = action.payload.user
+        state.signupEmail = null
       })
       .addCase(login.rejected, (state, action) => {
         state.loading = false
-        state.error = normalizeError(action.payload)
+        state.error = toAuthError(action.payload)
       })
       .addCase(signup.pending, (state) => {
         state.loading = true
@@ -197,29 +228,44 @@ const authSlice = createSlice({
       })
       .addCase(signup.rejected, (state, action) => {
         state.loading = false
-        const err = normalizeError(action.payload)
-        // Don't set error for VERIFICATION_RESENT — signup form handles it as toast
-        if (err.code === "VERIFICATION_RESENT") {
-          state.signupEmail = null
-        } else {
-          state.error = err
-        }
+        state.error = toAuthError(action.payload)
+      })
+      .addCase(initializeAuth.pending, (state) => {
+        state.loading = true
       })
       .addCase(initializeAuth.fulfilled, (state, action) => {
         state.loading = false
-        if (action.payload.user) {
-          state.user = action.payload.user
-        }
+        state.initialized = true
+        state.user = action.payload.user
       })
       .addCase(initializeAuth.rejected, (state) => {
         state.loading = false
+        state.initialized = true
+        state.user = null
       })
       .addCase(logout.fulfilled, (state) => {
         state.user = null
+        state.signupEmail = null
+        state.error = null
+      })
+      .addCase(syncSession.fulfilled, (state, action) => {
+        state.user = action.payload.user
+        state.loading = false
+        state.initialized = true
+      })
+      .addCase(syncSession.rejected, (state) => {
+        // Keep existing user on transient sync failure
+        state.loading = false
       })
   },
 })
 
 export { logout as logoutUser }
-export const { clearError, resetAuth, setUser, setServerFieldErrors, clearSignupEmail } = authSlice.actions
+export const {
+  clearError,
+  resetAuth,
+  setUser,
+  setServerFieldErrors,
+  clearSignupEmail,
+} = authSlice.actions
 export default authSlice.reducer

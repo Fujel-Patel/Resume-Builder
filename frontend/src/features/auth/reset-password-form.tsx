@@ -9,8 +9,9 @@ import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { resetPassword, logout } from "@/lib/api/auth"
 import { resetPasswordSchema } from "@/schemas/auth"
+import { normalizeAuthError } from "@/lib/auth/errors"
 
-const PASSWORD_SPECIAL_CHARS = /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/;]/u
+const PASSWORD_SPECIAL_CHARS = /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/;'`~]/u
 
 const PASSWORD_REQUIREMENTS = [
   { label: "At least 8 characters", test: (p: string) => p.length >= 8 },
@@ -70,13 +71,14 @@ export function ResetPasswordForm() {
     setLoading(true)
     try {
       await resetPassword(password)
+      // End recovery session so the user must sign in with the new password
       await logout()
       toast.success("Password updated successfully. Please sign in with your new password.")
       router.push("/login")
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Something went wrong"
-      setErrors({ form: message })
-      toast.error(message)
+      const normalized = normalizeAuthError(err)
+      setErrors({ form: normalized.message })
+      toast.error(normalized.message)
     } finally {
       setLoading(false)
     }
@@ -157,7 +159,7 @@ export function ResetPasswordForm() {
       </div>
 
       <div>
-        <label htmlFor="reset-confirm" className="mb-1.5 block text-sm font-medium text-foreground">
+        <label htmlFor="reset-confirm" className="text-sm font-medium text-foreground mb-1.5 block">
           Confirm new password
         </label>
         <div className="relative">

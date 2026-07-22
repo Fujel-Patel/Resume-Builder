@@ -15,22 +15,32 @@ function ResetPasswordContent() {
   useEffect(() => {
     let cancelled = false
 
-    async function checkSession() {
+    async function checkRecoverySession() {
       const supabase = createClient()
-      const { data: { session } } = await supabase.auth.getSession()
+
+      // Prefer getUser() — validates JWT with Supabase Auth server
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser()
 
       if (cancelled) return
 
-      if (session) {
-        setStatus("ready")
-      } else {
+      if (error || !user) {
         setStatus("error")
-        setMessage("This reset link has expired or is invalid. Please request a new one.")
+        setMessage(
+          "This reset link has expired or is invalid. Please request a new one.",
+        )
+        return
       }
+
+      setStatus("ready")
     }
 
-    checkSession()
-    return () => { cancelled = true }
+    checkRecoverySession()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   if (status === "loading") {
@@ -52,7 +62,9 @@ function ResetPasswordContent() {
           </div>
           <p className="text-sm text-muted-foreground">{message}</p>
           <Link href="/forgot-password">
-            <Button variant="brand" className="w-full">Request a new link</Button>
+            <Button variant="brand" className="w-full">
+              Request a new link
+            </Button>
           </Link>
           <p className="text-center text-sm text-muted-foreground">
             <Link href="/login" className="text-brand hover:underline">
@@ -66,9 +78,7 @@ function ResetPasswordContent() {
 
   return (
     <AuthLayout title="Reset password" subtitle="Enter your new password">
-      <Suspense fallback={<div className="text-center text-sm text-muted-foreground py-8">Loading...</div>}>
-        <ResetPasswordForm />
-      </Suspense>
+      <ResetPasswordForm />
     </AuthLayout>
   )
 }

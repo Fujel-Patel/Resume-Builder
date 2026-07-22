@@ -1,7 +1,6 @@
 """Tests for auth.py — Supabase JWT validation and email_verified enforcement."""
 
 import uuid
-from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import jwt as pyjwt
@@ -9,9 +8,10 @@ import pytest
 from fastapi import HTTPException
 
 from app.utils.auth import (
-    _403_EMAIL_NOT_VERIFIED,
     _decode_supabase_token,
     _check_email_verified,
+    _is_email_verified,
+    _extract_display_name,
 )
 
 
@@ -81,56 +81,62 @@ class TestDecodeSupabaseToken:
         """Random string should return None."""
         assert _decode_supabase_token("not.a.jwt") is None
 
-    @patch("app.utils.auth._get_jwks_client")
-    def test_valid_token_decoded(self, mock_jwks):
-        """Valid JWT signed with a known key should decode correctly."""
+    @patch("app.utils.auth._decode_with_secret", return_value=None)
+    @patch("app.utils.auth._decode_with_jwks")
+    def test_valid_token_decoded_via_jwks(self, mock_jwks_decode, _mock_secret):
+        """JWKS path returns the payload when verification succeeds."""
+        payload = _make_payload(sub=str(uuid.uuid4()))
+        mock_jwks_decode.return_value = payload
+
+        result = _decode_supabase_token("fake.jwt.token")
+        assert result is not None
+        assert result["email"] == "test@example.com"
+        mock_jwks_decode.assert_called_once_with("fake.jwt.token")
+
+    @patch("app.utils.auth.settings")
+    @patch("app.utils.auth._decode_with_jwks", return_value=None)
+    def test_valid_token_decoded_via_hs256_secret(self, _mock_jwks, mock_settings):
+        """Legacy HS256 secret is used when JWKS fails."""
         secret = "test-secret-key-for-testing-purposes!!"
+        mock_settings.SUPABASE_JWT_SECRET = secret
         payload = _make_payload(sub=str(uuid.uuid4()))
         token = pyjwt.encode(payload, secret, algorithm="HS256")
-
-        mock_key = MagicMock()
-        mock_key.key = secret
-        mock_jwks.return_value.get_signing_key_from_jwt.return_value = mock_key
 
         result = _decode_supabase_token(token)
         assert result is not None
         assert result["email"] == "test@example.com"
 
-    @patch("app.utils.auth._get_jwks_client")
-    def test_wrong_key_returns_none(self, mock_jwks):
+    @patch("app.utils.auth.settings")
+    @patch("app.utils.auth._decode_with_jwks", return_value=None)
+    def test_wrong_key_returns_none(self, _mock_jwks, mock_settings):
         """Token signed with different key should return None."""
+        mock_settings.SUPABASE_JWT_SECRET = "completely-different-key-32chars!!"
         payload = _make_payload()
-        token = pyjwt.encode(payload, "wrong-key", algorithm="HS256")
-
-        mock_key = MagicMock()
-        mock_key.key = "completely-different-key"
-        mock_jwks.return_value.get_signing_key_from_jwt.return_value = mock_key
+        token = pyjwt.encode(payload, "wrong-key-also-long-enough-32ch!", algorithm="HS256")
 
         result = _decode_supabase_token(token)
         assert result is None
 
-    @patch("app.utils.auth._get_jwks_client")
-    def test_expired_token_returns_none(self, mock_jwks):
+    @patch("app.utils.auth.settings")
+    @patch("app.utils.auth._decode_with_jwks", return_value=None)
+    def test_expired_token_returns_none(self, _mock_jwks, mock_settings):
         """Token with exp in the past should return None."""
+        secret = "test-secret-key-for-testing-purposes!!"
+        mock_settings.SUPABASE_JWT_SECRET = secret
         payload = _make_payload(exp=1)  # long expired
-        token = pyjwt.encode(payload, "test-key", algorithm="HS256")
-
-        mock_key = MagicMock()
-        mock_key.key = "test-key"
-        mock_jwks.return_value.get_signing_key_from_jwt.return_value = mock_key
+        token = pyjwt.encode(payload, secret, algorithm="HS256")
 
         result = _decode_supabase_token(token)
         assert result is None
 
-    @patch("app.utils.auth._get_jwks_client")
-    def test_wrong_audience_returns_none(self, mock_jwks):
+    @patch("app.utils.auth.settings")
+    @patch("app.utils.auth._decode_with_jwks", return_value=None)
+    def test_wrong_audience_returns_none(self, _mock_jwks, mock_settings):
         """Token with wrong audience should return None."""
+        secret = "test-secret-key-for-testing-purposes!!"
+        mock_settings.SUPABASE_JWT_SECRET = secret
         payload = _make_payload(aud="wrong-audience")
-        token = pyjwt.encode(payload, "test-key", algorithm="HS256")
-
-        mock_key = MagicMock()
-        mock_key.key = "test-key"
-        mock_jwks.return_value.get_signing_key_from_jwt.return_value = mock_key
+        token = pyjwt.encode(payload, secret, algorithm="HS256")
 
         result = _decode_supabase_token(token)
         assert result is None
@@ -241,7 +247,8 @@ class TestGetCurrentUser:
             "sub": str(user_id),
             "email": "ghost@example.com",
             "email_verified": True,
-            "raw_user_meta_data": {"name": "Ghost User"},
+            # Access tokens expose user_metadata (not raw_user_meta_data)
+            "user_metadata": {"name": "Ghost User"},
         }
         mock_user = MagicMock()
         mock_svc.get_user_by_id = AsyncMock(return_value=None)
@@ -255,16 +262,42 @@ class TestGetCurrentUser:
             db, user_id, "Ghost User", "ghost@example.com"
         )
 
+    @pytest.mark.asyncio
+    @patch("app.utils.auth.user_service")
+    @patch("app.utils.auth._decode_supabase_token")
+    async def test_legacy_raw_user_meta_data_still_works(self, mock_decode, mock_svc):
+        """Fallback to raw_user_meta_data when user_metadata is absent."""
+        from app.utils.auth import get_current_user
+        from fastapi.security import HTTPAuthorizationCredentials
+        from unittest.mock import AsyncMock, MagicMock
+
+        user_id = uuid.uuid4()
+        mock_decode.return_value = {
+            "sub": str(user_id),
+            "email": "legacy@example.com",
+            "email_verified": True,
+            "raw_user_meta_data": {"name": "Legacy User"},
+        }
+        mock_user = MagicMock()
+        mock_svc.get_user_by_id = AsyncMock(return_value=None)
+        mock_svc.create_user = AsyncMock(return_value=mock_user)
+        db = MagicMock()
+        creds = HTTPAuthorizationCredentials(scheme="Bearer", credentials="fake-token")
+
+        await get_current_user(credentials=creds, db=db)
+        mock_svc.create_user.assert_awaited_once_with(
+            db, user_id, "Legacy User", "legacy@example.com"
+        )
+
 
 # ── Tests: edge cases ────────────────────────────────────────────
 
 
 class TestEdgeCases:
     def test_check_email_verified_with_string_truthy(self):
-        """email_verified='true' (string) should NOT raise — truthy value."""
+        """email_verified='true' (string) should NOT raise."""
         payload = _make_payload()
         payload["email_verified"] = "true"
-        # 'true' is truthy in Python, so this should pass
         _check_email_verified(payload)
 
     def test_check_email_verified_with_empty_string(self):
@@ -282,3 +315,18 @@ class TestEdgeCases:
         with pytest.raises(HTTPException) as exc_info:
             _check_email_verified(payload)
         assert exc_info.value.status_code == 403
+
+    def test_is_email_verified_app_metadata_fallback(self):
+        assert _is_email_verified({"app_metadata": {"email_verified": True}}) is True
+        assert _is_email_verified({"email_verified": False}) is False
+
+    def test_extract_display_name_prefers_user_metadata(self):
+        name = _extract_display_name(
+            {"user_metadata": {"name": "Ada"}, "raw_user_meta_data": {"name": "Other"}},
+            "ada@example.com",
+        )
+        assert name == "Ada"
+
+    def test_extract_display_name_falls_back_to_email_local(self):
+        name = _extract_display_name({}, "ada@example.com")
+        assert name == "ada"
