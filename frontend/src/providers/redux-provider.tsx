@@ -28,15 +28,13 @@ function AuthInitializer({ children }: { children: React.ReactNode }) {
         store.dispatch(resetAuth())
         return
       }
-      if (
-        event === "SIGNED_IN" ||
-        event === "INITIAL_SESSION" ||
-        event === "TOKEN_REFRESHED" ||
-        event === "USER_UPDATED" ||
-        event === "PASSWORD_RECOVERY"
-      ) {
+      if (event === "SIGNED_IN" || event === "INITIAL_SESSION") {
         store.dispatch(syncSession())
       }
+      // TOKEN_REFRESHED intentionally excluded: token rotation does not
+      // change the user profile. Triggering syncSession here would cause
+      // _fetchWithAuth → refreshSession → TOKEN_REFRESHED → syncSession
+      // → getMeApi → 401 → refreshSession infinite loop.
     })
 
     return () => {

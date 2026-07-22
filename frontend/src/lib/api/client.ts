@@ -31,6 +31,8 @@ function dispatchUnauthorized() {
 
 const REQUEST_TIMEOUT = 300_000 // 5 minutes
 
+let refreshInFlight: Promise<boolean> | null = null
+
 async function _fetchWithAuth(
   path: string,
   init: RequestInit = {},
@@ -54,17 +56,32 @@ async function _fetchWithAuth(
     credentials: "include",
   })
 
-  // On 401, try refreshing session via Supabase
+  // On 401, try ONE token refresh (guarded against concurrent calls).
   if (res.status === 401 && session) {
-    const { data: { session: newSession } } = await supabase.auth.refreshSession()
-    if (newSession?.access_token) {
-      headers["Authorization"] = `Bearer ${newSession.access_token}`
-      res = await fetch(`${API_BASE_URL}${path}`, {
-        ...init,
-        headers,
-        credentials: "include",
+    if (!refreshInFlight) {
+      refreshInFlight = supabase.auth.refreshSession().then(({ data: { session: s } }) => {
+        const ok = !!s?.access_token
+        refreshInFlight = null
+        return ok
+      }).catch(() => {
+        refreshInFlight = null
+        return false
       })
-    } else {
+    }
+
+    if (await refreshInFlight) {
+      const { data: { session: newSession } } = await supabase.auth.getSession()
+      if (newSession?.access_token) {
+        headers["Authorization"] = `Bearer ${newSession.access_token}`
+        res = await fetch(`${API_BASE_URL}${path}`, {
+          ...init,
+          headers,
+          credentials: "include",
+        })
+      }
+    }
+
+    if (!res.ok && res.status === 401) {
       dispatchUnauthorized()
     }
   }

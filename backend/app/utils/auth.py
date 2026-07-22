@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import uuid
 from typing import Optional
 
@@ -14,6 +15,8 @@ from app.config.database import get_db
 from app.config.settings import settings
 from app.modules.users import models as user_models
 from app.modules.users import service as user_service
+
+logger = logging.getLogger(__name__)
 
 _401 = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -32,6 +35,7 @@ async def get_current_user(
     Supabase issues the same HS256-signed JWT regardless of auth method.
     """
     if not authorization or not authorization.startswith("Bearer "):
+        logger.warning("auth: missing or malformed Authorization header")
         raise _401
 
     token = authorization.removeprefix("Bearer ")
@@ -43,7 +47,8 @@ async def get_current_user(
             algorithms=["HS256"],
             audience="authenticated",
         )
-    except jwt.InvalidTokenError:
+    except jwt.InvalidTokenError as exc:
+        logger.warning("auth: JWT decode failed: %s (secret_len=%d)", type(exc).__name__, len(settings.SUPABASE_JWT_SECRET))
         raise _401
 
     sub: Optional[str] = payload.get("sub")
