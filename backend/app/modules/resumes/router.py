@@ -62,8 +62,6 @@ async def get_dashboard_summary(
                 "id": uid,
                 "name": current_user.name,
                 "email": current_user.email,
-                "is_verified": current_user.is_verified,
-                "is_active": current_user.is_active,
                 "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
                 "updated_at": current_user.updated_at.isoformat() if current_user.updated_at else None,
             },

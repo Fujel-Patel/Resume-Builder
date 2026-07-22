@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { useAppDispatch, useAppSelector } from "@/lib/hooks"
 import { login, clearError, type AuthError } from "@/lib/features/auth/authSlice"
 import { loginSchema } from "@/schemas/auth"
+import { GoogleLoginButton } from "@/components/auth/google-login-button"
 
 function getLoginErrorMessage(error: AuthError | string | null): string | null {
   if (!error) return null
@@ -108,6 +109,17 @@ export function LoginForm() {
         <p className="mt-1 text-sm text-muted-foreground">
           Enter your credentials to continue
         </p>
+      </div>
+
+      <GoogleLoginButton />
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-border" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-card px-2 text-muted-foreground">or</span>
+        </div>
       </div>
 
       {typeof errorMessage === "string" && (

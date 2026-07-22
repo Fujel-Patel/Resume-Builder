@@ -31,9 +31,6 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
             try:
                 import sentry_sdk
                 with sentry_sdk.new_scope() as scope:
-                    user_id = getattr(request.state, "user_id", None)
-                    if user_id:
-                        scope.set_user({"id": str(user_id)})
                     scope.set_context("request", {
                         "method": request.method,
                         "url": str(request.url),

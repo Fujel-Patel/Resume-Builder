@@ -3,7 +3,8 @@
 from pathlib import Path
 from typing import List, Union
 
-from pydantic_settings import BaseSettings, SettingsConfigDict, validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
 
 BASE_DIR = Path(__file__).resolve().parents[2]  # backend/app/config → backend
 
@@ -58,7 +59,8 @@ class Settings(BaseSettings):
     # ---------------------------------------------------------------------
     # Validators
     # ---------------------------------------------------------------------
-    @validator("CORS_ORIGINS", pre=True)
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
     def _split_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:
         """Always return a list of origins.
         Accepts:

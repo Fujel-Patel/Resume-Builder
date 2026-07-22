@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { useAppDispatch, useAppSelector } from "@/lib/hooks"
 import { signup, clearError, type AuthError } from "@/lib/features/auth/authSlice"
 import { signupSchema } from "@/schemas/auth"
+import { GoogleLoginButton } from "@/components/auth/google-login-button"
 
 const PASSWORD_SPECIAL_CHARS = /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/;]/u
 
@@ -125,6 +126,17 @@ export function SignupForm() {
         <p className="mt-1 text-sm text-muted-foreground">
           Fill in your details to get started
         </p>
+      </div>
+
+      <GoogleLoginButton />
+
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <span className="w-full border-t border-border" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-card px-2 text-muted-foreground">or</span>
+        </div>
       </div>
 
       {typeof errorMessage === "string" && (

@@ -18,17 +18,15 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         elapsed_ms = (time.perf_counter() - start) * 1000
 
-        user_id = getattr(request.state, "user_id", None)
         log_fn = logger.warning if response.status_code >= 400 else logger.info
 
         log_fn(
-            "{} {} {} {:.1f}ms request_id={} user_id={}",
+            "{} {} {} {:.1f}ms request_id={}",
             request.method,
             request.url.path,
             response.status_code,
             elapsed_ms,
             request_id,
-            user_id or "-",
         )
 
         response.headers["X-Request-ID"] = request_id
