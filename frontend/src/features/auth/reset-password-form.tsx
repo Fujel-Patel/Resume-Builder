@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Loader2 } from "lucide-react"
+import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { resetPassword, logout } from "@/lib/api/auth"
-import { ApiRequestError } from "@/lib/api/client"
+import { resetPasswordSchema } from "@/schemas/auth"
 
-const PASSWORD_SPECIAL_CHARS = /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/;]/
+const PASSWORD_SPECIAL_CHARS = /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/;]/u
 
 const PASSWORD_REQUIREMENTS = [
   { label: "At least 8 characters", test: (p: string) => p.length >= 8 },
@@ -20,6 +20,24 @@ const PASSWORD_REQUIREMENTS = [
   { label: "One special character", test: (p: string) => PASSWORD_SPECIAL_CHARS.test(p) },
 ] as const
 
+function getPasswordStrength(password: string): number {
+  let score = 0
+  if (password.length >= 8) score++
+  if (password.length >= 12) score++
+  if (/[A-Z]/.test(password)) score++
+  if (/[a-z]/.test(password)) score++
+  if (/\d/.test(password)) score++
+  if (PASSWORD_SPECIAL_CHARS.test(password)) score++
+  return Math.min(score, 4)
+}
+
+function getStrengthLabel(score: number): { label: string; color: string } {
+  if (score <= 1) return { label: "Weak", color: "text-destructive" }
+  if (score === 2) return { label: "Fair", color: "text-orange-500" }
+  if (score === 3) return { label: "Good", color: "text-emerald-500" }
+  return { label: "Strong", color: "text-emerald-500" }
+}
+
 export function ResetPasswordForm() {
   const router = useRouter()
   const [password, setPassword] = useState("")
@@ -27,50 +45,45 @@ export function ResetPasswordForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const validate = () => {
-    const errs: Record<string, string> = {}
-    if (!password) {
-      errs.password = "Password is required"
-    } else if (password.length < 8) {
-      errs.password = "Must be at least 8 characters"
-    } else if (!/[A-Z]/.test(password)) {
-      errs.password = "Must contain an uppercase letter"
-    } else if (!/[a-z]/.test(password)) {
-      errs.password = "Must contain a lowercase letter"
-    } else if (!/\d/.test(password)) {
-      errs.password = "Must contain a digit"
-    } else if (!PASSWORD_SPECIAL_CHARS.test(password)) {
-      errs.password = "Must contain a special character"
+  const validate = (): boolean => {
+    const result = resetPasswordSchema.safeParse({ password, confirmPassword })
+    if (result.success) {
+      setErrors({})
+      return true
     }
-
-    if (!confirmPassword) errs.confirmPassword = "Please confirm your password"
-    else if (password !== confirmPassword) errs.confirmPassword = "Passwords do not match"
-
-    setErrors(errs)
-    return Object.keys(errs).length === 0
+    const fieldErrors: Record<string, string> = {}
+    for (const issue of result.error.issues) {
+      const field = issue.path[0] as string
+      if (!fieldErrors[field]) {
+        fieldErrors[field] = issue.message
+      }
+    }
+    setErrors(fieldErrors)
+    return false
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError("")
     if (!validate()) return
     setLoading(true)
     try {
       await resetPassword(password)
       await logout()
-      toast.success("Password updated. Please log in.")
+      toast.success("Password updated successfully. Please sign in with your new password.")
       router.push("/login")
     } catch (err: unknown) {
-      const msg = err instanceof ApiRequestError ? err.message : "Something went wrong"
-      setError(msg)
-      toast.error(msg)
+      const message = err instanceof Error ? err.message : "Something went wrong"
+      setErrors({ form: message })
+      toast.error(message)
     } finally {
       setLoading(false)
     }
   }
+
+  const strengthScore = getPasswordStrength(password)
+  const strength = getStrengthLabel(strengthScore)
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
@@ -81,19 +94,24 @@ export function ResetPasswordForm() {
         </p>
       </div>
 
-      {error && (
+      {errors.form && (
         <div
           role="alert"
           className="rounded-lg border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive"
         >
-          {error}
+          {errors.form}
         </div>
       )}
 
       <div>
-        <label htmlFor="reset-password" className="mb-1.5 block text-sm font-medium text-foreground">
-          New password
-        </label>
+        <div className="mb-1.5 flex items-center justify-between">
+          <label htmlFor="reset-password" className="text-sm font-medium text-foreground">
+            New password
+          </label>
+          {password.length > 0 && (
+            <span className={`text-xs font-medium ${strength.color}`}>{strength.label}</span>
+          )}
+        </div>
         <div className="relative">
           <Input
             id="reset-password"
@@ -114,7 +132,7 @@ export function ResetPasswordForm() {
             tabIndex={-1}
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
-            {showPassword ? "Hide" : "Show"}
+            {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
         {errors.password ? (
@@ -130,7 +148,7 @@ export function ResetPasswordForm() {
                   key={req.label}
                   className={`text-xs ${met ? "text-emerald-500" : "text-muted-foreground"}`}
                 >
-                  {met ? "✓" : "○"} {req.label}
+                  {met ? "\u2713" : "\u25CB"} {req.label}
                 </li>
               )
             })}
@@ -162,7 +180,7 @@ export function ResetPasswordForm() {
             tabIndex={-1}
             aria-label={showConfirm ? "Hide password" : "Show password"}
           >
-            {showConfirm ? "Hide" : "Show"}
+            {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
           </button>
         </div>
         {errors.confirmPassword && (

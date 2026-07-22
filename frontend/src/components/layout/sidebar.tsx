@@ -9,6 +9,7 @@ import {
   BarChart3,
   User,
   Settings2,
+  ShieldCheck,
   LogOut,
   X,
 } from "lucide-react"
@@ -27,6 +28,7 @@ const navItems: NavItem[] = [
   { label: "ATS Score", href: "/ats-score", icon: BarChart3 },
   { label: "Profile", href: "/profile", icon: User },
   { label: "AI Settings", href: "/settings/ai", icon: Settings2 },
+  { label: "Security", href: "/settings/security", icon: ShieldCheck },
 ]
 
 export function Sidebar() {

@@ -9,6 +9,7 @@ import { Eye, EyeOff, Loader2, MailWarning } from "lucide-react"
 import { toast } from "sonner"
 import { useAppDispatch, useAppSelector } from "@/lib/hooks"
 import { login, clearError, type AuthError } from "@/lib/features/auth/authSlice"
+import { loginSchema } from "@/schemas/auth"
 
 function getLoginErrorMessage(error: AuthError | string | null): string | null {
   if (!error) return null
@@ -54,17 +55,21 @@ export function LoginForm() {
     if (msg) toast.error(msg)
   }, [error])
 
-  const validate = () => {
-    const errs: Record<string, string> = {}
-    const sanitizedEmail = email.trim().toLowerCase()
-    if (!sanitizedEmail) {
-      errs.email = "Email is required"
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sanitizedEmail)) {
-      errs.email = "Invalid email address"
+  const validate = (): boolean => {
+    const result = loginSchema.safeParse({ email, password })
+    if (result.success) {
+      setErrors({})
+      return true
     }
-    if (!password) errs.password = "Password is required"
-    setErrors(errs)
-    return Object.keys(errs).length === 0
+    const fieldErrors: Record<string, string> = {}
+    for (const issue of result.error.issues) {
+      const field = issue.path[0] as string
+      if (!fieldErrors[field]) {
+        fieldErrors[field] = issue.message
+      }
+    }
+    setErrors(fieldErrors)
+    return false
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

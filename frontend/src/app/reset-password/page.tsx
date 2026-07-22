@@ -18,7 +18,9 @@ function ResetPasswordContent() {
     async function handleReset() {
       const supabase = createClient()
 
-      // First check if middleware already established a session via PKCE code exchange
+      // Check if middleware already established a session via PKCE code exchange.
+      // When the user clicks the reset link, middleware intercepts the ?code= param,
+      // exchanges it for a session server-side, and redirects back here with cookies set.
       const { data: { session } } = await supabase.auth.getSession()
 
       if (cancelled) return
@@ -28,7 +30,7 @@ function ResetPasswordContent() {
         return
       }
 
-      // Fallback: check hash fragment for implicit flow tokens (legacy)
+      // Fallback: check hash fragment for implicit flow tokens (legacy Supabase links)
       const hash = window.location.hash
       if (hash && hash.length > 1) {
         const params = new URLSearchParams(hash.substring(1))
@@ -44,7 +46,7 @@ function ResetPasswordContent() {
           if (!cancelled) {
             if (error) {
               setStatus("error")
-              setMessage("Invalid or expired reset link. Please request a new one.")
+              setMessage("This reset link has expired or is invalid. Please request a new one.")
             } else {
               setStatus("ready")
             }
@@ -53,10 +55,10 @@ function ResetPasswordContent() {
         }
       }
 
-      // No session, no tokens — invalid link
+      // No session, no tokens — user navigated here directly or link was invalid
       if (!cancelled) {
         setStatus("error")
-        setMessage("Invalid reset link. Please request a new one.")
+        setMessage("This reset link has expired or is invalid. Please request a new one.")
       }
     }
 
@@ -76,7 +78,7 @@ function ResetPasswordContent() {
 
   if (status === "error") {
     return (
-      <AuthLayout title="Reset password" subtitle="Link invalid">
+      <AuthLayout title="Reset password" subtitle="Link invalid or expired">
         <div className="space-y-5 text-center">
           <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-destructive/10">
             <AlertCircle className="size-6 text-destructive" />
@@ -85,6 +87,11 @@ function ResetPasswordContent() {
           <Link href="/forgot-password">
             <Button variant="brand" className="w-full">Request a new link</Button>
           </Link>
+          <p className="text-center text-sm text-muted-foreground">
+            <Link href="/login" className="text-brand hover:underline">
+              Back to sign in
+            </Link>
+          </p>
         </div>
       </AuthLayout>
     )

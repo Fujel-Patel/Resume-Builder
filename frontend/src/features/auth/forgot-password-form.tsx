@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Loader2, ArrowLeft, CheckCircle2 } from "lucide-react"
 import { toast } from "sonner"
 import { forgotPassword } from "@/lib/api/auth"
+import { forgotPasswordSchema } from "@/schemas/auth"
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("")
@@ -14,24 +15,39 @@ export function ForgotPasswordForm() {
   const [error, setError] = useState("")
   const [sent, setSent] = useState(false)
 
-  const validate = () => {
-    const trimmed = email.trim().toLowerCase()
-    if (!trimmed) return "Email is required"
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return "Invalid email address"
-    return ""
+  const validate = (): string | null => {
+    const result = forgotPasswordSchema.safeParse({ email })
+    if (result.success) return null
+    return result.error.issues[0]?.message ?? "Invalid email address"
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
-    const err = validate()
-    if (err) { setError(err); toast.error(err); return }
+    const validationError = validate()
+    if (validationError) {
+      setError(validationError)
+      toast.error(validationError)
+      return
+    }
     setLoading(true)
     try {
       await forgotPassword(email.trim().toLowerCase())
       setSent(true)
-    } catch {
-      // Always show generic success — never reveal whether email exists
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : ""
+
+      // Supabase rate-limits password reset requests (e.g. once per 60s).
+      // Show a user-friendly message for rate limit errors.
+      if (message.includes("security purposes") || message.includes("rate limit")) {
+        setError("Please wait a moment before requesting another reset link.")
+        toast.error("Please wait a moment before requesting another reset link.")
+        setLoading(false)
+        return
+      }
+
+      // For all other errors (including "email not found"), always show
+      // generic success to prevent email enumeration attacks.
       setSent(true)
     } finally {
       setLoading(false)
@@ -39,6 +55,7 @@ export function ForgotPasswordForm() {
   }
 
   if (sent) {
+    const maskedEmail = email.trim().toLowerCase()
     return (
       <div className="space-y-5 text-center">
         <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-500/10">
@@ -47,11 +64,11 @@ export function ForgotPasswordForm() {
         <div>
           <h1 className="text-xl font-semibold text-foreground">Check your email</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            If an account exists with <strong className="text-foreground">{email.trim().toLowerCase()}</strong>,
+            If an account exists with <strong className="text-foreground">{maskedEmail}</strong>,
             a password reset link has been sent.
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Check your spam/junk folder if you don&apos;t see it.
+            The link expires in 1 hour. Check your spam/junk folder if you don&apos;t see it.
           </p>
         </div>
         <Link
@@ -93,6 +110,7 @@ export function ForgotPasswordForm() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
+          maxLength={255}
           autoComplete="email"
         />
       </div>

@@ -9,6 +9,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import { useAppDispatch, useAppSelector } from "@/lib/hooks"
 import { signup, clearError, type AuthError } from "@/lib/features/auth/authSlice"
+import { signupSchema } from "@/schemas/auth"
 
 const PASSWORD_SPECIAL_CHARS = /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/;]/u
 
@@ -80,47 +81,31 @@ export function SignupForm() {
     if (msg) toast.error(msg)
   }, [error])
 
-  const validate = () => {
-    const errs: Record<string, string> = {}
-    const trimmedName = name.trim()
-    if (!trimmedName) {
-      errs.name = "Full name is required"
-    } else if (trimmedName.length > 255) {
-      errs.name = "Name must be under 255 characters"
+  const validate = (): boolean => {
+    const result = signupSchema.safeParse({ name, email, password, confirmPassword })
+    if (result.success) {
+      setErrors({})
+      return true
     }
-    const sanitizedEmail = email.trim().toLowerCase()
-    if (!sanitizedEmail) {
-      errs.email = "Email is required"
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(sanitizedEmail)) {
-      errs.email = "Invalid email address"
+    const fieldErrors: Record<string, string> = {}
+    for (const issue of result.error.issues) {
+      const field = issue.path[0] as string
+      if (!fieldErrors[field]) {
+        fieldErrors[field] = issue.message
+      }
     }
-    if (!password) {
-      errs.password = "Password is required"
-    } else if (password.length < 8) {
-      errs.password = "Must be at least 8 characters"
-    } else if (!/[A-Z]/.test(password)) {
-      errs.password = "Must contain an uppercase letter"
-    } else if (!/[a-z]/.test(password)) {
-      errs.password = "Must contain a lowercase letter"
-    } else if (!/\d/.test(password)) {
-      errs.password = "Must contain a digit"
-    } else if (!PASSWORD_SPECIAL_CHARS.test(password)) {
-      errs.password = "Must contain a special character"
-    }
-    if (!confirmPassword) {
-      errs.confirmPassword = "Please confirm your password"
-    } else if (password !== confirmPassword) {
-      errs.confirmPassword = "Passwords do not match"
-    }
-    setErrors(errs)
-    return Object.keys(errs).length === 0
+    setErrors(fieldErrors)
+    return false
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
-    const sanitizedName = name.trim().replace(/<[^>]*>/g, "")
-    dispatch(signup({ name: sanitizedName, email: email.trim().toLowerCase(), password }))
+    dispatch(signup({
+      name: name.trim().replace(/<[^>]*>/g, ""),
+      email: email.trim().toLowerCase(),
+      password,
+    }))
   }
 
   const getFieldError = (field: string): string | undefined => {
@@ -239,7 +224,7 @@ export function SignupForm() {
                   key={rule.label}
                   className={`text-xs ${met ? "text-emerald-500" : "text-muted-foreground"}`}
                 >
-                  {met ? "✓" : "○"} {rule.label}
+                  {met ? "\u2713" : "\u25CB"} {rule.label}
                 </li>
               )
             })}

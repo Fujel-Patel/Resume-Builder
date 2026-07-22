@@ -1,5 +1,6 @@
 import json
 import uuid
+from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
 
@@ -226,9 +227,10 @@ class TestOptimizeResume:
 
 
 class TestOptimizeResumeStream:
+    @patch("app.modules.ai.router.AsyncSessionLocal")
     @patch("app.modules.ai.service.ai_complete")
     @patch("app.modules.ai.router.extract_text_from_bytes_async", new_callable=AsyncMock)
-    def test_stream_success(self, mock_extract, mock_ai, client, mock_db):
+    def test_stream_success(self, mock_extract, mock_ai, mock_session_local, client, mock_db):
         mock_extract.return_value = "John Doe - Experienced Python developer"
         mock_ai.return_value = json.dumps({
             "parsed": {"personal": {"first_name": "John"}, "summary": "Experienced", "skills": ["Python"], "experience": [], "projects": [], "education": [], "certifications": []},
@@ -239,6 +241,12 @@ class TestOptimizeResumeStream:
         mock_resume.id = uuid.UUID("00000000-0000-0000-0000-000000000001")
         mock_resume.data = MagicMock()
         mock_db.execute = AsyncMock(return_value=mock_result(scalar_value=mock_resume))
+
+        @asynccontextmanager
+        async def _yield_db():
+            yield mock_db
+
+        mock_session_local.side_effect = _yield_db
 
         resp = client.post(
             f"{BASE}/optimize-resume/stream",
@@ -292,11 +300,19 @@ class TestOptimizeResumeStream:
         assert "event: error" in resp.text
         assert "PARSE_ERROR" in resp.text
 
+    @patch("app.modules.ai.router.AsyncSessionLocal")
     @patch("app.modules.ai.service.ai_complete")
     @patch("app.modules.ai.router.extract_text_from_bytes_async", new_callable=AsyncMock)
-    def test_stream_invalid_json_yields_error_event(self, mock_extract, mock_ai, client, mock_db):
+    def test_stream_invalid_json_yields_error_event(self, mock_extract, mock_ai, mock_session_local, client, mock_db):
         mock_extract.return_value = "John Doe - Developer"
         mock_ai.return_value = "this is not json at all"
+
+        @asynccontextmanager
+        async def _yield_db():
+            yield mock_db
+
+        mock_session_local.side_effect = _yield_db
+
         resp = client.post(
             f"{BASE}/optimize-resume/stream",
             files={"file": ("resume.pdf", b"%PDF-1.4 fake", "application/pdf")},
@@ -307,11 +323,19 @@ class TestOptimizeResumeStream:
         assert "event: error" in resp.text
         assert "AI_PROVIDER_ERROR" in resp.text
 
+    @patch("app.modules.ai.router.AsyncSessionLocal")
     @patch("app.modules.ai.service.ai_complete")
     @patch("app.modules.ai.router.extract_text_from_bytes_async", new_callable=AsyncMock)
-    def test_stream_ai_failure_yields_error_event(self, mock_extract, mock_ai, client, mock_db):
+    def test_stream_ai_failure_yields_error_event(self, mock_extract, mock_ai, mock_session_local, client, mock_db):
         mock_extract.return_value = "John Doe - Developer"
         mock_ai.side_effect = Exception("Provider timeout")
+
+        @asynccontextmanager
+        async def _yield_db():
+            yield mock_db
+
+        mock_session_local.side_effect = _yield_db
+
         resp = client.post(
             f"{BASE}/optimize-resume/stream",
             files={"file": ("resume.pdf", b"%PDF-1.4 fake", "application/pdf")},
