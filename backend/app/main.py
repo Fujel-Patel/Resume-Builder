@@ -128,14 +128,12 @@ origins = list({
     *(["http://localhost:3000", "http://127.0.0.1:3000"] if settings.APP_ENV == "development" else []),
 })
 
-# Build a permissive CORS regex for Vercel preview URLs
-# Accept any number of hyphen‑separated suffixes after the project name.
-_cors_regex = None
+# Build CORS regex for Vercel preview URLs.
+# Always set: Vercel env vars may not be available (wrong working dir for .env),
+# so we cannot rely on VERCEL_PROJECT_NAME or APP_ENV to decide.
 if settings.VERCEL_PROJECT_NAME:
-    # Example: https://resume-builder-f5tkc715e-fujel-patels-projects.vercel.app
-    # Pattern accepts any hyphen‑separated suffix after the project name.
     _cors_regex = rf"https://{re.escape(settings.VERCEL_PROJECT_NAME)}(-[a-zA-Z0-9-]+)?\.vercel\.app"
-elif settings.APP_ENV != "development":
+else:
     _cors_regex = r"https://[a-zA-Z0-9_-]+(-[a-zA-Z0-9-]+)?\.vercel\.app"
 
 app.add_middleware(
