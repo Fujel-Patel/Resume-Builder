@@ -1,14 +1,11 @@
 """Users router — GET/PATCH/DELETE /me."""
 
 import logging
-from typing import Optional
 
-import jwt as pyjwt
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.database import get_db
-from app.config.settings import settings
 from app.modules.users import models as user_models
 from app.modules.users import schemas, service
 from app.types.common import success
@@ -22,55 +19,6 @@ router = APIRouter()
 @router.get("/me")
 async def get_me(current_user: user_models.User = Depends(get_current_user)):
     return success(schemas.UserResponse.model_validate(current_user).model_dump())
-
-
-@router.get("/debug/jwt")
-async def debug_jwt(authorization: Optional[str] = Header(default=None)):
-    """Temporary endpoint — remove after debugging JWT issues."""
-    if not authorization or not authorization.startswith("Bearer "):
-        return {"has_token": False, "secret_len": len(settings.SUPABASE_JWT_SECRET)}
-
-    token = authorization.removeprefix("Bearer ")
-    secret = settings.SUPABASE_JWT_SECRET
-
-    result: dict = {
-        "has_token": True,
-        "token_len": len(token),
-        "secret_len": len(secret),
-    }
-
-    try:
-        unverified = pyjwt.decode(token, options={"verify_signature": False})
-        result["sub"] = unverified.get("sub")
-        result["email"] = unverified.get("email")
-        result["aud"] = unverified.get("aud")
-        result["iss"] = unverified.get("iss")
-        result["exp"] = unverified.get("exp")
-        result["role"] = unverified.get("role")
-    except Exception as e:
-        result["unverified_error"] = str(e)
-
-    try:
-        verified = pyjwt.decode(token, secret, algorithms=["HS256"], audience="authenticated")
-        result["verified"] = True
-        result["verified_sub"] = verified.get("sub")
-    except pyjwt.ExpiredSignatureError:
-        result["verified"] = False
-        result["error"] = "EXPIRED"
-    except pyjwt.InvalidAudienceError:
-        result["verified"] = False
-        result["error"] = "INVALID_AUDIENCE"
-    except pyjwt.InvalidSignatureError:
-        result["verified"] = False
-        result["error"] = "INVALID_SIGNATURE"
-    except pyjwt.DecodeError as e:
-        result["verified"] = False
-        result["error"] = f"DECODE_ERROR: {e}"
-    except pyjwt.InvalidTokenError as e:
-        result["verified"] = False
-        result["error"] = f"INVALID_TOKEN: {type(e).__name__}: {e}"
-
-    return result
 
 
 @router.patch("/me")

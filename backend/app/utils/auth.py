@@ -7,6 +7,7 @@ import uuid
 from typing import Optional
 
 import jwt
+from jwt import PyJWKClient
 from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -15,6 +16,9 @@ from app.config.database import get_db
 from app.config.settings import settings
 from app.modules.users import models as user_models
 from app.modules.users import service as user_service
+
+_jwks_url = f"{settings.SUPABASE_URL.rstrip('/')}/auth/v1/.well-known/jwks.json"
+_jwk_client = PyJWKClient(_jwks_url, cache_keys=True, lifespan=3600)
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +35,8 @@ async def get_current_user(
 ) -> user_models.User:
     """Validate a Supabase JWT and return the authenticated user profile.
 
-    Works identically for email/password and Google OAuth users —
-    Supabase issues the same HS256-signed JWT regardless of auth method.
+    Uses JWKS-based verification so the correct signing key (ES256/RS256)
+    is selected automatically from the token's ``kid`` header.
     """
     if not authorization or not authorization.startswith("Bearer "):
         logger.warning("auth: missing or malformed Authorization header")
@@ -41,14 +45,15 @@ async def get_current_user(
     token = authorization.removeprefix("Bearer ")
 
     try:
+        signing_key = _jwk_client.get_signing_key_from_jwt(token)
         payload = jwt.decode(
             token,
-            settings.SUPABASE_JWT_SECRET,
-            algorithms=["HS256"],
+            signing_key.key,
+            algorithms=["ES256", "RS256"],
             audience="authenticated",
         )
-    except jwt.InvalidTokenError as exc:
-        logger.warning("auth: JWT decode failed: %s (secret_len=%d)", type(exc).__name__, len(settings.SUPABASE_JWT_SECRET))
+    except (jwt.InvalidTokenError, jwt.PyJWKClientError) as exc:
+        logger.warning("auth: JWT verification failed: %s", type(exc).__name__)
         raise _401
 
     sub: Optional[str] = payload.get("sub")
