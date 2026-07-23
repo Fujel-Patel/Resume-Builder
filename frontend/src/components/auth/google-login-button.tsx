@@ -17,7 +17,7 @@ async function handleGoogleLogin() {
         const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-                redirectTo: `${getSiteUrl()}/auth/callback?next=/dashboard`,
+                redirectTo: `${getSiteUrl()}/auth/callback`,
                 queryParams: {
                     access_type: "offline",
                     prompt: "consent",
