@@ -10,30 +10,29 @@ import { toast } from "sonner"
 export function GoogleLoginButton() {
   const [loading, setLoading] = useState(false)
 
-async function handleGoogleLogin() {
+  async function handleGoogleLogin() {
     setLoading(true)
     try {
-        const supabase = createClient()
-        const { error } = await supabase.auth.signInWithOAuth({
-            provider: "google",
-            options: {
-                redirectTo: `${getSiteUrl()}/auth/callback`,
-                queryParams: {
-                    access_type: "offline",
-                    prompt: "consent",
-                },
-            },
-        })
-        if (error) {
-            toast.error("Google sign-in failed. Please try again.")
-            setLoading(false)
-        }
-        // If no error, the browser navigates away to Google — no need to reset loading
-    } catch {
-        toast.error("Unable to connect to authentication service.")
+      const supabase = createClient()
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${getSiteUrl()}/auth/callback`,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
+        },
+      })
+      if (error) {
+        toast.error("Google sign-in failed. Please try again.")
         setLoading(false)
+      }
+    } catch {
+      toast.error("Unable to connect to authentication service.")
+      setLoading(false)
     }
-}
+  }
 
   return (
     <Button

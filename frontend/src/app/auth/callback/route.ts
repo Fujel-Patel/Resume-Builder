@@ -99,13 +99,15 @@ export async function GET(request: NextRequest) {
     }
 
     // PKCE failed: expired/used code, or missing code_verifier (different device).
-    // Do NOT send recovery failures to verify-email-sent.
+    // OAuth callbacks have no typeParam → send to /login with error.
+    // Email verification/recovery callbacks have a typeParam → send to appropriate page.
+    const errorDest = isRecovery
+      ? "/forgot-password"
+      : typeParam
+        ? "/verify-email-sent"
+        : "/login"
     return NextResponse.redirect(
-      buildRedirect(
-        request,
-        isRecovery ? "/forgot-password" : "/verify-email-sent",
-        { error: "link_invalid" },
-      ),
+      buildRedirect(request, errorDest, { error: "link_invalid" }),
     )
   }
 
