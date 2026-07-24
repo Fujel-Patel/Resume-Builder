@@ -79,6 +79,16 @@ async def lifespan(app: FastAPI):
         await conn.execute(text("SELECT 1"))
     if settings.APP_ENV == "development":
         await create_tables()
+    else:
+        # Auto-apply pending Alembic migrations on startup (production)
+        try:
+            from alembic.config import Config as AlembicConfig
+            from alembic import command as alembic_cmd
+            alembic_cfg = AlembicConfig("alembic.ini")
+            alembic_cmd.upgrade(alembic_cfg, "head")
+            logger.info("Alembic migrations applied")
+        except Exception as exc:
+            logger.warning("Alembic auto-migration failed: {} — continuing without", exc)
     logger.info("Database ready")
 
     yield
