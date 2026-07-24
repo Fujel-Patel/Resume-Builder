@@ -65,7 +65,15 @@ async def get_current_user(
     except ValueError:
         raise _401
 
-    user = await user_service.get_user_by_id(db, user_id)
+    try:
+        user = await user_service.get_user_by_id(db, user_id)
+    except Exception as exc:
+        logger.exception("auth: DB read failed for user %s: %s", user_id, exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={"code": "INTERNAL_ERROR", "message": f"Database error: {type(exc).__name__}: {exc}"},
+        )
+
     if user is None:
         email = str(payload.get("email") or "")
         name = _extract_name(payload, email)
@@ -77,6 +85,12 @@ async def get_current_user(
             user = await user_service.get_user_by_id(db, user_id)
             if user is None:
                 raise _401
+        except Exception as exc:
+            logger.exception("auth: user creation failed for %s: %s", user_id, exc)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail={"code": "INTERNAL_ERROR", "message": f"User creation error: {type(exc).__name__}: {exc}"},
+            )
 
     return user
 

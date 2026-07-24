@@ -158,7 +158,18 @@ async def list_providers(
         providers = result.scalars().all()
         return [AIProviderResponse.model_validate(p).model_dump() for p in providers]
 
-    providers = await user_get_or_set(uid, "ai_providers", _load)
+    try:
+        providers = await user_get_or_set(uid, "ai_providers", _load)
+    except Exception as exc:
+        from loguru import logger
+        logger.exception("list_providers failed for user {}: {}", uid, exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "code": "INTERNAL_ERROR",
+                "message": f"Failed to load AI providers: {type(exc).__name__}: {exc}",
+            },
+        )
     return success(providers)
 
 
@@ -333,22 +344,31 @@ async def verify_provider(
         if default:
             body.base_url = default
 
-    is_valid, error_msg, models = await verify_api_key(
-        body.provider_name, body.api_key, body.base_url
-    )
-
-    if is_valid:
-        result = await db.execute(
-            select(AIProvider).where(
-                AIProvider.user_id == current_user.id,
-                AIProvider.provider_name == body.provider_name,
-            )
+    try:
+        is_valid, error_msg, models = await verify_api_key(
+            body.provider_name, body.api_key, body.base_url
         )
-        existing = result.scalars().first()
-        if existing:
-            existing.is_verified = True
-            db.add(existing)
-            await db.commit()
+    except Exception as exc:
+        from loguru import logger
+        logger.exception("verify_api_key raised for provider {}: {}", body.provider_name, exc)
+        is_valid, error_msg, models = False, f"Verification error: {type(exc).__name__}: {exc}", []
+
+    try:
+        if is_valid:
+            result = await db.execute(
+                select(AIProvider).where(
+                    AIProvider.user_id == current_user.id,
+                    AIProvider.provider_name == body.provider_name,
+                )
+            )
+            existing = result.scalars().first()
+            if existing:
+                existing.is_verified = True
+                db.add(existing)
+                await db.commit()
+    except Exception as exc:
+        from loguru import logger
+        logger.exception("Failed to persist verify status for user {}: {}", current_user.id, exc)
 
     data = {"valid": is_valid}
 

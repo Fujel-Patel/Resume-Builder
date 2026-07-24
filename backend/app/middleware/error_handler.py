@@ -71,10 +71,11 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
                     content=_error_body(code, message, fields),
                 )
 
-            # Unhandled Python exception
+            # Unhandled Python exception — always include detail for pre-production debugging
+            detail = str(exc) if str(exc) else "An internal server error occurred"
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content=_error_body("INTERNAL_ERROR", "An internal server error occurred"),
+                content=_error_body("INTERNAL_ERROR", detail),
             )
 
 
