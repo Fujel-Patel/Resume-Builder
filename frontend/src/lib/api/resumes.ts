@@ -143,6 +143,8 @@ function toBackendSection(data: ResumeData, section: keyof ResumeData): JsonDict
           content: s.content,
         })),
       }
+    default:
+      return {}
   }
 }
 
