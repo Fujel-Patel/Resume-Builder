@@ -359,8 +359,6 @@ export function AiGeneratorPage() {
                 template={template}
                 setTemplate={setTemplate}
                 scannedWarning={scannedWarning}
-                isConfigured={isConfigured}
-                aiConfigLoading={aiConfigLoading}
               />
             )}
 

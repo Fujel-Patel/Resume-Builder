@@ -1,11 +1,10 @@
 "use client"
 
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { EnhancedCard } from "@/components/ui/enhanced-card"
 import { FileUpload } from "@/components/ui/file-upload"
 import { cn } from "@/lib/utils"
-import { Check, X, Search, AlertCircle, Settings } from "lucide-react"
+import { Check, X, Search, AlertCircle } from "lucide-react"
 import { TemplateSelector } from "./template-selector"
 import type { ResumeTemplate } from "@/features/resume/types"
 
@@ -27,35 +26,10 @@ export function JobInputStep({
   template: ResumeTemplate
   setTemplate: (t: ResumeTemplate) => void
   scannedWarning: boolean
-  isConfigured: boolean
-  aiConfigLoading: boolean
 }) {
-  const router = useRouter()
 
   return (
     <>
-      {!aiConfigLoading && !isConfigured && (
-        <EnhancedCard hover={false} className="mb-6 border-amber-500/30 bg-amber-500/5">
-          <div className="flex items-center gap-3">
-            <AlertCircle className="size-5 shrink-0 text-amber-500" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground">AI not configured</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Configure an AI provider to enable resume optimization. You can still browse the wizard, but AI processing requires an API key.
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => router.push("/settings/ai")}
-              className="shrink-0"
-            >
-              <Settings className="size-3.5" />
-              Configure AI
-            </Button>
-          </div>
-        </EnhancedCard>
-      )}
       <div className="mx-auto max-w-3xl space-y-6">
         <div>
           <h2 className="text-lg font-semibold text-foreground">Paste job description & upload resume</h2>
