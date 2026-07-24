@@ -1,6 +1,7 @@
 "use client"
 
 import type { ResumeData, ResumeTemplate } from "./types"
+import { templateMap } from "@/features/resume-builder/preview/templates"
 import { ProfessionalExecutiveTemplate } from "./templates/professional-executive/template"
 
 type ResumePreviewProps = {
@@ -8,7 +9,107 @@ type ResumePreviewProps = {
   template: ResumeTemplate
 }
 
+function flatToNested(data: ResumeData) {
+  return {
+    id: "preview",
+    name: "Preview",
+    targetRole: "",
+    targetIndustry: "",
+    sections: [],
+    content: {
+      contact: {
+        fullName: data.personal.name,
+        title: data.personal.title,
+        email: data.personal.email,
+        phone: data.personal.phone,
+        location: data.personal.location,
+        website: data.links.portfolio || data.links.website,
+        linkedin: data.links.linkedin ? `https://linkedin.com/in/${data.links.linkedin}` : "",
+        github: data.links.github ? `https://github.com/${data.links.github}` : "",
+        photoUrl: "",
+      },
+      summary: data.summary,
+      jobDescription: "",
+      experience: data.experience.map((e) => ({
+        id: `exp_${e.company}`,
+        company: e.company,
+        role: e.role,
+        startDate: e.startDate,
+        endDate: e.endDate,
+        current: e.endDate?.toLowerCase() === "present",
+        location: "",
+        bullets: e.description ? e.description.split("\n").filter(Boolean) : [],
+      })),
+      education: data.education.map((e) => ({
+        id: `edu_${e.school}`,
+        institution: e.school,
+        degree: e.degree,
+        field: e.field,
+        startDate: e.startDate,
+        endDate: e.endDate,
+        current: false,
+        gpa: "",
+      })),
+      skills: data.skillGroups
+        ? Object.entries(data.skillGroups).map(([name, skills]) => ({
+            id: `skg_${name}`,
+            name,
+            skills,
+          }))
+        : data.skills.length > 0
+          ? [{ id: "skg_default", name: "", skills: data.skills }]
+          : [],
+      languages: [],
+      certifications: data.certifications.map((c) => ({
+        id: `cert_${c.name}`,
+        name: c.name,
+        issuer: c.issuer,
+        date: c.date,
+        url: "",
+      })),
+      projects: data.projects.map((p) => ({
+        id: `proj_${p.name}`,
+        name: p.name,
+        role: "",
+        url: "",
+        startDate: "",
+        endDate: "",
+        bullets: p.description ? [p.description] : [],
+      })),
+      awards: [],
+      interests: [],
+      references: [],
+      custom: (data.customSections || []).map((s) => ({
+        id: `custom_${s.label}`,
+        title: s.label,
+        content: s.content,
+        bullets: [],
+      })),
+    },
+    theme: {
+      primaryColor: "#1a3a5c",
+      secondaryColor: "#4a6572",
+      textColor: "#333333",
+      backgroundColor: "#ffffff",
+      accentColor: "#00FFF0",
+      fontFamily: "Inter, sans-serif",
+      headingFont: "Inter, sans-serif",
+      fontSize: "medium" as const,
+      spacing: "normal" as const,
+      sectionStyle: "underline" as const,
+    },
+    templateId: "",
+    createdAt: "",
+    updatedAt: "",
+  }
+}
+
 export function ResumePreview({ data, template }: ResumePreviewProps) {
+  const Template = templateMap[template]
+  if (Template) {
+    return <Template resume={flatToNested(data)} />
+  }
+
   switch (template) {
     case "modern":
       return <ModernTemplate data={data} />
@@ -152,9 +253,6 @@ function SkillsSection({ data }: { data: ResumeData }) {
   return null
 }
 
-// ---------------------------------------------------------------------------
-// CLASSIC
-// ---------------------------------------------------------------------------
 function ClassicTemplate({ data }: { data: ResumeData }) {
   return (
     <div className="w-full bg-white text-black" style={{ fontFamily: "'Times New Roman', Times, serif", minHeight: 600 }}>
@@ -168,56 +266,48 @@ function ClassicTemplate({ data }: { data: ResumeData }) {
             {data.personal.location && <span>{data.personal.location}</span>}
           </div>
         </div>
-
         {(data.links.linkedin || data.links.github) && (
           <div className="mt-2 flex justify-center gap-4 text-[11px] text-gray-500">
             {data.links.linkedin && <span>linkedin.com/in/{data.links.linkedin}</span>}
             {data.links.github && <span>github.com/{data.links.github}</span>}
           </div>
         )}
-
         {data.summary && (
           <div className="mt-5">
             <div className="border-b border-gray-300 mb-1.5" />
             <p className="text-[11px] leading-relaxed text-gray-700">{data.summary}</p>
           </div>
         )}
-
         {(data.skills.length > 0 || (data.skillGroups && Object.keys(data.skillGroups).length > 0)) && (
           <div className="mt-4">
             <SectionTitle>Skills</SectionTitle>
             <SkillsSection data={data} />
           </div>
         )}
-
         {data.experience.length > 0 && (
           <div className="mt-4">
             <SectionTitle>Experience</SectionTitle>
             <ExperienceBlock experience={data.experience} />
           </div>
         )}
-
         {data.projects.length > 0 && (
           <div className="mt-4">
             <SectionTitle>Projects</SectionTitle>
             <ProjectsBlock projects={data.projects} />
           </div>
         )}
-
         {data.education.length > 0 && (
           <div className="mt-4">
             <SectionTitle>Education</SectionTitle>
             <EducationBlock education={data.education} />
           </div>
         )}
-
         {data.certifications.length > 0 && (
           <div className="mt-4">
             <SectionTitle>Certifications</SectionTitle>
             <CertificationsBlock certifications={data.certifications} />
           </div>
         )}
-
         {data.customSections && data.customSections.length > 0 && (
           <CustomSectionsBlock sections={data.customSections} />
         )}
@@ -226,9 +316,6 @@ function ClassicTemplate({ data }: { data: ResumeData }) {
   )
 }
 
-// ---------------------------------------------------------------------------
-// MODERN
-// ---------------------------------------------------------------------------
 function ModernTemplate({ data }: { data: ResumeData }) {
   return (
     <div className="w-full bg-white text-black" style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", minHeight: 600 }}>
@@ -243,7 +330,6 @@ function ModernTemplate({ data }: { data: ResumeData }) {
           {data.links.github && <span>github.com/{data.links.github}</span>}
         </div>
       </div>
-
       <div className="p-8 pt-6">
         {data.summary && (
           <div className="mb-5">
@@ -251,7 +337,6 @@ function ModernTemplate({ data }: { data: ResumeData }) {
             <p className="text-[11px] leading-relaxed text-gray-700">{data.summary}</p>
           </div>
         )}
-
         {(data.skills.length > 0 || (data.skillGroups && Object.keys(data.skillGroups).length > 0)) && (
           <div className="mb-5">
             <h2 className="text-xs font-bold uppercase tracking-wider text-[#1a3a5c] border-b border-[#1a3a5c] pb-1 mb-2">Skills</h2>
@@ -273,7 +358,6 @@ function ModernTemplate({ data }: { data: ResumeData }) {
             )}
           </div>
         )}
-
         {data.experience.length > 0 && (
           <div className="mb-5">
             <h2 className="text-xs font-bold uppercase tracking-wider text-[#1a3a5c] border-b border-[#1a3a5c] pb-1 mb-2">Experience</h2>
@@ -293,7 +377,6 @@ function ModernTemplate({ data }: { data: ResumeData }) {
             ))}
           </div>
         )}
-
         {data.projects.length > 0 && (
           <div className="mb-5">
             <h2 className="text-xs font-bold uppercase tracking-wider text-[#1a3a5c] border-b border-[#1a3a5c] pb-1 mb-2">Projects</h2>
@@ -305,7 +388,6 @@ function ModernTemplate({ data }: { data: ResumeData }) {
             ))}
           </div>
         )}
-
         {data.education.length > 0 && (
           <div className="mb-5">
             <h2 className="text-xs font-bold uppercase tracking-wider text-[#1a3a5c] border-b border-[#1a3a5c] pb-1 mb-2">Education</h2>
@@ -324,7 +406,6 @@ function ModernTemplate({ data }: { data: ResumeData }) {
             ))}
           </div>
         )}
-
         {data.certifications.length > 0 && (
           <div>
             <h2 className="text-xs font-bold uppercase tracking-wider text-[#1a3a5c] border-b border-[#1a3a5c] pb-1 mb-2">Certifications</h2>
@@ -339,7 +420,6 @@ function ModernTemplate({ data }: { data: ResumeData }) {
             ))}
           </div>
         )}
-
         {data.customSections && data.customSections.length > 0 && (
           <CustomSectionsBlock
             sections={data.customSections}
@@ -353,9 +433,6 @@ function ModernTemplate({ data }: { data: ResumeData }) {
   )
 }
 
-// ---------------------------------------------------------------------------
-// MINIMAL
-// ---------------------------------------------------------------------------
 function MinimalTemplate({ data }: { data: ResumeData }) {
   return (
     <div className="w-full bg-white text-black" style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", minHeight: 600 }}>
@@ -369,48 +446,41 @@ function MinimalTemplate({ data }: { data: ResumeData }) {
           {data.links.linkedin && <span>linkedin.com/in/{data.links.linkedin}</span>}
           {data.links.github && <span>github.com/{data.links.github}</span>}
         </div>
-
         {data.summary && (
           <div className="mt-6">
             <p className="text-[11px] leading-relaxed text-gray-600">{data.summary}</p>
           </div>
         )}
-
         {(data.skills.length > 0 || (data.skillGroups && Object.keys(data.skillGroups).length > 0)) && (
           <div className="mt-5">
             <p className="text-[9px] font-bold uppercase tracking-[2px] text-gray-400 mb-2">Skills</p>
             <SkillsSection data={data} />
           </div>
         )}
-
         {data.experience.length > 0 && (
           <div className="mt-5">
             <p className="text-[9px] font-bold uppercase tracking-[2px] text-gray-400 mb-2">Experience</p>
             <ExperienceBlock experience={data.experience} />
           </div>
         )}
-
         {data.projects.length > 0 && (
           <div className="mt-5">
             <p className="text-[9px] font-bold uppercase tracking-[2px] text-gray-400 mb-2">Projects</p>
             <ProjectsBlock projects={data.projects} />
           </div>
         )}
-
         {data.education.length > 0 && (
           <div className="mt-5">
             <p className="text-[9px] font-bold uppercase tracking-[2px] text-gray-400 mb-2">Education</p>
             <EducationBlock education={data.education} />
           </div>
         )}
-
         {data.certifications.length > 0 && (
           <div className="mt-5">
             <p className="text-[9px] font-bold uppercase tracking-[2px] text-gray-400 mb-2">Certifications</p>
             <CertificationsBlock certifications={data.certifications} />
           </div>
         )}
-
         {data.customSections && data.customSections.length > 0 && (
           <CustomSectionsBlock
             sections={data.customSections}
@@ -424,9 +494,6 @@ function MinimalTemplate({ data }: { data: ResumeData }) {
   )
 }
 
-// ---------------------------------------------------------------------------
-// CREATIVE
-// ---------------------------------------------------------------------------
 function CreativeTemplate({ data }: { data: ResumeData }) {
   return (
     <div className="flex w-full bg-white text-black" style={{ fontFamily: "'Helvetica Neue', Arial, sans-serif", minHeight: 600 }}>
@@ -435,7 +502,6 @@ function CreativeTemplate({ data }: { data: ResumeData }) {
           <h1 className="text-lg font-bold text-white leading-tight">{data.personal.name || "Your Name"}</h1>
           <p className="text-[11px] text-[#a0a0c0] mt-1">{data.personal.title || "Job Title"}</p>
         </div>
-
         <div className="mt-6">
           <p className="text-[8px] font-bold uppercase tracking-wider text-[#c0c0e0] mb-2">Contact</p>
           <div className="space-y-1 text-[10px] text-[#d0d0e0]">
@@ -444,7 +510,6 @@ function CreativeTemplate({ data }: { data: ResumeData }) {
             {data.personal.location && <p>{data.personal.location}</p>}
           </div>
         </div>
-
         {(data.links.linkedin || data.links.github) && (
           <div className="mt-4">
             <p className="text-[8px] font-bold uppercase tracking-wider text-[#c0c0e0] mb-2">Links</p>
@@ -455,7 +520,6 @@ function CreativeTemplate({ data }: { data: ResumeData }) {
             </div>
           </div>
         )}
-
         {(data.skills.length > 0 || (data.skillGroups && Object.keys(data.skillGroups).length > 0)) && (
           <div className="mt-4">
             <p className="text-[8px] font-bold uppercase tracking-wider text-[#c0c0e0] mb-2">Skills</p>
@@ -474,7 +538,6 @@ function CreativeTemplate({ data }: { data: ResumeData }) {
           </div>
         )}
       </div>
-
       <div className="w-[65%] p-6">
         {data.summary && (
           <div className="mb-5">
@@ -482,7 +545,6 @@ function CreativeTemplate({ data }: { data: ResumeData }) {
             <p className="text-[11px] leading-relaxed text-gray-700">{data.summary}</p>
           </div>
         )}
-
         {data.experience.length > 0 && (
           <div className="mb-5">
             <h2 className="text-[11px] font-bold text-[#2d2d3f] border-b-2 border-[#2d2d3f] pb-1 mb-2 uppercase tracking-wider">Experience</h2>
@@ -502,7 +564,6 @@ function CreativeTemplate({ data }: { data: ResumeData }) {
             ))}
           </div>
         )}
-
         {data.projects.length > 0 && (
           <div className="mb-5">
             <h2 className="text-[11px] font-bold text-[#2d2d3f] border-b-2 border-[#2d2d3f] pb-1 mb-2 uppercase tracking-wider">Projects</h2>
@@ -514,7 +575,6 @@ function CreativeTemplate({ data }: { data: ResumeData }) {
             ))}
           </div>
         )}
-
         {data.education.length > 0 && (
           <div className="mb-5">
             <h2 className="text-[11px] font-bold text-[#2d2d3f] border-b-2 border-[#2d2d3f] pb-1 mb-2 uppercase tracking-wider">Education</h2>
@@ -533,7 +593,6 @@ function CreativeTemplate({ data }: { data: ResumeData }) {
             ))}
           </div>
         )}
-
         {data.certifications.length > 0 && (
           <div>
             <h2 className="text-[11px] font-bold text-[#2d2d3f] border-b-2 border-[#2d2d3f] pb-1 mb-2 uppercase tracking-wider">Certifications</h2>
@@ -548,7 +607,6 @@ function CreativeTemplate({ data }: { data: ResumeData }) {
             ))}
           </div>
         )}
-
         {data.customSections && data.customSections.length > 0 && (
           <CustomSectionsBlock
             sections={data.customSections}

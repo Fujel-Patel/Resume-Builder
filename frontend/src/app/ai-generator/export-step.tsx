@@ -3,9 +3,9 @@
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { ResumePreview } from "@/features/resume/resume-preview"
-import { cn } from "@/lib/utils"
+import { builderTemplates } from "@/features/resume-builder/preview/templates"
 import { Check, Download, Eye, RotateCcw } from "lucide-react"
-import { TemplateSelector, TEMPLATES } from "./template-selector"
+import { TemplateSelector } from "./template-selector"
 import type { ResumeTemplate, ResumeData } from "@/features/resume/types"
 
 export function ExportStep({
@@ -30,7 +30,7 @@ export function ExportStep({
   const router = useRouter()
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold text-foreground">Export your optimized resume</h2>
@@ -48,9 +48,9 @@ export function ExportStep({
         </div>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-1 space-y-4">
-          <TemplateSelector selected={template} onSelect={setTemplate} label="Template" />
+      <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
+        <div className="flex flex-col gap-4">
+          <TemplateSelector selected={template} onSelect={setTemplate} label="Choose Template" />
 
           <div className="space-y-2 pt-2">
             <Button variant="brand" className="w-full" onClick={onDownloadPdf} disabled={!resumeId || downloading}>
@@ -68,12 +68,14 @@ export function ExportStep({
           </div>
         </div>
 
-        <div className="lg:col-span-2">
-          <div className="overflow-hidden rounded-lg border shadow-sm">
+        <div className="min-h-0">
+          <div className="sticky top-4 overflow-hidden rounded-lg border shadow-sm">
             <div className="bg-muted px-4 py-2 border-b flex items-center justify-between">
-              <p className="text-xs font-medium text-muted-foreground">Preview — {TEMPLATES.find((t) => t.id === template)?.label}</p>
+              <p className="text-xs font-medium text-muted-foreground">
+                Preview — {builderTemplates.find((t) => t.id === template)?.name || template}
+              </p>
             </div>
-            <div className="bg-[#0A0A0A] p-4" style={{ minHeight: 400 }}>
+            <div className="bg-[#0A0A0A] p-4" style={{ minHeight: 500 }}>
               <div className="mx-auto max-w-[210mm] scale-[0.7] origin-top">
                 <ResumePreview data={optimizedFrontend} template={template} />
               </div>
