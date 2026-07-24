@@ -26,8 +26,8 @@ router = APIRouter()
 
 VALID_PROVIDERS = {"gemini", "openrouter", "groq", "custom", "nvidia-nim", "nvidia"}
 
-# Providers where base_url is required (no default)
-BASE_URL_REQUIRED = {"custom", "nvidia-nim", "nvidia"}
+# Providers where base_url is required and no default exists
+BASE_URL_REQUIRED = {"custom"}
 
 # Normalize user-facing names to internal names
 PROVIDER_ALIASES = {"nvidia": "nvidia-nim"}
@@ -187,14 +187,18 @@ async def add_provider(
                 status_code=400,
                 detail={"code": "VALIDATION_ERROR", "message": str(e)},
             )
-    elif body.provider_name in BASE_URL_REQUIRED:
-        raise HTTPException(
-            status_code=400,
-            detail={
-                "code": "VALIDATION_ERROR",
-                "message": f"base_url is required for provider '{body.provider_name}'",
-            },
-        )
+    else:
+        default = _get_default_base_url(body.provider_name)
+        if default:
+            body.base_url = default
+        elif body.provider_name in BASE_URL_REQUIRED:
+            raise HTTPException(
+                status_code=400,
+                detail={
+                    "code": "VALIDATION_ERROR",
+                    "message": f"base_url is required for provider '{body.provider_name}'",
+                },
+            )
 
     existing = await db.execute(
         select(AIProvider).where(
@@ -324,6 +328,10 @@ async def verify_provider(
                 status_code=400,
                 detail={"code": "VALIDATION_ERROR", "message": str(e)},
             )
+    else:
+        default = _get_default_base_url(body.provider_name)
+        if default:
+            body.base_url = default
 
     is_valid, error_msg, models = await verify_api_key(
         body.provider_name, body.api_key, body.base_url

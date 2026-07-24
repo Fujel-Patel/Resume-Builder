@@ -56,7 +56,7 @@ const PROVIDER_OPTIONS = [
   { value: "openrouter", label: "OpenRouter", needsBaseUrl: false },
   { value: "groq", label: "Groq", needsBaseUrl: false },
   { value: "custom", label: "Custom (OpenAI-compatible)", needsBaseUrl: true },
-  { value: "nvidia-nim", label: "NVIDIA NIM", needsBaseUrl: true },
+  { value: "nvidia-nim", label: "NVIDIA NIM", needsBaseUrl: false, defaultBaseUrl: "https://integrate.api.nvidia.com/v1" },
 ]
 
 const PROVIDER_LABELS: Record<string, string> = Object.fromEntries(
@@ -185,7 +185,8 @@ export function AiSettingsPage() {
       setDialogOpen(false)
       invalidateAiConfig()
       await fetchProviders()
-    } catch {
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to save provider")
     } finally {
       setSaving(false)
     }
@@ -213,7 +214,11 @@ export function AiSettingsPage() {
         }
       } else {
       }
-    } catch {
+    } catch (err) {
+      setInlineVerifyResult({
+        valid: false,
+        error: err instanceof Error ? err.message : "Verification request failed",
+      })
     } finally {
       setVerifyingInline(false)
     }
@@ -247,7 +252,11 @@ export function AiSettingsPage() {
         )
       } else {
       }
-    } catch {
+    } catch (err) {
+      setVerifyResult({
+        valid: false,
+        error: err instanceof Error ? err.message : "Verification request failed",
+      })
     } finally {
       setVerifying(false)
     }
@@ -268,7 +277,8 @@ export function AiSettingsPage() {
       invalidateAiConfig()
       setDeleteOpen(false)
       setDeleteTarget(null)
-    } catch {
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete provider")
     } finally {
       setDeleting(false)
     }
@@ -472,7 +482,11 @@ export function AiSettingsPage() {
                   <Select
                     value={form.provider_name}
                     onValueChange={(value) => {
-                      updateForm({ provider_name: value ?? "" })
+                      const opt = PROVIDER_OPTIONS.find((o) => o.value === value)
+                      updateForm({
+                        provider_name: value ?? "",
+                        base_url: opt?.defaultBaseUrl ?? "",
+                      })
                       setAvailableModels([])
                       setInlineVerifyResult(null)
                     }}

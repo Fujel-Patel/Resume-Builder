@@ -144,8 +144,11 @@ async def ai_complete(
 async def verify_api_key(
     provider_name: str, api_key: str, base_url: Optional[str] = None
 ) -> tuple[bool, str, list[dict]]:
-    if base_url:
-        base_url = _validate_base_url(base_url)
+    try:
+        if base_url:
+            base_url = _validate_base_url(base_url)
+    except ValueError as exc:
+        return False, str(exc), []
 
     list_fn = LIST_MODELS_MAP.get(provider_name)
     if list_fn:

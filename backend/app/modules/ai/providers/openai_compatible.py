@@ -17,7 +17,8 @@ PROVIDER_DEFAULTS = {
     "openrouter": OPENROUTER_BASE_URL,
     "groq": GROQ_BASE_URL,
     "custom": None,
-    "nvidia-nim": None,
+    "nvidia-nim": "https://integrate.api.nvidia.com/v1",
+    "nvidia": "https://integrate.api.nvidia.com/v1",
 }
 
 
