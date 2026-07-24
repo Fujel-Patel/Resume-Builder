@@ -16,8 +16,6 @@ export function JobInputStep({
   template,
   setTemplate,
   scannedWarning,
-  isConfigured,
-  aiConfigLoading,
 }: {
   jobDesc: string
   setJobDesc: (v: string) => void
