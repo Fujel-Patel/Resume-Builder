@@ -15,6 +15,7 @@ export type ResumeData = {
     website: string
   }
   summary: string
+  jobDescription?: string
   skills: string[]
   skillGroups: Record<string, string[]> | null
   experience: ExperienceEntry[]

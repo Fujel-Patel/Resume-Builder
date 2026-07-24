@@ -236,10 +236,10 @@ export function BlueSteelTemplate({ resume }: Props) {
                   }}
                 >
                   <div style={{ flex: 1 }}>
-                    <p style={{ fontSize: 14, fontWeight: 700, color: C.heading, margin: 0 }}>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: C.heading, margin: 0, lineHeight: 1.3 }}>
                       {exp.role}
                     </p>
-                    <p style={{ fontSize: 13, fontWeight: 500, color: C.text, margin: "2px 0 0 0" }}>
+                    <p style={{ fontSize: 13, fontWeight: 500, color: C.primary, margin: "2px 0 0 0", lineHeight: 1.3 }}>
                       {exp.company}
                     </p>
                   </div>
@@ -260,12 +260,12 @@ export function BlueSteelTemplate({ resume }: Props) {
                       margin: "6px 0 0 0",
                       paddingLeft: 14,
                       fontSize: 12,
-                      lineHeight: 1.6,
+                      lineHeight: 1.65,
                       color: C.text,
                     }}
                   >
                     {exp.bullets.map((b, bi) => (
-                      <li key={bi} style={{ marginBottom: 2 }}>
+                      <li key={bi} style={{ marginBottom: 3 }}>
                         {b}
                       </li>
                     ))}
@@ -297,10 +297,10 @@ export function BlueSteelTemplate({ resume }: Props) {
                 }}
               >
                 <div>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: C.heading, margin: 0 }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: C.heading, margin: 0, lineHeight: 1.3 }}>
                     {edu.degree}{edu.field ? ` in ${edu.field}` : ""}
                   </p>
-                  <p style={{ fontSize: 13, color: C.text, margin: "2px 0 0 0" }}>
+                  <p style={{ fontSize: 13, color: C.primary, margin: "2px 0 0 0", lineHeight: 1.3 }}>
                     {edu.institution}
                   </p>
                 </div>

@@ -7,7 +7,7 @@ import { ProfileImage, CompactSkills } from "../resume-page"
 const C = {
   primary: "#355E88",
   divider: "#4A6785",
-  dark: "#222222",
+  dark: "#1a1a1a",
   body: "#333333",
   muted: "#666666",
   title: "#355E88",
@@ -174,14 +174,14 @@ export function ProfessionalExecutiveTemplate({ resume }: Props) {
                   alignItems: "flex-start",
                 }}
               >
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 16, fontWeight: 700, color: C.dark, margin: 0 }}>
-                    {exp.role}
-                  </p>
-                  <p style={{ fontSize: 15, fontWeight: 500, color: C.body, margin: "2px 0 0 0" }}>
-                    {exp.company}
-                  </p>
-                </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: 16, fontWeight: 700, color: C.dark, margin: 0, lineHeight: 1.3 }}>
+                      {exp.role}
+                    </p>
+                    <p style={{ fontSize: 14, fontWeight: 500, color: C.primary, margin: "2px 0 0 0", lineHeight: 1.3 }}>
+                      {exp.company}
+                    </p>
+                  </div>
                 {(exp.startDate || exp.endDate) && (
                   <p style={{ fontSize: 14, fontWeight: 600, color: C.date, margin: 0, whiteSpace: "nowrap" }}>
                     {exp.startDate}
@@ -191,9 +191,9 @@ export function ProfessionalExecutiveTemplate({ resume }: Props) {
                 )}
               </div>
               {exp.bullets.length > 0 && (
-                <ul style={{ margin: "6px 0 0 0", paddingLeft: 18, fontSize: 14, lineHeight: 1.6, color: C.body }}>
+                <ul style={{ margin: "6px 0 0 0", paddingLeft: 18, fontSize: 14, lineHeight: 1.65, color: C.body }}>
                   {exp.bullets.map((b, i) => (
-                    <li key={i}>{b}</li>
+                    <li key={i} style={{ marginBottom: 3 }}>{b}</li>
                   ))}
                 </ul>
               )}
@@ -215,10 +215,10 @@ export function ProfessionalExecutiveTemplate({ resume }: Props) {
               }}
             >
               <div>
-                <p style={{ fontSize: 16, fontWeight: 700, color: C.dark, margin: 0 }}>
+                <p style={{ fontSize: 16, fontWeight: 700, color: C.dark, margin: 0, lineHeight: 1.3 }}>
                   {edu.degree}{edu.field ? ` in ${edu.field}` : ""}
                 </p>
-                <p style={{ fontSize: 15, fontWeight: 500, color: C.body, margin: "2px 0 0 0" }}>
+                <p style={{ fontSize: 14, fontWeight: 500, color: C.primary, margin: "2px 0 0 0", lineHeight: 1.3 }}>
                   {edu.institution}
                 </p>
               </div>
@@ -274,10 +274,11 @@ function Section({ heading, children }: { heading: string; children: React.React
       <Divider />
       <h2
         style={{
-          fontSize: 16,
+          fontSize: 15,
           fontWeight: 700,
           color: C.title,
-          margin: "0 0 8px 0",
+          margin: "0 0 10px 0",
+          letterSpacing: "0.02em",
         }}
       >
         {heading}
@@ -292,10 +293,11 @@ function Divider() {
     <hr
       style={{
         border: "none",
-        height: 2,
+        height: 1.5,
         backgroundColor: C.divider,
-        marginTop: 8,
-        marginBottom: 12,
+        marginTop: 10,
+        marginBottom: 14,
+        opacity: 0.6,
       }}
     />
   )

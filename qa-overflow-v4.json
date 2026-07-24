@@ -1,0 +1,224 @@
+[
+  {
+    "id": "nova-timeline",
+    "width": 516,
+    "height": 90,
+    "status": "WRONG_WIDTH_516"
+  },
+  {
+    "id": "professional-executive",
+    "width": 469,
+    "height": 63,
+    "status": "WRONG_WIDTH_469"
+  },
+  {
+    "id": "obsidian-edge",
+    "width": 516,
+    "height": 152,
+    "status": "WRONG_WIDTH_516"
+  },
+  {
+    "id": "blue-steel",
+    "width": 516,
+    "height": 111,
+    "status": "WRONG_WIDTH_516"
+  },
+  {
+    "id": "neon-green",
+    "width": 469,
+    "height": 692,
+    "status": "WRONG_WIDTH_469"
+  },
+  {
+    "id": "startup-founder",
+    "width": 516,
+    "height": 150,
+    "status": "WRONG_WIDTH_516"
+  },
+  {
+    "id": "graduate-entry",
+    "width": 469,
+    "height": 685,
+    "status": "WRONG_WIDTH_469"
+  },
+  {
+    "id": "minimal-timeline",
+    "width": 155,
+    "height": 730,
+    "status": "WRONG_WIDTH_155"
+  },
+  {
+    "id": "developer-portfolio",
+    "width": 165,
+    "height": 730,
+    "status": "WRONG_WIDTH_165"
+  },
+  {
+    "id": "designer-creative",
+    "width": 181,
+    "height": 730,
+    "status": "WRONG_WIDTH_181"
+  },
+  {
+    "id": "ats-clean",
+    "width": 469,
+    "height": 705,
+    "status": "WRONG_WIDTH_469"
+  },
+  {
+    "id": "ats-minimal",
+    "width": 480,
+    "height": 598,
+    "status": "WRONG_WIDTH_480"
+  },
+  {
+    "id": "ats-bold-headings",
+    "width": 469,
+    "height": 732,
+    "status": "WRONG_WIDTH_469"
+  },
+  {
+    "id": "ats-serif",
+    "width": 469,
+    "height": 683,
+    "status": "WRONG_WIDTH_469"
+  },
+  {
+    "id": "ats-modern-sans",
+    "width": 469,
+    "height": 680,
+    "status": "WRONG_WIDTH_469"
+  },
+  {
+    "id": "ats-compact",
+    "width": 480,
+    "height": 611,
+    "status": "WRONG_WIDTH_480"
+  },
+  {
+    "id": "ats-executive",
+    "width": 459,
+    "height": 723,
+    "status": "WRONG_WIDTH_459"
+  },
+  {
+    "id": "ats-creative-safe",
+    "width": 469,
+    "height": 746,
+    "status": "WRONG_WIDTH_469"
+  },
+  {
+    "id": "executive-navy",
+    "width": 459,
+    "height": 773,
+    "status": "WRONG_WIDTH_459"
+  },
+  {
+    "id": "corporate-gray",
+    "width": 469,
+    "height": 738,
+    "status": "WRONG_WIDTH_469"
+  },
+  {
+    "id": "consultant",
+    "width": 459,
+    "height": 812,
+    "status": "WRONG_WIDTH_459"
+  },
+  {
+    "id": "finance-formal",
+    "width": 469,
+    "height": 735,
+    "status": "WRONG_WIDTH_469"
+  },
+  {
+    "id": "tech-professional",
+    "width": 469,
+    "height": 734,
+    "status": "WRONG_WIDTH_469"
+  },
+  {
+    "id": "healthcare",
+    "width": 469,
+    "height": 667,
+    "status": "WRONG_WIDTH_469"
+  },
+  {
+    "id": "legal",
+    "width": 469,
+    "height": 687,
+    "status": "WRONG_WIDTH_469"
+  },
+  {
+    "id": "sidebar-classic",
+    "width": 134,
+    "height": 730,
+    "status": "WRONG_WIDTH_134"
+  },
+  {
+    "id": "sidebar-modern",
+    "width": 134,
+    "height": 730,
+    "status": "WRONG_WIDTH_134"
+  },
+  {
+    "id": "sidebar-dark",
+    "width": 134,
+    "height": 730,
+    "status": "WRONG_WIDTH_134"
+  },
+  {
+    "id": "split-even",
+    "width": 131,
+    "height": 730,
+    "status": "WRONG_WIDTH_131"
+  },
+  {
+    "id": "split-golden",
+    "width": 131,
+    "height": 776,
+    "status": "WRONG_WIDTH_131"
+  },
+  {
+    "id": "sidebar-right",
+    "width": 364,
+    "height": 694,
+    "status": "WRONG_WIDTH_364"
+  },
+  {
+    "id": "sidebar-narrow",
+    "width": 106,
+    "height": 730,
+    "status": "WRONG_WIDTH_106"
+  },
+  {
+    "id": "creative-gradient",
+    "width": 469,
+    "height": 760,
+    "status": "WRONG_WIDTH_469"
+  },
+  {
+    "id": "creative-bold",
+    "width": 469,
+    "height": 836,
+    "status": "WRONG_WIDTH_469"
+  },
+  {
+    "id": "creative-elegant",
+    "width": 469,
+    "height": 787,
+    "status": "WRONG_WIDTH_469"
+  },
+  {
+    "id": "creative-ocean",
+    "width": 469,
+    "height": 785,
+    "status": "WRONG_WIDTH_469"
+  },
+  {
+    "id": "creative-sage",
+    "width": 469,
+    "height": 644,
+    "status": "WRONG_WIDTH_469"
+  }
+]

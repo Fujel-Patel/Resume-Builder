@@ -45,6 +45,7 @@ function toBackendAll(data: ResumeData): JsonDict {
       portfolio: data.links.portfolio,
     },
     summary: data.summary,
+    job_description: data.jobDescription || null,
     skills: data.skills,
     skill_groups: data.skillGroups ?? {},
     experience: data.experience.map((e) => ({
@@ -221,6 +222,7 @@ export function toFrontendFromContent(d: JsonDict): ResumeData {
       website: "",
     },
     summary: str(d.summary),
+    jobDescription: str(d.job_description),
     skills: Array.isArray(d.skills) ? (d.skills as string[]) : [],
     skillGroups: (d.skill_groups as Record<string, string[]>) ?? null,
     experience: arr(d.experience).map((e: JsonDict) => {

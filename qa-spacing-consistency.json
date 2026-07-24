@@ -1,0 +1,483 @@
+[
+  {
+    "id": "nova-timeline",
+    "dividerCount": 40,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": false,
+      "phone": false,
+      "linkedin": false,
+      "website": false
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "professional-executive",
+    "dividerCount": 10,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "obsidian-edge",
+    "dividerCount": 1,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "blue-steel",
+    "dividerCount": 2,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "neon-green",
+    "dividerCount": 1,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "startup-founder",
+    "dividerCount": 1,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "graduate-entry",
+    "dividerCount": 1,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "center"
+  },
+  {
+    "id": "minimal-timeline",
+    "dividerCount": 6,
+    "bulletCount": 11,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "n/a"
+  },
+  {
+    "id": "developer-portfolio",
+    "dividerCount": 1,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "n/a"
+  },
+  {
+    "id": "designer-creative",
+    "dividerCount": 2,
+    "bulletCount": 11,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "n/a"
+  },
+  {
+    "id": "ats-clean",
+    "dividerCount": 8,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "ats-minimal",
+    "dividerCount": 2,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "ats-bold-headings",
+    "dividerCount": 19,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "ats-serif",
+    "dividerCount": 1,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "ats-modern-sans",
+    "dividerCount": 1,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "center"
+  },
+  {
+    "id": "ats-compact",
+    "dividerCount": 2,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "ats-executive",
+    "dividerCount": 1,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "ats-creative-safe",
+    "dividerCount": 33,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "executive-navy",
+    "dividerCount": 4,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "corporate-gray",
+    "dividerCount": 21,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "consultant",
+    "dividerCount": 1,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "finance-formal",
+    "dividerCount": 1,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "center"
+  },
+  {
+    "id": "tech-professional",
+    "dividerCount": 35,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "healthcare",
+    "dividerCount": 10,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "center"
+  },
+  {
+    "id": "legal",
+    "dividerCount": 9,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "sidebar-classic",
+    "dividerCount": 47,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": false,
+      "phone": false,
+      "linkedin": false,
+      "website": false
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "n/a"
+  },
+  {
+    "id": "sidebar-modern",
+    "dividerCount": 1,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": false,
+      "phone": false,
+      "linkedin": false,
+      "website": false
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "n/a"
+  },
+  {
+    "id": "sidebar-dark",
+    "dividerCount": 1,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": false,
+      "phone": false,
+      "linkedin": false,
+      "website": false
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "n/a"
+  },
+  {
+    "id": "split-even",
+    "dividerCount": 1,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": false,
+      "phone": false,
+      "linkedin": false,
+      "website": false
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "n/a"
+  },
+  {
+    "id": "split-golden",
+    "dividerCount": 1,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": false,
+      "phone": false,
+      "linkedin": false,
+      "website": false
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "n/a"
+  },
+  {
+    "id": "sidebar-right",
+    "dividerCount": 37,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": false,
+      "phone": false,
+      "linkedin": false,
+      "website": false
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "n/a"
+  },
+  {
+    "id": "sidebar-narrow",
+    "dividerCount": 1,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": false,
+      "phone": false,
+      "linkedin": false,
+      "website": false
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "n/a"
+  },
+  {
+    "id": "creative-gradient",
+    "dividerCount": 23,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "creative-bold",
+    "dividerCount": 11,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "creative-elegant",
+    "dividerCount": 1,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  },
+  {
+    "id": "creative-ocean",
+    "dividerCount": 1,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "center"
+  },
+  {
+    "id": "creative-sage",
+    "dividerCount": 2,
+    "bulletCount": 0,
+    "contactVisible": {
+      "email": true,
+      "phone": true,
+      "linkedin": true,
+      "website": true
+    },
+    "hasProfileImage": false,
+    "h1Alignment": "start"
+  }
+]

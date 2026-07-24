@@ -15,8 +15,8 @@ const sans = "Inter, -apple-system, BlinkMacSystemFont, sans-serif"
 
 const styles = {
   page: {
-    width: "210mm",
-    minHeight: "297mm",
+    width: "794px",
+    minHeight: "1123px",
     fontFamily: sans,
     color: "#1e1b4b",
     backgroundColor: "#ffffff",
@@ -30,29 +30,38 @@ const styles = {
     minWidth: "32%",
     backgroundColor: palette.dark,
     color: palette.text,
-    padding: "28px 18px",
+    padding: "30px 18px",
     boxSizing: "border-box" as const,
   },
   sidebarTitle: {
     fontFamily: mono,
-    fontSize: "10px",
+    fontSize: "9px",
     fontWeight: 600,
-    letterSpacing: "0.08em",
+    letterSpacing: "0.12em",
     textTransform: "uppercase" as const,
-    color: "#a5b4fc",
-    marginBottom: "8px",
-    paddingBottom: "4px",
-    borderBottom: "1px solid #4338ca",
+    color: "#818cf8",
+    marginBottom: "10px",
+    paddingBottom: "0",
+    borderBottom: "none",
+    display: "flex" as const,
+    alignItems: "center" as const,
+    gap: "6px",
+  },
+  sidebarDivider: {
+    flex: 1,
+    height: "1px",
+    backgroundColor: "#4338ca",
   },
   contactRow: {
     display: "flex",
     alignItems: "center",
-    gap: "6px",
-    marginBottom: "5px",
-    fontSize: "9.5px",
+    gap: "7px",
+    marginBottom: "6px",
+    fontSize: "9px",
     color: "#c7d2fe",
     fontFamily: mono,
     wordBreak: "break-word" as const,
+    lineHeight: 1.4,
   },
   contactIcon: {
     flexShrink: 0,
@@ -62,38 +71,45 @@ const styles = {
     color: "#818cf8",
   },
   skillGroup: {
-    marginBottom: "10px",
+    marginBottom: "12px",
   },
   skillGroupLabel: {
     fontFamily: mono,
-    fontSize: "9px",
+    fontSize: "8.5px",
     fontWeight: 600,
     color: "#a5b4fc",
-    marginBottom: "4px",
+    marginBottom: "5px",
     textTransform: "uppercase" as const,
-    letterSpacing: "0.05em",
+    letterSpacing: "0.08em",
   },
   skillTag: {
     display: "inline-block",
     fontFamily: mono,
-    fontSize: "9px",
-    padding: "2px 7px",
+    fontSize: "8.5px",
+    padding: "2.5px 8px",
     backgroundColor: "#3730a3",
     color: "#c7d2fe",
-    borderRadius: "3px",
+    borderRadius: "4px",
     marginRight: "3px",
     marginBottom: "3px",
+    letterSpacing: "0.01em",
   },
   langItem: {
     display: "flex",
     justifyContent: "space-between",
-    fontSize: "9.5px",
-    marginBottom: "3px",
+    fontSize: "9px",
+    marginBottom: "4px",
     color: "#c7d2fe",
+    fontFamily: mono,
+  },
+  langLevel: {
+    color: "#818cf8",
+    fontSize: "8.5px",
+    textTransform: "capitalize" as const,
   },
   main: {
     flex: 1,
-    padding: "28px 24px",
+    padding: "30px 26px",
     boxSizing: "border-box" as const,
   },
   headerName: {
@@ -102,32 +118,42 @@ const styles = {
     color: palette.dark,
     marginBottom: "2px",
     fontFamily: sans,
+    letterSpacing: "-0.02em",
   },
   headerTitle: {
-    fontSize: "12px",
+    fontSize: "11.5px",
     color: palette.primary,
     fontFamily: mono,
-    marginBottom: "12px",
+    marginBottom: "14px",
+    letterSpacing: "0.02em",
   },
   sectionTitle: {
     fontFamily: mono,
-    fontSize: "11px",
+    fontSize: "10px",
     fontWeight: 700,
-    letterSpacing: "0.06em",
+    letterSpacing: "0.08em",
     textTransform: "uppercase" as const,
     color: palette.primary,
-    marginBottom: "6px",
-    paddingBottom: "4px",
-    borderBottom: `2px solid ${palette.muted}`,
+    marginBottom: "8px",
+    paddingBottom: "0",
+    borderBottom: "none",
+    display: "flex" as const,
+    alignItems: "center" as const,
+    gap: "6px",
+  },
+  sectionDivider: {
+    flex: 1,
+    height: "2px",
+    background: `linear-gradient(to right, ${palette.muted}, transparent)`,
   },
   summaryText: {
     fontSize: "11px",
-    lineHeight: "1.6",
+    lineHeight: "1.65",
     color: "#374151",
-    marginBottom: "14px",
+    marginBottom: "16px",
   },
   expBlock: {
-    marginBottom: "12px",
+    marginBottom: "14px",
   },
   expHeader: {
     display: "flex",
@@ -139,63 +165,75 @@ const styles = {
     fontSize: "12px",
     fontWeight: 600,
     color: "#1e1b4b",
+    lineHeight: 1.3,
   },
   expCompany: {
-    fontSize: "10.5px",
+    fontSize: "10px",
     color: "#6366f1",
     fontFamily: mono,
+    lineHeight: 1.3,
   },
   expDate: {
-    fontSize: "10px",
+    fontSize: "9.5px",
     color: "#9ca3af",
     whiteSpace: "nowrap" as const,
     flexShrink: 0,
+    fontFamily: mono,
+    fontWeight: 500,
   },
   bullet: {
-    fontSize: "11px",
+    fontSize: "10.5px",
     lineHeight: "1.55",
     color: "#374151",
-    paddingLeft: "14px",
+    paddingLeft: "16px",
     position: "relative" as const,
-    marginBottom: "2px",
-    fontFamily: mono,
+    marginBottom: "3px",
   },
   bulletPrefix: {
     position: "absolute" as const,
     left: "0",
     color: palette.primary,
     fontWeight: 700,
+    fontFamily: mono,
+    fontSize: "10px",
   },
   eduDegree: {
     fontSize: "12px",
     fontWeight: 600,
     color: "#1e1b4b",
+    lineHeight: 1.3,
   },
   eduInstitution: {
     fontSize: "10.5px",
     color: "#6b7280",
+    lineHeight: 1.3,
   },
   eduMeta: {
-    fontSize: "10px",
+    fontSize: "9.5px",
     color: "#9ca3af",
+    fontFamily: mono,
+    marginTop: "1px",
   },
   certItem: {
     fontSize: "11px",
     color: "#374151",
     marginBottom: "3px",
+    fontWeight: 500,
   },
   certIssuer: {
-    fontSize: "10px",
+    fontSize: "9.5px",
     color: "#9ca3af",
+    fontFamily: mono,
   },
   refItem: {
-    marginBottom: "6px",
-    fontSize: "10px",
+    marginBottom: "8px",
+    fontSize: "9.5px",
   },
   awardDesc: {
-    fontSize: "10px",
+    fontSize: "9.5px",
     color: "#6b7280",
     marginTop: "2px",
+    lineHeight: "1.5",
   },
 }
 
@@ -215,19 +253,22 @@ export function DeveloperPortfolioTemplate({ resume }: { resume: ResumeData }) {
     <div style={styles.page}>
       {/* Sidebar */}
       <aside style={styles.sidebar}>
-        <div style={{ marginBottom: "16px" }}>
-          <div style={{ fontSize: "18px", fontWeight: 700, color: "#ffffff", marginBottom: "2px" }}>
+        <div style={{ marginBottom: "20px" }}>
+          <div style={{ fontSize: "16px", fontWeight: 700, color: "#ffffff", marginBottom: "3px", letterSpacing: "-0.01em" }}>
             {contact.fullName || "Your Name"}
           </div>
-          <div style={{ fontSize: "11px", fontFamily: mono, color: "#a5b4fc" }}>
+          <div style={{ fontSize: "10px", fontFamily: mono, color: "#818cf8", letterSpacing: "0.02em" }}>
             {contact.title || "Job Title"}
           </div>
         </div>
 
         {/* Contact */}
         {sidebarSections.some((s) => s.type === "contact") && (
-          <div style={{ marginBottom: "14px" }}>
-            <div style={styles.sidebarTitle}>&gt; contact</div>
+          <div style={{ marginBottom: "16px" }}>
+            <div style={styles.sidebarTitle}>
+              &gt; contact
+              <div style={styles.sidebarDivider} />
+            </div>
             {contact.email && (
               <div style={styles.contactRow}>
                 <span style={styles.contactIcon}>&#9993;</span>
@@ -254,7 +295,7 @@ export function DeveloperPortfolioTemplate({ resume }: { resume: ResumeData }) {
             )}
             {contact.linkedin && (
               <div style={styles.contactRow}>
-                <span style={{ ...styles.contactIcon, fontWeight: 700 }}>in</span>
+                <span style={{ ...styles.contactIcon, fontWeight: 700, fontSize: "9px" }}>in</span>
                 <span>{contact.linkedin}</span>
               </div>
             )}
@@ -269,8 +310,11 @@ export function DeveloperPortfolioTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Skills */}
         {skills.length > 0 && sidebarSections.some((s) => s.type === "skills") && (
-          <div style={{ marginBottom: "14px" }}>
-            <div style={styles.sidebarTitle}>&gt; skills</div>
+          <div style={{ marginBottom: "16px" }}>
+            <div style={styles.sidebarTitle}>
+              &gt; skills
+              <div style={styles.sidebarDivider} />
+            </div>
             {skills.map((group) => (
               <div key={group.id} style={styles.skillGroup}>
                 <div style={styles.skillGroupLabel}>{group.name}</div>
@@ -286,12 +330,15 @@ export function DeveloperPortfolioTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Languages */}
         {languages.length > 0 && sidebarSections.some((s) => s.type === "languages") && (
-          <div style={{ marginBottom: "14px" }}>
-            <div style={styles.sidebarTitle}>&gt; languages</div>
+          <div style={{ marginBottom: "16px" }}>
+            <div style={styles.sidebarTitle}>
+              &gt; languages
+              <div style={styles.sidebarDivider} />
+            </div>
             {languages.map((lang) => (
               <div key={lang.id} style={styles.langItem}>
                 <span>{lang.name}</span>
-                <span style={{ color: "#818cf8" }}>{lang.proficiency}</span>
+                <span style={styles.langLevel}>{lang.proficiency}</span>
               </div>
             ))}
           </div>
@@ -299,8 +346,11 @@ export function DeveloperPortfolioTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Interests */}
         {interests.length > 0 && sidebarSections.some((s) => s.type === "interests") && (
-          <div style={{ marginBottom: "14px" }}>
-            <div style={styles.sidebarTitle}>&gt; interests</div>
+          <div style={{ marginBottom: "16px" }}>
+            <div style={styles.sidebarTitle}>
+              &gt; interests
+              <div style={styles.sidebarDivider} />
+            </div>
             <div>
               {interests.map((item) => (
                 <span key={item.id} style={styles.skillTag}>{item.name}</span>
@@ -311,14 +361,17 @@ export function DeveloperPortfolioTemplate({ resume }: { resume: ResumeData }) {
 
         {/* References */}
         {references.length > 0 && sidebarSections.some((s) => s.type === "references") && (
-          <div style={{ marginBottom: "14px" }}>
-            <div style={styles.sidebarTitle}>&gt; references</div>
+          <div style={{ marginBottom: "16px" }}>
+            <div style={styles.sidebarTitle}>
+              &gt; references
+              <div style={styles.sidebarDivider} />
+            </div>
             {references.map((ref) => (
               <div key={ref.id} style={styles.refItem}>
-                <div style={{ fontWeight: 600, color: "#e0e7ff" }}>{ref.name}</div>
-                <div style={{ color: "#a5b4fc" }}>{ref.role}</div>
-                {ref.company && <div style={{ color: "#a5b4fc" }}>{ref.company}</div>}
-                {ref.email && <div style={{ color: "#818cf8" }}>{ref.email}</div>}
+                <div style={{ fontWeight: 600, color: "#e0e7ff", fontSize: "9.5px" }}>{ref.name}</div>
+                <div style={{ color: "#a5b4fc", fontFamily: mono, fontSize: "8.5px" }}>{ref.role}</div>
+                {ref.company && <div style={{ color: "#a5b4fc", fontFamily: mono, fontSize: "8.5px" }}>{ref.company}</div>}
+                {ref.email && <div style={{ color: "#818cf8", fontFamily: mono, fontSize: "8.5px", marginTop: "1px" }}>{ref.email}</div>}
               </div>
             ))}
           </div>
@@ -328,23 +381,29 @@ export function DeveloperPortfolioTemplate({ resume }: { resume: ResumeData }) {
       {/* Main Content */}
       <main style={styles.main}>
         {/* Header */}
-        <div style={{ marginBottom: "14px" }}>
+        <div style={{ marginBottom: "16px" }}>
           <div style={styles.headerName}>{contact.fullName || "Your Name"}</div>
           <div style={styles.headerTitle}>{contact.title || "Job Title"}</div>
         </div>
 
         {/* Summary */}
         {summary && mainSections.some((s) => s.type === "summary") && (
-          <section style={{ marginBottom: "14px" }}>
-            <div style={styles.sectionTitle}>&#9654; Summary</div>
+          <section style={{ marginBottom: "16px" }}>
+            <div style={styles.sectionTitle}>
+              &#9654; Summary
+              <div style={styles.sectionDivider} />
+            </div>
             <p style={styles.summaryText}>{summary}</p>
           </section>
         )}
 
         {/* Experience */}
         {experience.length > 0 && mainSections.some((s) => s.type === "experience") && (
-          <section style={{ marginBottom: "14px" }}>
-            <div style={styles.sectionTitle}>&#9654; Experience</div>
+          <section style={{ marginBottom: "16px" }}>
+            <div style={styles.sectionTitle}>
+              &#9654; Experience
+              <div style={styles.sectionDivider} />
+            </div>
             {experience.map((exp) => (
               <div key={exp.id} style={styles.expBlock}>
                 <div style={styles.expHeader}>
@@ -363,7 +422,7 @@ export function DeveloperPortfolioTemplate({ resume }: { resume: ResumeData }) {
                   )}
                 </div>
                 {exp.bullets.length > 0 && (
-                  <div style={{ marginTop: "4px" }}>
+                  <div style={{ marginTop: "5px" }}>
                     {exp.bullets.map((bullet, i) => (
                       <div key={i} style={styles.bullet}>
                         <span style={styles.bulletPrefix}>&gt; </span>
@@ -379,8 +438,11 @@ export function DeveloperPortfolioTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Projects */}
         {projects.length > 0 && mainSections.some((s) => s.type === "projects") && (
-          <section style={{ marginBottom: "14px" }}>
-            <div style={styles.sectionTitle}>&#9654; Projects</div>
+          <section style={{ marginBottom: "16px" }}>
+            <div style={styles.sectionTitle}>
+              &#9654; Projects
+              <div style={styles.sectionDivider} />
+            </div>
             {projects.map((proj) => (
               <div key={proj.id} style={styles.expBlock}>
                 <div style={styles.expHeader}>
@@ -398,7 +460,7 @@ export function DeveloperPortfolioTemplate({ resume }: { resume: ResumeData }) {
                   )}
                 </div>
                 {proj.bullets.length > 0 && (
-                  <div style={{ marginTop: "4px" }}>
+                  <div style={{ marginTop: "5px" }}>
                     {proj.bullets.map((bullet, i) => (
                       <div key={i} style={styles.bullet}>
                         <span style={styles.bulletPrefix}>&gt; </span>
@@ -414,8 +476,11 @@ export function DeveloperPortfolioTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Education */}
         {education.length > 0 && mainSections.some((s) => s.type === "education") && (
-          <section style={{ marginBottom: "14px" }}>
-            <div style={styles.sectionTitle}>&#9654; Education</div>
+          <section style={{ marginBottom: "16px" }}>
+            <div style={styles.sectionTitle}>
+              &#9654; Education
+              <div style={styles.sectionDivider} />
+            </div>
             {education.map((edu) => (
               <div key={edu.id} style={styles.expBlock}>
                 <div style={styles.expHeader}>
@@ -441,8 +506,11 @@ export function DeveloperPortfolioTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Certifications */}
         {certifications.length > 0 && mainSections.some((s) => s.type === "certifications") && (
-          <section style={{ marginBottom: "14px" }}>
-            <div style={styles.sectionTitle}>&#9654; Certifications</div>
+          <section style={{ marginBottom: "16px" }}>
+            <div style={styles.sectionTitle}>
+              &#9654; Certifications
+              <div style={styles.sectionDivider} />
+            </div>
             {certifications.map((cert) => (
               <div key={cert.id} style={styles.expBlock}>
                 <div style={styles.expHeader}>
@@ -459,8 +527,11 @@ export function DeveloperPortfolioTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Awards */}
         {awards.length > 0 && mainSections.some((s) => s.type === "awards") && (
-          <section style={{ marginBottom: "14px" }}>
-            <div style={styles.sectionTitle}>&#9654; Awards</div>
+          <section style={{ marginBottom: "16px" }}>
+            <div style={styles.sectionTitle}>
+              &#9654; Awards
+              <div style={styles.sectionDivider} />
+            </div>
             {awards.map((award) => (
               <div key={award.id} style={styles.expBlock}>
                 <div style={styles.expHeader}>
@@ -480,8 +551,11 @@ export function DeveloperPortfolioTemplate({ resume }: { resume: ResumeData }) {
         {custom.length > 0 && mainSections.some((s) => s.type === "custom") && (
           <>
             {custom.map((section) => (
-              <section key={section.id} style={{ marginBottom: "14px" }}>
-                <div style={styles.sectionTitle}>&#9654; {section.title}</div>
+              <section key={section.id} style={{ marginBottom: "16px" }}>
+                <div style={styles.sectionTitle}>
+                  &#9654; {section.title}
+                  <div style={styles.sectionDivider} />
+                </div>
                 {section.content && <p style={styles.summaryText}>{section.content}</p>}
                 {section.bullets.length > 0 && (
                   <div>

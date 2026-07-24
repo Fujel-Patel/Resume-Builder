@@ -190,6 +190,7 @@ export const NeonGreenTemplate = memo(function NeonGreenTemplate({ resume }: Pro
                         fontWeight: 700,
                         color: C.text,
                         margin: 0,
+                        lineHeight: 1.3,
                       }}
                     >
                       {proj.name}
@@ -233,12 +234,12 @@ export const NeonGreenTemplate = memo(function NeonGreenTemplate({ resume }: Pro
                       margin: "4px 0 0 0",
                       paddingLeft: 14,
                       fontSize: 11,
-                      lineHeight: 1.6,
+                      lineHeight: 1.65,
                       color: C.secondary,
                     }}
                   >
                     {proj.bullets.map((b, bi) => (
-                      <li key={bi} style={{ marginBottom: 1 }}>
+                      <li key={bi} style={{ marginBottom: 3 }}>
                         {b}
                       </li>
                     ))}
@@ -275,6 +276,7 @@ export const NeonGreenTemplate = memo(function NeonGreenTemplate({ resume }: Pro
                         fontWeight: 700,
                         color: C.text,
                         margin: 0,
+                        lineHeight: 1.3,
                       }}
                     >
                       {exp.role}
@@ -282,9 +284,10 @@ export const NeonGreenTemplate = memo(function NeonGreenTemplate({ resume }: Pro
                     <p
                       style={{
                         fontSize: 12,
-                        fontStyle: "italic",
-                        color: C.secondary,
+                        fontWeight: 500,
+                        color: C.accent,
                         margin: "2px 0 0 0",
+                        lineHeight: 1.3,
                       }}
                     >
                       {exp.company}
@@ -319,12 +322,12 @@ export const NeonGreenTemplate = memo(function NeonGreenTemplate({ resume }: Pro
                       margin: "4px 0 0 0",
                       paddingLeft: 14,
                       fontSize: 11,
-                      lineHeight: 1.6,
+                      lineHeight: 1.65,
                       color: C.secondary,
                     }}
                   >
                     {exp.bullets.map((b, bi) => (
-                      <li key={bi} style={{ marginBottom: 1 }}>
+                      <li key={bi} style={{ marginBottom: 3 }}>
                         {b}
                       </li>
                     ))}
@@ -357,6 +360,7 @@ export const NeonGreenTemplate = memo(function NeonGreenTemplate({ resume }: Pro
                       fontWeight: 700,
                       color: C.text,
                       margin: 0,
+                      lineHeight: 1.3,
                     }}
                   >
                     {edu.degree}
@@ -365,9 +369,10 @@ export const NeonGreenTemplate = memo(function NeonGreenTemplate({ resume }: Pro
                   <p
                     style={{
                       fontSize: 12,
-                      fontStyle: "italic",
-                      color: C.secondary,
+                      fontWeight: 500,
+                      color: C.accent,
                       margin: "2px 0 0 0",
+                      lineHeight: 1.3,
                     }}
                   >
                     {edu.institution}

@@ -1,0 +1,995 @@
+[
+  {
+    "id": "nova-timeline",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "30px",
+      "fontWeight": "700",
+      "fontFamily": "Inter, -apple-system, BlinkMacSystemFont",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.6px"
+    },
+    "sectionHeaderCount": 10,
+    "firstSectionHeader": {
+      "text": "Skills",
+      "fontSize": "9.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(87, 83, 78)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "13px",
+      "9.5px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "professional-executive",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "34px",
+      "fontWeight": "700",
+      "fontFamily": "Inter, -apple-system, BlinkMacSystemFont",
+      "color": "rgb(30, 58, 95)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.68px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(30, 58, 95)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "13px",
+      "14px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "obsidian-edge",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "32px",
+      "fontWeight": "700",
+      "fontFamily": "Inter, -apple-system, BlinkMacSystemFont",
+      "color": "rgb(255, 255, 255)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.64px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(17, 24, 39)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "13px",
+      "14px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "blue-steel",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "30px",
+      "fontWeight": "700",
+      "fontFamily": "\"Playfair Display\", serif",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.6px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(47, 53, 82)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "13px",
+      "14px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "neon-green",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "30px",
+      "fontWeight": "700",
+      "fontFamily": "Inter, -apple-system, BlinkMacSystemFont",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.6px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(17, 24, 39)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "13px",
+      "22px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "startup-founder",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "32px",
+      "fontWeight": "700",
+      "fontFamily": "Inter, -apple-system, BlinkMacSystemFont",
+      "color": "rgb(255, 255, 255)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.64px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(4, 120, 87)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "12px",
+      "13px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "graduate-entry",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "30px",
+      "fontWeight": "700",
+      "fontFamily": "Inter, -apple-system, BlinkMacSystemFont",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.6px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(59, 125, 216)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "13px",
+      "8px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "minimal-timeline",
+    "h1": null,
+    "sectionHeaderCount": 8,
+    "firstSectionHeader": {
+      "text": "Contact",
+      "fontSize": "9px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(113, 113, 122)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10px",
+      "11px",
+      "13px",
+      "8.5px",
+      "9.5px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "developer-portfolio",
+    "h1": null,
+    "sectionHeaderCount": 11,
+    "firstSectionHeader": {
+      "text": "> contact",
+      "fontSize": "9px",
+      "fontWeight": "600",
+      "textTransform": "uppercase",
+      "color": "rgb(129, 140, 248)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10px",
+      "11px",
+      "13px",
+      "8.5px",
+      "9px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "designer-creative",
+    "h1": null,
+    "sectionHeaderCount": 3,
+    "firstSectionHeader": {
+      "text": "Contact",
+      "fontSize": "9px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(196, 181, 253)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10px",
+      "11px",
+      "13px",
+      "8.5px",
+      "9.5px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "ats-clean",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "30px",
+      "fontWeight": "700",
+      "fontFamily": "Inter, -apple-system, BlinkMacSystemFont",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.6px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(17, 24, 39)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "13px",
+      "8px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "ats-minimal",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "22px",
+      "fontWeight": "700",
+      "fontFamily": "Inter, -apple-system, BlinkMacSystemFont",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.22px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "10.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(107, 114, 128)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "11px",
+      "13px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "ats-bold-headings",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "30px",
+      "fontWeight": "700",
+      "fontFamily": "\"IBM Plex Sans\", sans-serif",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.6px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(255, 255, 255)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "11px",
+      "13px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "ats-serif",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "30px",
+      "fontWeight": "700",
+      "fontFamily": "\"Playfair Display\", serif",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.6px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(30, 58, 95)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "11px",
+      "12px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "ats-modern-sans",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "30px",
+      "fontWeight": "700",
+      "fontFamily": "Geist, sans-serif",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.6px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(67, 56, 202)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "13px",
+      "8px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "ats-compact",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "22px",
+      "fontWeight": "700",
+      "fontFamily": "\"DM Sans\", sans-serif",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.22px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(17, 24, 39)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "11px",
+      "13px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "ats-executive",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "30px",
+      "fontWeight": "700",
+      "fontFamily": "\"Playfair Display\", serif",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.6px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "13px",
+      "fontWeight": "800",
+      "textTransform": "none",
+      "color": "rgb(30, 58, 95)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "11px",
+      "12px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "ats-creative-safe",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "30px",
+      "fontWeight": "700",
+      "fontFamily": "\"DM Sans\", sans-serif",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.6px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(17, 24, 39)",
+      "borderBottom": "1.6px solid"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "13px",
+      "9.5px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "executive-navy",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "30px",
+      "fontWeight": "700",
+      "fontFamily": "\"Playfair Display\", serif",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.6px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "13px",
+      "fontWeight": "800",
+      "textTransform": "none",
+      "color": "rgb(30, 58, 95)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "11px",
+      "13px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "corporate-gray",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "22px",
+      "fontWeight": "700",
+      "fontFamily": "\"IBM Plex Sans\", sans-serif",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.22px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "10.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(107, 114, 128)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "11px",
+      "13px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "consultant",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "30px",
+      "fontWeight": "700",
+      "fontFamily": "\"Playfair Display\", serif",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.6px"
+    },
+    "sectionHeaderCount": 10,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(46, 52, 64)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "12px",
+      "13px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "finance-formal",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "30px",
+      "fontWeight": "700",
+      "fontFamily": "\"Playfair Display\", serif",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.6px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(30, 58, 95)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "13px",
+      "22px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "tech-professional",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "30px",
+      "fontWeight": "700",
+      "fontFamily": "Geist, sans-serif",
+      "color": "rgb(255, 255, 255)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.6px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(17, 24, 39)",
+      "borderBottom": "1.6px solid"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "13px",
+      "9.5px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "healthcare",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "30px",
+      "fontWeight": "700",
+      "fontFamily": "\"DM Sans\", sans-serif",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.6px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(15, 118, 110)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "13px",
+      "9.5px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "legal",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "22px",
+      "fontWeight": "700",
+      "fontFamily": "\"Playfair Display\", serif",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.22px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(30, 58, 95)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "11px",
+      "12px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "sidebar-classic",
+    "h1": null,
+    "sectionHeaderCount": 10,
+    "firstSectionHeader": {
+      "text": "Skills",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(30, 58, 95)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "11px",
+      "13px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "sidebar-modern",
+    "h1": null,
+    "sectionHeaderCount": 10,
+    "firstSectionHeader": {
+      "text": "Skills",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(17, 24, 39)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "11px",
+      "13px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "sidebar-dark",
+    "h1": null,
+    "sectionHeaderCount": 10,
+    "firstSectionHeader": {
+      "text": "Skills",
+      "fontSize": "10.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(107, 114, 128)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "11px",
+      "13px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "split-even",
+    "h1": null,
+    "sectionHeaderCount": 10,
+    "firstSectionHeader": {
+      "text": "Skills",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(15, 118, 110)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "13px",
+      "9.5px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "split-golden",
+    "h1": null,
+    "sectionHeaderCount": 16,
+    "firstSectionHeader": {
+      "text": "Skills",
+      "fontSize": "13px",
+      "fontWeight": "800",
+      "textTransform": "none",
+      "color": "rgb(46, 52, 64)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11px",
+      "12px",
+      "13px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "sidebar-right",
+    "h1": null,
+    "sectionHeaderCount": 10,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(17, 24, 39)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "11px",
+      "13px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "sidebar-narrow",
+    "h1": null,
+    "sectionHeaderCount": 10,
+    "firstSectionHeader": {
+      "text": "Skills",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(17, 24, 39)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "13px",
+      "9.5px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "creative-gradient",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "30px",
+      "fontWeight": "700",
+      "fontFamily": "\"DM Sans\", sans-serif",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.6px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(17, 24, 39)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "13px",
+      "18px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "creative-bold",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "30px",
+      "fontWeight": "700",
+      "fontFamily": "Inter, -apple-system, BlinkMacSystemFont",
+      "color": "rgb(255, 255, 255)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.6px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(255, 255, 255)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "13px",
+      "22px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "creative-elegant",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "30px",
+      "fontWeight": "700",
+      "fontFamily": "\"Playfair Display\", serif",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.6px"
+    },
+    "sectionHeaderCount": 10,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "13px",
+      "fontWeight": "800",
+      "textTransform": "none",
+      "color": "rgb(46, 52, 64)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11px",
+      "12px",
+      "13px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "creative-ocean",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "30px",
+      "fontWeight": "700",
+      "fontFamily": "Geist, sans-serif",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.6px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "11.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(2, 132, 199)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "13px",
+      "22px"
+    ],
+    "overflow": 0
+  },
+  {
+    "id": "creative-sage",
+    "h1": {
+      "text": "Alexandra Chen",
+      "fontSize": "22px",
+      "fontWeight": "700",
+      "fontFamily": "Geist, sans-serif",
+      "color": "rgb(17, 24, 39)",
+      "marginBottom": "0px",
+      "letterSpacing": "-0.22px"
+    },
+    "sectionHeaderCount": 7,
+    "firstSectionHeader": {
+      "text": "Professional Summary",
+      "fontSize": "10.5px",
+      "fontWeight": "700",
+      "textTransform": "uppercase",
+      "color": "rgb(107, 114, 128)",
+      "borderBottom": "none"
+    },
+    "bodyFontSizes": [
+      "10.5px",
+      "10px",
+      "11.5px",
+      "11px",
+      "12px"
+    ],
+    "overflow": 0
+  }
+]

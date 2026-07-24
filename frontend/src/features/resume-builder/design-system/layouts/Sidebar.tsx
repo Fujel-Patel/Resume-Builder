@@ -12,8 +12,8 @@ type SidebarProps = {
   sidebarPadding?: number
 }
 
-export function Sidebar({ sidebar, main, sidebarWidth = 28, sidebarPosition = "left", gap = 20, margin, sidebarBg, sidebarPadding }: SidebarProps) {
-  const m = { top: 32, right: 32, bottom: 32, left: 32, ...margin }
+export function Sidebar({ sidebar, main, sidebarWidth = 28, sidebarPosition = "left", gap = 24, margin, sidebarBg, sidebarPadding }: SidebarProps) {
+  const m = { top: 36, right: 36, bottom: 36, left: 36, ...margin }
   const sp = sidebarPadding ?? m.left
   const sidebarEl = (
     <div style={{ width: `${sidebarWidth}%`, flexShrink: 0, ...(sidebarBg ? { backgroundColor: sidebarBg, margin: `-${m.top}px 0 -${m.bottom}px -${m.left}px`, padding: `${m.top}px ${sp}px ${m.bottom}px ${m.left}px` } : { paddingRight: gap }) }}>

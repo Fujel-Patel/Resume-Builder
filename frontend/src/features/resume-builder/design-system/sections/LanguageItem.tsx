@@ -19,9 +19,9 @@ const proficiencyLabels: Record<string, string> = {
 export function LanguageItem({ item, colors = {} }: LanguageItemProps) {
   const c = { ...d, ...colors }
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, fontSize: 10, marginBottom: 2 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, fontSize: 10, marginBottom: 4 }}>
       <span style={{ fontWeight: 500, color: c.text }}>{item.name}</span>
-      <span style={{ color: c.muted, fontSize: 9 }}>{proficiencyLabels[item.proficiency] ?? item.proficiency}</span>
+      <span style={{ color: c.muted, fontSize: 9.5, fontStyle: "italic" }}>{proficiencyLabels[item.proficiency] ?? item.proficiency}</span>
     </div>
   )
 }

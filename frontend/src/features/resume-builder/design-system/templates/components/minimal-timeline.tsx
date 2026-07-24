@@ -7,12 +7,13 @@ const palette = {
   light: "#f4f4f5",
   muted: "#e4e4e7",
   text: "#ffffff",
+  accent: "#3f3f46",
 }
 
 const styles = {
   page: {
-    width: "210mm",
-    minHeight: "297mm",
+    width: "794px",
+    minHeight: "1123px",
     fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
     color: "#18181b",
     backgroundColor: "#ffffff",
@@ -27,25 +28,33 @@ const styles = {
     minWidth: "30%",
     backgroundColor: palette.primary,
     color: palette.text,
-    padding: "28px 20px",
+    padding: "30px 20px",
     boxSizing: "border-box" as const,
   },
   sidebarSectionTitle: {
-    fontSize: "10px",
+    fontSize: "9px",
     fontWeight: 700,
-    letterSpacing: "0.1em",
+    letterSpacing: "0.14em",
     textTransform: "uppercase" as const,
-    color: "#a1a1aa",
-    marginBottom: "8px",
-    paddingBottom: "4px",
-    borderBottom: `1px solid #3f3f46`,
+    color: "#71717a",
+    marginBottom: "10px",
+    paddingBottom: "0",
+    borderBottom: "none",
+    display: "flex" as const,
+    alignItems: "center" as const,
+    gap: "8px",
+  },
+  sidebarDivider: {
+    flex: 1,
+    height: "1px",
+    backgroundColor: "#3f3f46",
   },
   contactItem: {
     display: "flex",
     alignItems: "center",
-    gap: "6px",
-    marginBottom: "5px",
-    fontSize: "10px",
+    gap: "8px",
+    marginBottom: "6px",
+    fontSize: "9.5px",
     color: "#d4d4d8",
     wordBreak: "break-word" as const,
   },
@@ -54,70 +63,73 @@ const styles = {
     width: "14px",
     textAlign: "center" as const,
     fontSize: "10px",
+    color: "#71717a",
   },
   skillGroup: {
-    marginBottom: "8px",
+    marginBottom: "10px",
   },
   skillGroupName: {
-    fontSize: "10px",
+    fontSize: "9.5px",
     fontWeight: 600,
     color: "#e4e4e7",
-    marginBottom: "3px",
+    marginBottom: "5px",
+    letterSpacing: "0.01em",
   },
   skillTag: {
     display: "inline-block",
-    fontSize: "9px",
-    padding: "2px 6px",
+    fontSize: "8.5px",
+    padding: "2px 7px",
     backgroundColor: "#27272a",
     color: "#d4d4d8",
     borderRadius: "3px",
     marginRight: "3px",
     marginBottom: "3px",
+    letterSpacing: "0.01em",
   },
   mainArea: {
     flex: 1,
-    padding: "28px 24px",
+    padding: "24px 28px",
     position: "relative" as const,
     boxSizing: "border-box" as const,
   },
   timelineLine: {
     position: "absolute" as const,
-    left: "12px",
-    top: "28px",
-    bottom: "28px",
-    width: "1px",
-    backgroundColor: "#e4e4e7",
+    left: "14px",
+    top: "30px",
+    bottom: "30px",
+    width: "1.5px",
+    background: "linear-gradient(to bottom, #e4e4e7 0%, #d4d4d8 50%, #e4e4e7 100%)",
   },
   timelineDot: {
     position: "absolute" as const,
-    left: "8px",
-    top: "4px",
+    left: "10px",
+    top: "2px",
     width: "9px",
     height: "9px",
     borderRadius: "50%",
     backgroundColor: palette.primary,
-    border: "2px solid #ffffff",
+    border: "2.5px solid #ffffff",
     zIndex: 1,
   },
   section: {
     position: "relative" as const,
-    marginBottom: "16px",
-    paddingLeft: "16px",
+    marginBottom: "12px",
+    paddingLeft: "18px",
   },
   sectionTitle: {
-    fontSize: "11px",
+    fontSize: "10px",
     fontWeight: 700,
-    letterSpacing: "0.08em",
+    letterSpacing: "0.1em",
     textTransform: "uppercase" as const,
     color: palette.primary,
-    marginBottom: "6px",
-    paddingBottom: "3px",
-    borderBottom: `1.5px solid ${palette.muted}`,
+    marginBottom: "8px",
+    paddingBottom: "0",
+    borderBottom: "none",
   },
   summaryText: {
     fontSize: "11px",
-    lineHeight: "1.6",
-    color: "#3f3f46",
+    lineHeight: "1.65",
+    color: "#52525b",
   },
   expHeader: {
     display: "flex",
@@ -129,69 +141,96 @@ const styles = {
     fontSize: "12px",
     fontWeight: 600,
     color: "#18181b",
+    lineHeight: 1.35,
   },
   expCompany: {
-    fontSize: "11px",
-    color: "#52525b",
+    fontSize: "10.5px",
+    color: "#71717a",
+    lineHeight: 1.35,
   },
   expDate: {
-    fontSize: "10px",
+    fontSize: "9.5px",
     color: "#a1a1aa",
     whiteSpace: "nowrap" as const,
     flexShrink: 0,
+    fontWeight: 500,
   },
   bullet: {
-    fontSize: "11px",
+    fontSize: "10.5px",
     lineHeight: "1.55",
-    color: "#3f3f46",
-    paddingLeft: "10px",
+    color: "#52525b",
+    paddingLeft: "12px",
     position: "relative" as const,
-    marginBottom: "2px",
+    marginBottom: "3px",
   },
   bulletMarker: {
     position: "absolute" as const,
     left: "0",
-    top: "6px",
-    width: "3px",
-    height: "3px",
+    top: "6.5px",
+    width: "3.5px",
+    height: "3.5px",
     borderRadius: "50%",
     backgroundColor: "#a1a1aa",
   },
   itemBlock: {
-    marginBottom: "10px",
+    marginBottom: "8px",
   },
   langItem: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    fontSize: "10px",
-    marginBottom: "3px",
-    color: "#3f3f46",
+    fontSize: "9.5px",
+    marginBottom: "4px",
+    color: "#d4d4d8",
+    padding: "2px 0",
+  },
+  langLevel: {
+    fontSize: "8.5px",
+    color: "#71717a",
+    textTransform: "capitalize" as const,
+    fontWeight: 500,
+    backgroundColor: "#27272a",
+    padding: "1px 6px",
+    borderRadius: "3px",
   },
   eduDegree: {
     fontSize: "12px",
     fontWeight: 600,
     color: "#18181b",
+    lineHeight: 1.35,
   },
   eduInstitution: {
-    fontSize: "11px",
-    color: "#52525b",
+    fontSize: "10.5px",
+    color: "#71717a",
+    lineHeight: 1.35,
   },
   eduMeta: {
-    fontSize: "10px",
+    fontSize: "9.5px",
     color: "#a1a1aa",
+    marginTop: "1px",
   },
   certItem: {
     fontSize: "11px",
     color: "#3f3f46",
-    marginBottom: "4px",
+    fontWeight: 500,
+    marginBottom: "3px",
   },
   certIssuer: {
-    fontSize: "10px",
+    fontSize: "9.5px",
     color: "#71717a",
   },
   projectBullets: {
-    marginTop: "3px",
+    marginTop: "4px",
+  },
+  awardDesc: {
+    fontSize: "9.5px",
+    color: "#71717a",
+    marginTop: "2px",
+    lineHeight: "1.5",
+  },
+  refItem: {
+    marginBottom: "8px",
+    fontSize: "9.5px",
   },
 }
 
@@ -211,20 +250,23 @@ export function MinimalTimelineTemplate({ resume }: { resume: ResumeData }) {
     <div style={styles.page}>
       {/* Sidebar */}
       <aside style={styles.sidebar}>
-        {/* Name in sidebar */}
-        <div style={{ marginBottom: "16px" }}>
-          <div style={{ fontSize: "18px", fontWeight: 700, color: "#ffffff", marginBottom: "2px" }}>
+        {/* Name */}
+        <div style={{ marginBottom: "20px" }}>
+          <div style={{ fontSize: "16px", fontWeight: 700, color: "#ffffff", marginBottom: "3px", letterSpacing: "-0.01em" }}>
             {contact.fullName || "Your Name"}
           </div>
-          <div style={{ fontSize: "11px", color: "#a1a1aa" }}>
+          <div style={{ fontSize: "10px", color: "#a1a1aa", letterSpacing: "0.02em" }}>
             {contact.title || "Job Title"}
           </div>
         </div>
 
         {/* Contact */}
         {sidebarSections.some((s) => s.type === "contact") && (
-          <div style={{ marginBottom: "14px" }}>
-            <div style={styles.sidebarSectionTitle}>Contact</div>
+          <div style={{ marginBottom: "16px" }}>
+            <div style={styles.sidebarSectionTitle}>
+              Contact
+              <div style={styles.sidebarDivider} />
+            </div>
             {contact.email && (
               <div style={styles.contactItem}>
                 <span style={styles.contactIcon}>&#9993;</span>
@@ -251,7 +293,7 @@ export function MinimalTimelineTemplate({ resume }: { resume: ResumeData }) {
             )}
             {contact.linkedin && (
               <div style={styles.contactItem}>
-                <span style={{ ...styles.contactIcon, fontWeight: 700 }}>in</span>
+                <span style={{ ...styles.contactIcon, fontWeight: 700, fontSize: "9px" }}>in</span>
                 <span>{contact.linkedin}</span>
               </div>
             )}
@@ -266,8 +308,11 @@ export function MinimalTimelineTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Skills */}
         {skills.length > 0 && sidebarSections.some((s) => s.type === "skills") && (
-          <div style={{ marginBottom: "14px" }}>
-            <div style={styles.sidebarSectionTitle}>Skills</div>
+          <div style={{ marginBottom: "16px" }}>
+            <div style={styles.sidebarSectionTitle}>
+              Skills
+              <div style={styles.sidebarDivider} />
+            </div>
             {skills.map((group) => (
               <div key={group.id} style={styles.skillGroup}>
                 <div style={styles.skillGroupName}>{group.name}</div>
@@ -283,12 +328,15 @@ export function MinimalTimelineTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Languages */}
         {languages.length > 0 && sidebarSections.some((s) => s.type === "languages") && (
-          <div style={{ marginBottom: "14px" }}>
-            <div style={styles.sidebarSectionTitle}>Languages</div>
+          <div style={{ marginBottom: "16px" }}>
+            <div style={styles.sidebarSectionTitle}>
+              Languages
+              <div style={styles.sidebarDivider} />
+            </div>
             {languages.map((lang) => (
               <div key={lang.id} style={styles.langItem}>
                 <span>{lang.name}</span>
-                <span style={{ color: "#71717a", textTransform: "capitalize" }}>{lang.proficiency}</span>
+                <span style={styles.langLevel}>{lang.proficiency}</span>
               </div>
             ))}
           </div>
@@ -296,13 +344,14 @@ export function MinimalTimelineTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Interests */}
         {interests.length > 0 && sidebarSections.some((s) => s.type === "interests") && (
-          <div style={{ marginBottom: "14px" }}>
-            <div style={styles.sidebarSectionTitle}>Interests</div>
+          <div style={{ marginBottom: "16px" }}>
+            <div style={styles.sidebarSectionTitle}>
+              Interests
+              <div style={styles.sidebarDivider} />
+            </div>
             <div>
               {interests.map((item) => (
-                <span key={item.id} style={{ ...styles.skillTag, backgroundColor: "#27272a" }}>
-                  {item.name}
-                </span>
+                <span key={item.id} style={styles.skillTag}>{item.name}</span>
               ))}
             </div>
           </div>
@@ -310,14 +359,17 @@ export function MinimalTimelineTemplate({ resume }: { resume: ResumeData }) {
 
         {/* References */}
         {references.length > 0 && sidebarSections.some((s) => s.type === "references") && (
-          <div style={{ marginBottom: "14px" }}>
-            <div style={styles.sidebarSectionTitle}>References</div>
+          <div style={{ marginBottom: "16px" }}>
+            <div style={styles.sidebarSectionTitle}>
+              References
+              <div style={styles.sidebarDivider} />
+            </div>
             {references.map((ref) => (
-              <div key={ref.id} style={{ marginBottom: "8px", fontSize: "10px" }}>
-                <div style={{ fontWeight: 600, color: "#e4e4e7" }}>{ref.name}</div>
-                <div style={{ color: "#a1a1aa" }}>{ref.role}</div>
-                {ref.company && <div style={{ color: "#a1a1aa" }}>{ref.company}</div>}
-                {ref.email && <div style={{ color: "#71717a" }}>{ref.email}</div>}
+              <div key={ref.id} style={styles.refItem}>
+                <div style={{ fontWeight: 600, color: "#e4e4e7", fontSize: "9.5px" }}>{ref.name}</div>
+                <div style={{ color: "#a1a1aa", fontSize: "9px" }}>{ref.role}</div>
+                {ref.company && <div style={{ color: "#a1a1aa", fontSize: "9px" }}>{ref.company}</div>}
+                {ref.email && <div style={{ color: "#71717a", fontSize: "9px", marginTop: "1px" }}>{ref.email}</div>}
               </div>
             ))}
           </div>
@@ -472,9 +524,7 @@ export function MinimalTimelineTemplate({ resume }: { resume: ResumeData }) {
                   {award.date && <div style={styles.expDate}>{award.date}</div>}
                 </div>
                 {award.description && (
-                  <div style={{ fontSize: "10px", color: "#52525b", marginTop: "2px" }}>
-                    {award.description}
-                  </div>
+                  <div style={styles.awardDesc}>{award.description}</div>
                 )}
               </div>
             ))}

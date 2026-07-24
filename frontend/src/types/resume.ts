@@ -169,11 +169,11 @@ export const defaultTheme: ResumeTheme = {
 }
 
 export const emptyContact: ContactInfo = {
-  fullName: "",
-  title: "",
-  email: "",
-  phone: "",
-  location: "",
+  fullName: "John Doe",
+  title: "Web Developer",
+  email: "john@example.com",
+  phone: "(555) 123-4567",
+  location: "San Francisco, CA",
   website: "",
   linkedin: "",
   github: "",

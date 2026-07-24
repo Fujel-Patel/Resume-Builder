@@ -589,10 +589,10 @@ function Section({
     <section className="avoid-break" style={{ margin: 0, padding: 0 }}>
       <h2
         style={{
-          fontSize: 13.5,
+          fontSize: 14,
           fontWeight: 700,
           color: C.heading,
-          margin: "0 0 7px 0",
+          margin: "0 0 8px 0",
           padding: 0,
           display: "flex",
           alignItems: "center",
@@ -618,12 +618,12 @@ const BULLET_LIST: CSSProperties = {
   listStyleType: "disc",
   listStylePosition: "outside",
   fontSize: 11.5,
-  lineHeight: 1.55,
+  lineHeight: 1.6,
   color: C.body,
 }
 
 const BULLET_ITEM: CSSProperties = {
-  margin: "0 0 1px 0",
+  margin: "0 0 2px 0",
   padding: 0,
 }
 

@@ -23,6 +23,8 @@ type SectionRendererProps = {
   accentHeaders: boolean
   headingFont?: string
   bodyFont?: string
+  headerVariant?: string
+  compact?: boolean
 }
 
 const sectionTypeToTitle: Record<string, string> = {
@@ -40,6 +42,7 @@ const sectionTypeToTitle: Record<string, string> = {
 
 export function SectionRenderer({
   sections, content, sectionVariants, palette, textColors, showDivider, accentHeaders,
+  headerVariant, compact,
 }: SectionRendererProps) {
   const ordered = [...sections].filter(s => s.visible).sort((a, b) => a.order - b.order)
   const headerColors = {
@@ -48,6 +51,8 @@ export function SectionRenderer({
     muted: textColors.muted,
     border: palette.muted,
   }
+  const isSidebar = headerVariant === "sidebar"
+  const effectiveHeaderVariant = isSidebar ? "sidebar" : sectionVariants.header
 
   return (
     <>
@@ -55,16 +60,24 @@ export function SectionRenderer({
         const elements: React.ReactNode[] = []
 
         if (section.type === "summary" && content.summary) {
-          elements.push(<SummarySection key="summary" text={content.summary} colors={{ text: textColors.primary, secondary: textColors.secondary }} />)
+          elements.push(
+            <SummarySection
+              key="summary"
+              text={content.summary}
+              variant={sectionVariants.summary as any}
+              colors={{ text: textColors.primary, secondary: textColors.secondary, primary: palette.primary, muted: textColors.muted, border: palette.muted }}
+              compact={compact}
+            />,
+          )
         }
         if (section.type === "experience") {
           elements.push(...content.experience.map(item => (
-            <ExperienceItem key={item.id} item={item} variant={sectionVariants.experience as any} colors={{ primary: palette.primary, text: textColors.primary, secondary: textColors.secondary, muted: textColors.muted }} />
+            <ExperienceItem key={item.id} item={item} variant={sectionVariants.experience as any} colors={{ primary: palette.primary, text: textColors.primary, secondary: textColors.secondary, muted: textColors.muted }} compact={compact} />
           )))
         }
         if (section.type === "education") {
           elements.push(...content.education.map(item => (
-            <EducationItem key={item.id} item={item} variant={sectionVariants.education as any} colors={{ primary: palette.primary, text: textColors.primary, secondary: textColors.secondary, muted: textColors.muted }} />
+            <EducationItem key={item.id} item={item} variant={sectionVariants.education as any} colors={{ primary: palette.primary, text: textColors.primary, secondary: textColors.secondary, muted: textColors.muted }} compact={compact} />
           )))
         }
         if (section.type === "skills" && content.skills.length > 0) {
@@ -72,7 +85,7 @@ export function SectionRenderer({
         }
         if (section.type === "projects") {
           elements.push(...content.projects.map(item => (
-            <ProjectCard key={item.id} item={item} variant={sectionVariants.projects as any} colors={{ primary: palette.primary, text: textColors.primary, secondary: textColors.secondary, muted: textColors.muted }} />
+            <ProjectCard key={item.id} item={item} variant={sectionVariants.projects as any} colors={{ primary: palette.primary, text: textColors.primary, secondary: textColors.secondary, muted: textColors.muted }} compact={compact} />
           )))
         }
         if (section.type === "languages") {
@@ -87,19 +100,21 @@ export function SectionRenderer({
         }
         if (section.type === "awards") {
           elements.push(...content.awards.map(item => (
-            <AwardItem key={item.id} item={item} colors={{ primary: palette.primary, text: textColors.primary, secondary: textColors.secondary, muted: textColors.muted }} />
+            <AwardItem key={item.id} item={item} colors={{ primary: palette.primary, text: textColors.primary, muted: textColors.muted }} />
           )))
         }
 
         if (elements.length === 0) return null
 
         return (
-          <div key={section.id}>
-            {showDivider && idx > 0 && <Divider variant="thin" color={palette.muted} spacing={8} />}
+          <div key={section.id} style={compact && idx > 0 ? { marginTop: -6 } : undefined}>
+            {showDivider && idx > 0 && <Divider variant="thin" color={palette.muted} spacing={compact ? 4 : 8} />}
             <SectionHeader
               title={section.title || sectionTypeToTitle[section.type] || section.type}
-              variant={sectionVariants.header as any}
+              variant={effectiveHeaderVariant as any}
               colors={headerColors}
+              number={effectiveHeaderVariant === "numbered" ? idx + 1 : undefined}
+              compact={compact}
             />
             {elements}
           </div>

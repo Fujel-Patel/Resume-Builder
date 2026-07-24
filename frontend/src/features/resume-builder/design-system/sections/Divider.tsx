@@ -6,7 +6,7 @@ type DividerProps = {
   spacing?: number
 }
 
-export function Divider({ variant = "thin", color = "#e5e7eb", spacing = 8 }: DividerProps) {
+export function Divider({ variant = "thin", color = "#e5e7eb", spacing = 10 }: DividerProps) {
   if (variant === "none") return null
   if (variant === "accent") {
     return <div style={{ height: 1.5, backgroundColor: color, marginBottom: spacing, marginTop: spacing, opacity: 0.5 }} />

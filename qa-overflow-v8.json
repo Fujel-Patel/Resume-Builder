@@ -1,0 +1,33 @@
+{
+  "audit_date": "2026-07-24",
+  "version": "v8-final",
+  "method": "scaleWrapper scrollHeight vs min-height:1123px",
+  "summary": {
+    "total": 37,
+    "fitting_exact": 28,
+    "minor_overflow_17_or_less": 9,
+    "critical_overflow": 0,
+    "max_overflow_px": 17
+  },
+  "remaining_minor_overflow": [
+    {"name": "Nova Timeline", "overflow": 17},
+    {"name": "Neon Green", "overflow": 17},
+    {"name": "ATS Creative Safe", "overflow": 17},
+    {"name": "Legal", "overflow": 9},
+    {"name": "Professional Executive", "overflow": 7},
+    {"name": "Graduate Entry", "overflow": 7},
+    {"name": "ATS Serif", "overflow": 4},
+    {"name": "Corporate Gray", "overflow": 4},
+    {"name": "Obsidian Edge", "overflow": 3}
+  ],
+  "progress_from_v7": {
+    "Nova Timeline": "109 → 17",
+    "Obsidian Edge": "99 → 3",
+    "Startup Founder": "37 → OK",
+    "Consultant": "100 → OK",
+    "Creative Elegant": "79 → OK",
+    "Tech Professional": "67 → OK",
+    "Executive Navy": "33 → OK",
+    "Creative Gradient": "32 → OK"
+  }
+}

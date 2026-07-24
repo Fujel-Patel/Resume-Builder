@@ -1,0 +1,39 @@
+{
+  "audit_date": "2026-07-24",
+  "version": "v7-accurate",
+  "method": "scaleWrapper scrollHeight vs min-height:1123px",
+  "summary": {
+    "total": 37,
+    "ok": 22,
+    "minor_le20": 5,
+    "moderate_21_50": 2,
+    "significant_gt50": 8
+  },
+  "significant_overflow": [
+    {"name": "Obsidian Edge", "scrollH": 1248, "overflow": 125, "layout": "hero-banner"},
+    {"name": "Nova Timeline", "scrollH": 1232, "overflow": 109, "layout": "two-column-left/component-driven"},
+    {"name": "Consultant", "scrollH": 1223, "overflow": 100, "layout": "single"},
+    {"name": "Creative Elegant", "scrollH": 1202, "overflow": 79, "layout": "single"},
+    {"name": "Tech Professional", "scrollH": 1190, "overflow": 67, "layout": "single"},
+    {"name": "Startup Founder", "scrollH": 1186, "overflow": 63, "layout": "single"},
+    {"name": "Executive Navy", "scrollH": 1156, "overflow": 33, "layout": "single"},
+    {"name": "Creative Gradient", "scrollH": 1155, "overflow": 32, "layout": "single"}
+  ],
+  "minor_overflow": [
+    {"name": "Neon Green", "scrollH": 1140, "overflow": 17},
+    {"name": "ATS Creative Safe", "scrollH": 1140, "overflow": 17},
+    {"name": "Legal", "scrollH": 1132, "overflow": 9},
+    {"name": "Professional Executive", "scrollH": 1130, "overflow": 7},
+    {"name": "Graduate Entry", "scrollH": 1130, "overflow": 7},
+    {"name": "ATS Serif", "scrollH": 1127, "overflow": 4},
+    {"name": "Corporate Gray", "scrollH": 1127, "overflow": 4}
+  ],
+  "ok": [
+    "Blue Steel", "Minimal Timeline", "Developer Portfolio", "Designer Creative",
+    "ATS Clean", "ATS Minimal", "ATS Bold Headings", "ATS Modern Sans",
+    "ATS Compact", "ATS Executive", "Finance Formal", "Healthcare",
+    "Sidebar Classic", "Sidebar Modern", "Sidebar Dark", "Split Even",
+    "Split Golden", "Sidebar Right", "Sidebar Narrow", "Creative Bold",
+    "Creative Ocean", "Creative Sage"
+  ]
+}

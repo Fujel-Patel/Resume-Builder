@@ -13,8 +13,8 @@ const sans = "Inter, -apple-system, BlinkMacSystemFont, sans-serif"
 
 const styles = {
   page: {
-    width: "210mm",
-    minHeight: "297mm",
+    width: "794px",
+    minHeight: "1123px",
     fontFamily: sans,
     color: "#1e1b4b",
     backgroundColor: "#ffffff",
@@ -28,41 +28,51 @@ const styles = {
     minWidth: "35%",
     backgroundColor: palette.primary,
     color: palette.text,
-    padding: "32px 22px",
+    padding: "34px 22px",
     boxSizing: "border-box" as const,
   },
   photo: {
-    width: "120px",
-    height: "120px",
+    width: "110px",
+    height: "110px",
     borderRadius: "50%",
     backgroundColor: "#7c3aed",
-    border: "3px solid rgba(255,255,255,0.3)",
+    border: "3px solid rgba(255,255,255,0.2)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "42px",
+    fontSize: "38px",
     fontWeight: 700,
     color: "#ffffff",
-    marginBottom: "12px",
+    marginBottom: "16px",
+    boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
   },
   contactSectionTitle: {
-    fontSize: "10px",
+    fontSize: "9px",
     fontWeight: 700,
-    letterSpacing: "0.1em",
+    letterSpacing: "0.14em",
     textTransform: "uppercase" as const,
     color: "#c4b5fd",
-    marginBottom: "8px",
-    paddingBottom: "4px",
-    borderBottom: "1px solid rgba(255,255,255,0.15)",
+    marginBottom: "10px",
+    paddingBottom: "0",
+    borderBottom: "none",
+    display: "flex" as const,
+    alignItems: "center" as const,
+    gap: "8px",
+  },
+  sidebarDivider: {
+    flex: 1,
+    height: "1px",
+    backgroundColor: "rgba(255,255,255,0.12)",
   },
   contactRow: {
     display: "flex",
     alignItems: "center",
-    gap: "6px",
-    marginBottom: "5px",
-    fontSize: "9.5px",
+    gap: "8px",
+    marginBottom: "6px",
+    fontSize: "9px",
     color: "#ddd6fe",
     wordBreak: "break-word" as const,
+    lineHeight: 1.4,
   },
   contactIcon: {
     flexShrink: 0,
@@ -71,74 +81,96 @@ const styles = {
     fontSize: "10px",
   },
   skillGroup: {
-    marginBottom: "10px",
+    marginBottom: "12px",
   },
   skillLabel: {
-    fontSize: "9.5px",
+    fontSize: "9px",
     fontWeight: 600,
     color: "#e9d5ff",
-    marginBottom: "4px",
+    marginBottom: "6px",
+    letterSpacing: "0.01em",
   },
   skillBar: {
     width: "100%",
-    height: "6px",
-    backgroundColor: "rgba(255,255,255,0.15)",
+    height: "5px",
+    backgroundColor: "rgba(255,255,255,0.12)",
     borderRadius: "3px",
     marginBottom: "6px",
     overflow: "hidden" as const,
   },
   skillFill: {
     height: "100%",
-    backgroundColor: "rgba(255,255,255,0.7)",
+    backgroundColor: "rgba(255,255,255,0.6)",
     borderRadius: "3px",
   },
   langItem: {
     display: "flex",
     justifyContent: "space-between",
-    fontSize: "10px",
-    marginBottom: "3px",
+    fontSize: "9.5px",
+    marginBottom: "4px",
     color: "#ddd6fe",
+    padding: "2px 0",
+  },
+  langLevel: {
+    fontSize: "8.5px",
+    textTransform: "capitalize" as const,
+    color: "#c4b5fd",
+    fontWeight: 500,
   },
   refItem: {
     marginBottom: "8px",
-    fontSize: "10px",
+    fontSize: "9.5px",
+  },
+  interestTag: {
+    display: "inline-block",
+    fontSize: "8.5px",
+    padding: "3px 8px",
+    backgroundColor: "rgba(255,255,255,0.12)",
+    color: "#ddd6fe",
+    borderRadius: "12px",
+    marginRight: "3px",
+    marginBottom: "4px",
   },
   rightCol: {
     flex: 1,
-    padding: "32px 24px",
+    padding: "34px 26px",
     boxSizing: "border-box" as const,
   },
   nameBlock: {
-    marginBottom: "20px",
+    marginBottom: "22px",
   },
   fullName: {
-    fontSize: "26px",
+    fontSize: "24px",
     fontWeight: 700,
     color: "#1e1b4b",
-    marginBottom: "2px",
+    marginBottom: "3px",
+    letterSpacing: "-0.02em",
+    lineHeight: 1.1,
   },
   jobTitle: {
-    fontSize: "13px",
+    fontSize: "12.5px",
     color: palette.primary,
     fontWeight: 500,
+    letterSpacing: "0.02em",
   },
   sectionTitle: {
-    fontSize: "12px",
+    fontSize: "11px",
     fontWeight: 700,
     color: "#1e1b4b",
-    marginBottom: "8px",
-    paddingBottom: "4px",
-    paddingLeft: "10px",
+    marginBottom: "10px",
+    paddingBottom: "0",
+    paddingLeft: "12px",
     borderLeft: `3px solid ${palette.primary}`,
+    lineHeight: 1.3,
   },
   summaryText: {
     fontSize: "11px",
-    lineHeight: "1.6",
+    lineHeight: "1.65",
     color: "#374151",
-    marginBottom: "16px",
+    marginBottom: "18px",
   },
   expBlock: {
-    marginBottom: "12px",
+    marginBottom: "14px",
   },
   expHeader: {
     display: "flex",
@@ -150,29 +182,32 @@ const styles = {
     fontSize: "12px",
     fontWeight: 600,
     color: "#1e1b4b",
+    lineHeight: 1.3,
   },
   expCompany: {
     fontSize: "10.5px",
-    color: "#6b7280",
+    color: "#7c3aed",
+    lineHeight: 1.3,
   },
   expDate: {
-    fontSize: "10px",
+    fontSize: "9.5px",
     color: "#9ca3af",
     whiteSpace: "nowrap" as const,
     flexShrink: 0,
+    fontWeight: 500,
   },
   bullet: {
-    fontSize: "11px",
+    fontSize: "10.5px",
     lineHeight: "1.55",
     color: "#374151",
-    paddingLeft: "10px",
+    paddingLeft: "12px",
     position: "relative" as const,
-    marginBottom: "2px",
+    marginBottom: "3px",
   },
   bulletMarker: {
     position: "absolute" as const,
     left: "0",
-    top: "6px",
+    top: "6.5px",
     width: "4px",
     height: "4px",
     borderRadius: "50%",
@@ -182,28 +217,33 @@ const styles = {
     fontSize: "12px",
     fontWeight: 600,
     color: "#1e1b4b",
+    lineHeight: 1.3,
   },
   eduInstitution: {
     fontSize: "10.5px",
     color: "#6b7280",
+    lineHeight: 1.3,
   },
   eduMeta: {
-    fontSize: "10px",
+    fontSize: "9.5px",
     color: "#9ca3af",
+    marginTop: "1px",
   },
   certItem: {
     fontSize: "11px",
     color: "#374151",
     marginBottom: "3px",
+    fontWeight: 500,
   },
   certIssuer: {
-    fontSize: "10px",
+    fontSize: "9.5px",
     color: "#9ca3af",
   },
   awardDesc: {
-    fontSize: "10px",
+    fontSize: "9.5px",
     color: "#6b7280",
     marginTop: "2px",
+    lineHeight: "1.5",
   },
 }
 
@@ -249,8 +289,11 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Contact */}
         {sidebarSections.some((s) => s.type === "contact") && (
-          <div style={{ marginBottom: "16px" }}>
-            <div style={styles.contactSectionTitle}>Contact</div>
+          <div style={{ marginBottom: "18px" }}>
+            <div style={styles.contactSectionTitle}>
+              Contact
+              <div style={styles.sidebarDivider} />
+            </div>
             {contact.email && (
               <div style={styles.contactRow}>
                 <span style={styles.contactIcon}>&#9993;</span>
@@ -277,7 +320,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
             )}
             {contact.linkedin && (
               <div style={styles.contactRow}>
-                <span style={{ ...styles.contactIcon, fontWeight: 700 }}>in</span>
+                <span style={{ ...styles.contactIcon, fontWeight: 700, fontSize: "9px" }}>in</span>
                 <span>{contact.linkedin}</span>
               </div>
             )}
@@ -292,14 +335,17 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Skills */}
         {skills.length > 0 && sidebarSections.some((s) => s.type === "skills") && (
-          <div style={{ marginBottom: "16px" }}>
-            <div style={styles.contactSectionTitle}>Skills</div>
+          <div style={{ marginBottom: "18px" }}>
+            <div style={styles.contactSectionTitle}>
+              Skills
+              <div style={styles.sidebarDivider} />
+            </div>
             {skills.map((group) => (
               <div key={group.id} style={styles.skillGroup}>
                 <div style={styles.skillLabel}>{group.name}</div>
                 {group.skills.map((skill, i) => (
                   <div key={i}>
-                    <div style={{ fontSize: "9px", color: "#ddd6fe", marginBottom: "1px" }}>{skill}</div>
+                    <div style={{ fontSize: "8.5px", color: "#ddd6fe", marginBottom: "2px" }}>{skill}</div>
                     <div style={styles.skillBar}>
                       <div style={{ ...styles.skillFill, width: `${skillPercent(85 - i * 10)}%` }} />
                     </div>
@@ -312,12 +358,15 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Languages */}
         {languages.length > 0 && sidebarSections.some((s) => s.type === "languages") && (
-          <div style={{ marginBottom: "16px" }}>
-            <div style={styles.contactSectionTitle}>Languages</div>
+          <div style={{ marginBottom: "18px" }}>
+            <div style={styles.contactSectionTitle}>
+              Languages
+              <div style={styles.sidebarDivider} />
+            </div>
             {languages.map((lang) => (
               <div key={lang.id} style={styles.langItem}>
                 <span>{lang.name}</span>
-                <span style={{ textTransform: "capitalize" }}>{lang.proficiency}</span>
+                <span style={styles.langLevel}>{lang.proficiency}</span>
               </div>
             ))}
           </div>
@@ -325,25 +374,14 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Interests */}
         {interests.length > 0 && sidebarSections.some((s) => s.type === "interests") && (
-          <div style={{ marginBottom: "16px" }}>
-            <div style={styles.contactSectionTitle}>Interests</div>
+          <div style={{ marginBottom: "18px" }}>
+            <div style={styles.contactSectionTitle}>
+              Interests
+              <div style={styles.sidebarDivider} />
+            </div>
             <div>
               {interests.map((item) => (
-                <span
-                  key={item.id}
-                  style={{
-                    display: "inline-block",
-                    fontSize: "9px",
-                    padding: "2px 7px",
-                    backgroundColor: "rgba(255,255,255,0.15)",
-                    color: "#ddd6fe",
-                    borderRadius: "3px",
-                    marginRight: "3px",
-                    marginBottom: "3px",
-                  }}
-                >
-                  {item.name}
-                </span>
+                <span key={item.id} style={styles.interestTag}>{item.name}</span>
               ))}
             </div>
           </div>
@@ -351,14 +389,17 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* References */}
         {references.length > 0 && sidebarSections.some((s) => s.type === "references") && (
-          <div style={{ marginBottom: "16px" }}>
-            <div style={styles.contactSectionTitle}>References</div>
+          <div style={{ marginBottom: "18px" }}>
+            <div style={styles.contactSectionTitle}>
+              References
+              <div style={styles.sidebarDivider} />
+            </div>
             {references.map((ref) => (
               <div key={ref.id} style={styles.refItem}>
-                <div style={{ fontWeight: 600, color: "#ffffff" }}>{ref.name}</div>
-                <div style={{ color: "#c4b5fd" }}>{ref.role}</div>
-                {ref.company && <div style={{ color: "#c4b5fd" }}>{ref.company}</div>}
-                {ref.email && <div style={{ color: "#a78bfa" }}>{ref.email}</div>}
+                <div style={{ fontWeight: 600, color: "#ffffff", fontSize: "9.5px" }}>{ref.name}</div>
+                <div style={{ color: "#c4b5fd", fontSize: "9px" }}>{ref.role}</div>
+                {ref.company && <div style={{ color: "#c4b5fd", fontSize: "9px" }}>{ref.company}</div>}
+                {ref.email && <div style={{ color: "#a78bfa", fontSize: "9px", marginTop: "1px" }}>{ref.email}</div>}
               </div>
             ))}
           </div>
@@ -375,7 +416,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Summary */}
         {summary && mainSections.some((s) => s.type === "summary") && (
-          <section style={{ marginBottom: "16px" }}>
+          <section style={{ marginBottom: "18px" }}>
             <div style={styles.sectionTitle}>Professional Summary</div>
             <p style={styles.summaryText}>{summary}</p>
           </section>
@@ -383,7 +424,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Experience */}
         {experience.length > 0 && mainSections.some((s) => s.type === "experience") && (
-          <section style={{ marginBottom: "16px" }}>
+          <section style={{ marginBottom: "18px" }}>
             <div style={styles.sectionTitle}>Experience</div>
             {experience.map((exp) => (
               <div key={exp.id} style={styles.expBlock}>
@@ -403,7 +444,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
                   )}
                 </div>
                 {exp.bullets.length > 0 && (
-                  <div style={{ marginTop: "4px" }}>
+                  <div style={{ marginTop: "5px" }}>
                     {exp.bullets.map((bullet, i) => (
                       <div key={i} style={styles.bullet}>
                         <div style={styles.bulletMarker} />
@@ -419,7 +460,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Projects */}
         {projects.length > 0 && mainSections.some((s) => s.type === "projects") && (
-          <section style={{ marginBottom: "16px" }}>
+          <section style={{ marginBottom: "18px" }}>
             <div style={styles.sectionTitle}>Projects</div>
             {projects.map((proj) => (
               <div key={proj.id} style={styles.expBlock}>
@@ -438,7 +479,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
                   )}
                 </div>
                 {proj.bullets.length > 0 && (
-                  <div style={{ marginTop: "4px" }}>
+                  <div style={{ marginTop: "5px" }}>
                     {proj.bullets.map((bullet, i) => (
                       <div key={i} style={styles.bullet}>
                         <div style={styles.bulletMarker} />
@@ -454,7 +495,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Education */}
         {education.length > 0 && mainSections.some((s) => s.type === "education") && (
-          <section style={{ marginBottom: "16px" }}>
+          <section style={{ marginBottom: "18px" }}>
             <div style={styles.sectionTitle}>Education</div>
             {education.map((edu) => (
               <div key={edu.id} style={styles.expBlock}>
@@ -481,7 +522,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Certifications */}
         {certifications.length > 0 && mainSections.some((s) => s.type === "certifications") && (
-          <section style={{ marginBottom: "16px" }}>
+          <section style={{ marginBottom: "18px" }}>
             <div style={styles.sectionTitle}>Certifications</div>
             {certifications.map((cert) => (
               <div key={cert.id} style={styles.expBlock}>
@@ -499,7 +540,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Awards */}
         {awards.length > 0 && mainSections.some((s) => s.type === "awards") && (
-          <section style={{ marginBottom: "16px" }}>
+          <section style={{ marginBottom: "18px" }}>
             <div style={styles.sectionTitle}>Awards</div>
             {awards.map((award) => (
               <div key={award.id} style={styles.expBlock}>
@@ -520,7 +561,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
         {custom.length > 0 && mainSections.some((s) => s.type === "custom") && (
           <>
             {custom.map((section) => (
-              <section key={section.id} style={{ marginBottom: "16px" }}>
+              <section key={section.id} style={{ marginBottom: "18px" }}>
                 <div style={styles.sectionTitle}>{section.title}</div>
                 {section.content && <p style={styles.summaryText}>{section.content}</p>}
                 {section.bullets.length > 0 && (

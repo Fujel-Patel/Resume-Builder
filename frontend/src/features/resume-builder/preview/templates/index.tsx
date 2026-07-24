@@ -2,16 +2,9 @@
 
 import type { ComponentType } from "react"
 import type { ResumeData } from "@/types/resume"
-import { NovaTemplate } from "./nova-template"
-import { ProfessionalExecutiveTemplate } from "./professional-executive"
-import { ObsidianEdgeTemplate } from "./obsidian-edge"
-import { BlueSteelTemplate } from "./blue-steel"
-import { NeonGreenTemplate } from "./neon-green"
 import { MinimalTimelineTemplate } from "../../design-system/templates/components/minimal-timeline"
 import { DeveloperPortfolioTemplate } from "../../design-system/templates/components/developer-portfolio"
 import { DesignerCreativeTemplate } from "../../design-system/templates/components/designer-creative"
-import { StartupFounderTemplate } from "../../design-system/templates/components/startup-founder"
-import { GraduateEntryTemplate } from "../../design-system/templates/components/graduate-entry"
 import { ConfigTemplateRenderer } from "../../design-system/renderer/TemplateRenderer"
 import type { TemplateConfig } from "../../design-system/templates/types"
 import {
@@ -42,6 +35,13 @@ import {
   creativeElegantConfig,
   creativeOceanConfig,
   creativeSageConfig,
+  professionalExecutiveConfig,
+  obsidianEdgeConfig,
+  blueSteelConfig,
+  neonGreenConfig,
+  novaConfig,
+  startupFounderConfig,
+  graduateEntryConfig,
 } from "../../design-system/templates"
 
 export type BuilderTemplateComponent = ComponentType<{ resume: ResumeData }>
@@ -62,46 +62,65 @@ function makeConfigComponent(config: TemplateConfig): BuilderTemplateComponent {
 }
 
 export const builderTemplates: BuilderTemplateEntry[] = [
-  // --- Legacy component-driven templates ---
+  // --- Config-driven templates (converted from components) ---
   {
-    id: "nova-timeline",
-    name: "Nova Timeline",
-    description: "Modern two-column timeline layout with sidebar",
-    tags: ["ATS Friendly", "Modern"],
-    component: NovaTemplate,
+    id: novaConfig.id,
+    name: novaConfig.name,
+    description: novaConfig.description,
+    tags: novaConfig.tags,
+    category: "two-column",
+    component: makeConfigComponent(novaConfig),
   },
   {
-    id: "professional-executive",
-    name: "Professional Executive",
-    description: "Corporate navy design with structured sections",
-    tags: ["Executive", "ATS Friendly"],
-    component: ProfessionalExecutiveTemplate,
-  },
-  {
-    id: "obsidian-edge",
-    name: "Obsidian Edge",
-    description:
-      "Bold black header with white body, icon section headings, multi-column skills — print-ready A4",
-    tags: ["Modern", "ATS Friendly", "Professional"],
+    id: professionalExecutiveConfig.id,
+    name: professionalExecutiveConfig.name,
+    description: professionalExecutiveConfig.description,
+    tags: professionalExecutiveConfig.tags,
     category: "professional",
-    component: ObsidianEdgeTemplate,
+    component: makeConfigComponent(professionalExecutiveConfig),
   },
   {
-    id: "blue-steel",
-    name: "Blue Steel",
-    description: "Minimalist European design with elegant typography and card-based layout",
-    tags: ["Executive", "ATS Friendly", "Professional"],
-    component: BlueSteelTemplate,
+    id: obsidianEdgeConfig.id,
+    name: obsidianEdgeConfig.name,
+    description: obsidianEdgeConfig.description,
+    tags: obsidianEdgeConfig.tags,
+    category: "professional",
+    component: makeConfigComponent(obsidianEdgeConfig),
   },
   {
-    id: "neon-green",
-    name: "Neon Green",
-    description: "Modern software-engineer resume with clean typography and subtle green accents",
-    tags: ["ATS Friendly", "Modern", "Professional"],
-    component: NeonGreenTemplate,
+    id: blueSteelConfig.id,
+    name: blueSteelConfig.name,
+    description: blueSteelConfig.description,
+    tags: blueSteelConfig.tags,
+    category: "professional",
+    component: makeConfigComponent(blueSteelConfig),
+  },
+  {
+    id: neonGreenConfig.id,
+    name: neonGreenConfig.name,
+    description: neonGreenConfig.description,
+    tags: neonGreenConfig.tags,
+    category: "professional",
+    component: makeConfigComponent(neonGreenConfig),
+  },
+  {
+    id: startupFounderConfig.id,
+    name: startupFounderConfig.name,
+    description: startupFounderConfig.description,
+    tags: startupFounderConfig.tags,
+    category: "professional",
+    component: makeConfigComponent(startupFounderConfig),
+  },
+  {
+    id: graduateEntryConfig.id,
+    name: graduateEntryConfig.name,
+    description: graduateEntryConfig.description,
+    tags: graduateEntryConfig.tags,
+    category: "ats",
+    component: makeConfigComponent(graduateEntryConfig),
   },
 
-  // --- Component-driven templates ---
+  // --- Remaining component-driven templates ---
   {
     id: "minimal-timeline",
     name: "Minimal Timeline",
@@ -125,22 +144,6 @@ export const builderTemplates: BuilderTemplateEntry[] = [
     tags: ["Creative", "Designer", "Bold"],
     category: "creative",
     component: DesignerCreativeTemplate,
-  },
-  {
-    id: "startup-founder",
-    name: "Startup Founder",
-    description: "Modern startup-style with large typography and card projects",
-    tags: ["Startup", "Founder", "Modern"],
-    category: "professional",
-    component: StartupFounderTemplate,
-  },
-  {
-    id: "graduate-entry",
-    name: "Graduate Entry",
-    description: "Clean entry-level template emphasizing education and projects",
-    tags: ["Graduate", "Entry-Level", "ATS Friendly"],
-    category: "ats",
-    component: GraduateEntryTemplate,
   },
 
   // --- ATS templates ---

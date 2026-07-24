@@ -68,6 +68,7 @@ function mapLegacyToNew(legacy: LegacyResumeData, id: string) {
         photoUrl: "",
       },
       summary: legacy.summary,
+      jobDescription: legacy.jobDescription || "",
       experience: legacy.experience.map((e) => ({
         id: `exp_${Math.random().toString(36).slice(2)}`,
         company: e.company,
