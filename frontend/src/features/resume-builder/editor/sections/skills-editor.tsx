@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import { toast } from "sonner"
 import { useResumeStore } from "@/store/resume-store"
 import { SectionHeader } from "./section-header"
 import { Plus, Trash2, X } from "lucide-react"
 import { suggestSkillsApi } from "@/lib/api/ai-suggest"
+import { ApiRequestError } from "@/lib/api/client"
 
 type SkillsEditorProps = {
   sectionId: string
@@ -41,17 +43,24 @@ export function SkillsEditor({
         job_description: jobDescription || "",
         current_skills: Object.keys(currentSkills).length > 0 ? currentSkills : { other: [] },
       })
+      if (typeof result.skills !== "object" || result.skills === null || Array.isArray(result.skills)) {
+        toast.error("AI returned an unexpected skills format. Please try again.")
+        return
+      }
       const newGroups: { name: string; skills: string[] }[] = Object.entries(result.skills).map(([key, skillList]) => ({
         name: key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-        skills: skillList,
-      }))
+        skills: Array.isArray(skillList) ? skillList.map(String) : [],
+      })).filter((g) => g.skills.length > 0)
       setSkills(
         newGroups.map((g) => ({
           id: `skill_${Date.now()}_${Math.random().toString(36).slice(2)}`,
           ...g,
         }))
       )
-    } catch {
+      toast.success("Skills updated")
+    } catch (err) {
+      const msg = err instanceof ApiRequestError ? err.message : "Failed to suggest skills"
+      toast.error(msg)
     } finally {
       setAiLoading(false)
     }

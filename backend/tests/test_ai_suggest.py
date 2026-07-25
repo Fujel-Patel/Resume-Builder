@@ -44,6 +44,33 @@ class TestSuggestSummary:
         data = resp.json()["data"]
         assert "Improve" in data["summary"]
 
+    @patch("app.modules.ai.service.ai_complete")
+    def test_markdown_wrapping_stripped(self, mock_ai, client):
+        mock_ai.return_value = '```json\nExperienced Python developer with 5 years of expertise.\n```'
+        resp = client.post(f"{BASE}/suggest/summary", json={
+            "job_title": "Python Developer",
+            "skills": ["Python", "Django"],
+            "experience": ["Built web apps"],
+            "job_description": "Python role",
+        })
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert "Experienced Python developer" in data["summary"]
+        assert "```" not in data["summary"]
+
+    @patch("app.modules.ai.service.ai_complete")
+    def test_label_prefix_stripped(self, mock_ai, client):
+        mock_ai.return_value = '**Summary:** Senior engineer with cloud experience.'
+        resp = client.post(f"{BASE}/suggest/summary", json={
+            "job_title": "Cloud Engineer",
+            "skills": ["AWS"],
+            "experience": ["Deployed infrastructure"],
+            "job_description": "Cloud role",
+        })
+        assert resp.status_code == 200
+        data = resp.json()["data"]
+        assert data["summary"].startswith("Senior engineer")
+
 
 class TestSuggestSkills:
     @patch("app.modules.ai.service.ai_complete")
@@ -71,6 +98,18 @@ class TestSuggestSkills:
         })
         assert resp.status_code == 422
 
+    @patch("app.modules.ai.service.ai_complete")
+    def test_list_response_wrapped_in_dict(self, mock_ai, client):
+        mock_ai.return_value = '["React", "Python", "FastAPI"]'
+        resp = client.post(f"{BASE}/suggest/skills", json={
+            "job_description": "Full stack role",
+            "current_skills": {"frontend": ["React"]},
+        })
+        assert resp.status_code == 200
+        data = resp.json()["data"]["skills"]
+        assert isinstance(data, dict)
+        assert "skills" in data
+
 
 class TestSuggestExperience:
     @patch("app.modules.ai.service.ai_complete")
@@ -97,6 +136,32 @@ class TestSuggestExperience:
             "job_description": "Engineer role",
         })
         assert resp.status_code == 200
+
+    @patch("app.modules.ai.service.ai_complete")
+    def test_dict_wrapped_bullets_unwrapped(self, mock_ai, client):
+        mock_ai.return_value = '{"bullets": ["Led team", "Built API"]}'
+        resp = client.post(f"{BASE}/suggest/experience", json={
+            "experience_bullets": ["Managed team", "Created endpoint"],
+            "job_role": "Tech Lead",
+            "job_description": "Senior engineer role",
+        })
+        assert resp.status_code == 200
+        data = resp.json()["data"]["bullets"]
+        assert isinstance(data, list)
+        assert len(data) == 2
+        assert "Led team" in data[0]
+
+    @patch("app.modules.ai.service.ai_complete")
+    def test_fewer_bullets_than_input(self, mock_ai, client):
+        mock_ai.return_value = '["Led team"]'
+        resp = client.post(f"{BASE}/suggest/experience", json={
+            "experience_bullets": ["Bullet 1", "Bullet 2", "Bullet 3"],
+            "job_role": "Engineer",
+        })
+        assert resp.status_code == 200
+        data = resp.json()["data"]["bullets"]
+        assert isinstance(data, list)
+        assert len(data) == 1
 
 
 class TestSuggestProjects:

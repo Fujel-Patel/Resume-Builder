@@ -1,9 +1,11 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import { toast } from "sonner"
 import { useResumeStore } from "@/store/resume-store"
 import { SectionHeader } from "./section-header"
 import { suggestSummaryApi } from "@/lib/api/ai-suggest"
+import { ApiRequestError } from "@/lib/api/client"
 
 type SummaryEditorProps = {
   sectionId: string
@@ -36,7 +38,10 @@ export function SummaryEditor({
         current_summary: summary || null,
       })
       setSummary(result.summary)
-    } catch {
+      toast.success("Summary improved")
+    } catch (err) {
+      const msg = err instanceof ApiRequestError ? err.message : "Failed to improve summary"
+      toast.error(msg)
     } finally {
       setAiLoading(false)
     }

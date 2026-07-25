@@ -1,9 +1,11 @@
 "use client"
 
 import { useState, useCallback, useRef } from "react"
+import { toast } from "sonner"
 import { useResumeStore } from "@/store/resume-store"
 import { SectionHeader } from "./section-header"
 import { suggestJobTitleApi } from "@/lib/api/ai-suggest"
+import { ApiRequestError } from "@/lib/api/client"
 
 type ContactEditorProps = {
   sectionId: string
@@ -28,7 +30,10 @@ export function ContactEditor({
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const handleSuggestJobTitle = useCallback(async () => {
-    if (!jobDescription.trim()) return
+    if (!jobDescription.trim()) {
+      toast.error("Enter a Job Description first to suggest a job title")
+      return
+    }
     setAiLoading(true)
     try {
       const result = await suggestJobTitleApi({
@@ -36,7 +41,10 @@ export function ContactEditor({
         current_title: contact.title || null,
       })
       updateContact({ title: result.title })
-    } catch {
+      toast.success("Job title suggested")
+    } catch (err) {
+      const msg = err instanceof ApiRequestError ? err.message : "Failed to suggest job title"
+      toast.error(msg)
     } finally {
       setAiLoading(false)
     }

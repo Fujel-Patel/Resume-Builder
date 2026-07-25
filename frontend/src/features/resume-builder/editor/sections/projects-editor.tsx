@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import { toast } from "sonner"
 import { useResumeStore } from "@/store/resume-store"
 import { SectionHeader } from "./section-header"
 import { Plus, Trash2, X } from "lucide-react"
 import { suggestProjectsApi } from "@/lib/api/ai-suggest"
+import { ApiRequestError } from "@/lib/api/client"
 
 type ProjectsEditorProps = {
   sectionId: string
@@ -32,7 +34,10 @@ export function ProjectsEditor({
 
   const handleImproveProjects = useCallback(async () => {
     const allBullets = projects.flatMap((p) => p.bullets).filter(Boolean)
-    if (allBullets.length === 0) return
+    if (allBullets.length === 0) {
+      toast.error("Add at least one project description to improve")
+      return
+    }
     setAiLoading(true)
     try {
       const first = projects[0]
@@ -43,15 +48,22 @@ export function ProjectsEditor({
         tech_stack: techNames.length > 0 ? techNames : null,
         job_description: jobDescription || null,
       })
-      if (result.projects.length === allBullets.length) {
-        let bi = 0
-        for (const proj of projects) {
-          const projBullets = result.projects.slice(bi, bi + proj.bullets.length)
-          updateProject(proj.id, { bullets: projBullets })
-          bi += proj.bullets.length
-        }
+      if (!Array.isArray(result.projects) || result.projects.length === 0) {
+        toast.error("AI returned an unexpected response. Please try again.")
+        return
       }
-    } catch {
+      let bi = 0
+      for (const proj of projects) {
+        const projBullets = result.projects.slice(bi, bi + proj.bullets.length)
+        if (projBullets.length > 0) {
+          updateProject(proj.id, { bullets: projBullets.map(String) })
+        }
+        bi += proj.bullets.length
+      }
+      toast.success("Project descriptions improved")
+    } catch (err) {
+      const msg = err instanceof ApiRequestError ? err.message : "Failed to improve projects"
+      toast.error(msg)
     } finally {
       setAiLoading(false)
     }

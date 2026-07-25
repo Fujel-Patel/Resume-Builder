@@ -87,6 +87,48 @@ def _parse_json_safe(raw: str) -> dict | list:
         return _extract_json(raw)
 
 
+def _unwrap_json_array(raw: str, expected_key: str | None = None) -> list:
+    """Parse AI response and reliably extract a flat list of strings.
+
+    Handles the common cases where the LLM wraps the array in a dict
+    (e.g. ``{"bullets": ["a", "b"]}``) or returns a bare array.
+    """
+    parsed = _parse_json_safe(raw)
+
+    if isinstance(parsed, list):
+        return [str(item) for item in parsed]
+
+    if isinstance(parsed, dict):
+        if expected_key and expected_key in parsed:
+            val = parsed[expected_key]
+            if isinstance(val, list):
+                return [str(item) for item in val]
+            if isinstance(val, str):
+                return [val]
+        # Fallback: take the first list-typed value in the dict
+        for v in parsed.values():
+            if isinstance(v, list):
+                return [str(item) for item in v]
+
+    # Last resort: return the stringified original
+    return [str(parsed)]
+
+
+def _strip_markdown(text: str) -> str:
+    """Remove common markdown wrapping from LLM text responses."""
+    text = text.strip()
+    # Remove triple-backtick fences
+    match = re.search(r"```(?:\w+)?\s*\n?(.*?)\n?\s*```", text, re.DOTALL)
+    if match:
+        text = match.group(1).strip()
+    # Remove surrounding quotes
+    if len(text) >= 2 and text[0] == text[-1] and text[0] in ('"', "'"):
+        text = text[1:-1].strip()
+    # Remove leading label like "**Summary:** " or "Summary: "
+    text = re.sub(r"^[\* ]*[Ss]ummary[: ]*[\* ]*", "", text)
+    return text.strip()
+
+
 # ---------------------------------------------------------------------------
 # POST /ai/suggest/summary
 # ---------------------------------------------------------------------------
@@ -111,7 +153,7 @@ async def suggest_summary(
         parts.append(f"Current Summary: {req.current_summary}")
     prompt = "\n".join(parts)
     result = await _safe_ai_complete(str(current_user.id), prompt, db)
-    return success({"summary": result})
+    return success({"summary": _strip_markdown(result)})
 
 
 # ---------------------------------------------------------------------------
@@ -140,6 +182,11 @@ async def suggest_skills(
         skills = _parse_json_safe(raw)
     except json.JSONDecodeError:
         raise _ai_error("AI returned invalid JSON for skills list")
+    if not isinstance(skills, dict):
+        if isinstance(skills, list):
+            skills = {"skills": skills}
+        else:
+            skills = {"skills": [str(skills)]}
     return success({"skills": skills})
 
 
@@ -167,11 +214,9 @@ async def improve_experience(
     prompt = "\n".join(parts)
     raw = await _safe_ai_complete(str(current_user.id), prompt, db, json_mode=True)
     try:
-        bullets = _parse_json_safe(raw)
-    except json.JSONDecodeError:
+        bullets = _unwrap_json_array(raw, "bullets")
+    except (json.JSONDecodeError, ValueError):
         raise _ai_error("AI returned invalid JSON for experience bullets")
-    if not isinstance(bullets, list):
-        bullets = [str(bullets)]
     return success({"bullets": bullets})
 
 
@@ -198,13 +243,9 @@ async def improve_projects(
     prompt = "\n".join(parts)
     raw = await _safe_ai_complete(str(current_user.id), prompt, db, json_mode=True)
     try:
-        improved = _parse_json_safe(raw)
-    except json.JSONDecodeError:
+        improved = _unwrap_json_array(raw, "projects")
+    except (json.JSONDecodeError, ValueError):
         raise _ai_error("AI returned invalid JSON for project descriptions")
-    if isinstance(improved, dict):
-        improved = list(improved.values())[0]
-    if not isinstance(improved, list):
-        improved = [str(improved)]
     return success({"projects": improved})
 
 

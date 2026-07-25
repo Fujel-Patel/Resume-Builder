@@ -1,10 +1,12 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import { toast } from "sonner"
 import { useResumeStore } from "@/store/resume-store"
 import { SectionHeader } from "./section-header"
 import { Plus, Trash2, X } from "lucide-react"
 import { suggestExperienceApi } from "@/lib/api/ai-suggest"
+import { ApiRequestError } from "@/lib/api/client"
 
 type ExperienceEditorProps = {
   sectionId: string
@@ -31,7 +33,10 @@ export function ExperienceEditor({
 
   const handleImproveExperience = useCallback(async () => {
     const allBullets = experiences.flatMap((e) => e.bullets).filter(Boolean)
-    if (allBullets.length === 0) return
+    if (allBullets.length === 0) {
+      toast.error("Add at least one bullet point to improve")
+      return
+    }
     setAiLoading(true)
     try {
       const first = experiences[0]
@@ -41,15 +46,22 @@ export function ExperienceEditor({
         company: first.company || null,
         job_description: jobDescription || null,
       })
-      if (result.bullets.length === allBullets.length) {
-        let bi = 0
-        for (const exp of experiences) {
-          const expBullets = result.bullets.slice(bi, bi + exp.bullets.length)
-          updateExperience(exp.id, { bullets: expBullets })
-          bi += exp.bullets.length
-        }
+      if (!Array.isArray(result.bullets) || result.bullets.length === 0) {
+        toast.error("AI returned an unexpected response. Please try again.")
+        return
       }
-    } catch {
+      let bi = 0
+      for (const exp of experiences) {
+        const expBullets = result.bullets.slice(bi, bi + exp.bullets.length)
+        if (expBullets.length > 0) {
+          updateExperience(exp.id, { bullets: expBullets.map(String) })
+        }
+        bi += exp.bullets.length
+      }
+      toast.success("Experience bullets improved")
+    } catch (err) {
+      const msg = err instanceof ApiRequestError ? err.message : "Failed to improve experience"
+      toast.error(msg)
     } finally {
       setAiLoading(false)
     }
