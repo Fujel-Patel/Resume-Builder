@@ -8,7 +8,7 @@ type SummarySectionProps = {
   compact?: boolean
 }
 
-const d = { text: "#111827", secondary: "#374151", primary: "#1e3a5f", muted: "#6b7280", border: "#e5e7eb" }
+const d = { text: "#111827", secondary: "#4B5563", primary: "#2563EB", muted: "#6B7280", border: "#E5E7EB" }
 
 export function SummarySection({ text, variant = "standard", colors = {}, typography = {} }: SummarySectionProps) {
   const c = { ...d, ...colors }
@@ -16,7 +16,7 @@ export function SummarySection({ text, variant = "standard", colors = {}, typogr
 
   if (variant === "highlight") {
     return (
-      <div style={{ padding: "10px 14px", backgroundColor: c.primary + "08", borderLeft: `3px solid ${c.primary}`, borderRadius: "0 4px 4px 0", marginBottom: 2 }}>
+      <div style={{ padding: "8px 12px", backgroundColor: c.primary + "08", borderLeft: `3px solid ${c.primary}`, borderRadius: "0 4px 4px 0", marginBottom: 2 }}>
         <p style={{ margin: 0, fontSize: typography.fontSize ?? 10.5, lineHeight: typography.lineHeight ?? 1.65, color: c.secondary, letterSpacing: "0.01em" }}>
           {text}
         </p>

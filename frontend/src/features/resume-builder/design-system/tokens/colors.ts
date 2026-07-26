@@ -25,13 +25,14 @@ export const accentPalettes: Record<string, AccentPalette> = {
   neonGreen:  { name: "Neon Green",   primary: "#3DDC97", light: "#ecfdf5", muted: "#a7f3d0", text: "#111827" },
   indigoDark: { name: "Indigo Dark",  primary: "#4f46e5", light: "#eef2ff", muted: "#c7d2fe", text: "#ffffff" },
   blueSteel:  { name: "Blue Steel",   primary: "#2F3552", light: "#DCE4EA", muted: "#c5cdd8", text: "#ffffff" },
+  nova:       { name: "Nova Blue",    primary: "#2563EB", light: "#eff6ff", muted: "#dbeafe", text: "#ffffff" },
 }
 
 export type AccentName = keyof typeof accentPalettes
 
 export const textColors = {
   primary:   "#111827",
-  secondary: "#374151",
+  secondary: "#4B5563",
   muted:     "#6b7280",
   subtle:    "#9ca3af",
   white:     "#ffffff",

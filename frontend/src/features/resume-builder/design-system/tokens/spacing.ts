@@ -25,6 +25,7 @@ export const spacingPresets = {
   dense:      { sectionGap: 12, itemGap: 6,  intraGap: 3 },
   airy:       { sectionGap: 32, itemGap: 18, intraGap: 10 },
   executive:  { sectionGap: 24, itemGap: 12, intraGap: 7 },
+  nova:       { sectionGap: 16, itemGap: 10, intraGap: 5 },
 } as const
 
 export type SpacingPreset = keyof typeof spacingPresets

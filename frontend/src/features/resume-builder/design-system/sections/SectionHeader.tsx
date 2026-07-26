@@ -11,20 +11,26 @@ type SectionHeaderProps = {
   compact?: boolean
 }
 
-const defaults = { primary: "#1e3a5f", text: "#111827", muted: "#6b7280", border: "#e5e7eb" }
+const defaults = { primary: "#2563EB", text: "#111827", muted: "#6B7280", border: "#E5E7EB" }
 
 export function SectionHeader({ title, variant = "underline", colors = {}, typography = {}, icon, number, compact }: SectionHeaderProps) {
   const c = { ...defaults, ...colors }
-  const base = { fontSize: typography.fontSize ?? 11.5, fontWeight: typography.fontWeight ?? 700, letterSpacing: typography.letterSpacing ?? "0.08em", textTransform: (typography.textTransform ?? "uppercase") as "uppercase" }
-  const mb = compact ? 6 : 10
+  const base = {
+    fontSize: typography.fontSize ?? 13,
+    fontWeight: typography.fontWeight ?? 700,
+    letterSpacing: typography.letterSpacing ?? "0.08em",
+    textTransform: (typography.textTransform ?? "uppercase") as "uppercase",
+  }
+  const mb = compact ? 6 : 8
 
   if (variant === "underline") {
     return (
-      <div style={{ borderBottom: `1.5px solid ${c.primary}`, paddingBottom: compact ? 3 : 5, marginBottom: mb }}>
+      <div style={{ marginBottom: mb }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           {icon && <span style={{ color: c.primary, flexShrink: 0, fontSize: 13 }}>{icon}</span>}
-          <h2 style={{ ...base, color: c.primary, margin: 0 }}>{title}</h2>
+          <h2 style={{ ...base, color: c.text, margin: 0 }}>{title}</h2>
         </div>
+        <div style={{ height: 2, backgroundColor: c.primary, marginTop: compact ? 3 : 4, borderRadius: 1 }} />
       </div>
     )
   }
@@ -48,7 +54,7 @@ export function SectionHeader({ title, variant = "underline", colors = {}, typog
   if (variant === "minimal") {
     return (
       <div style={{ marginBottom: mb }}>
-        <h2 style={{ ...base, fontSize: (typography.fontSize ?? 11.5) - 1, color: c.muted, margin: 0, letterSpacing: "0.14em" }}>{title}</h2>
+        <h2 style={{ ...base, fontSize: (typography.fontSize ?? 13) - 2, color: c.muted, margin: 0, letterSpacing: "0.14em" }}>{title}</h2>
       </div>
     )
   }
@@ -82,7 +88,7 @@ export function SectionHeader({ title, variant = "underline", colors = {}, typog
   if (variant === "editorial") {
     return (
       <div style={{ marginBottom: compact ? 9 : 12, display: "flex", alignItems: "baseline", gap: 10 }}>
-        <h2 style={{ ...base, fontSize: (typography.fontSize ?? 11.5) + 1.5, fontWeight: 800, color: c.primary, margin: 0, letterSpacing: "-0.01em", textTransform: "none" as const }}>{title}</h2>
+        <h2 style={{ ...base, fontSize: (typography.fontSize ?? 13) + 1.5, fontWeight: 800, color: c.primary, margin: 0, letterSpacing: "-0.01em", textTransform: "none" as const }}>{title}</h2>
         <div style={{ flex: 1, height: 2.5, backgroundColor: c.primary, borderRadius: 1 }} />
       </div>
     )
@@ -112,11 +118,11 @@ export function SectionHeader({ title, variant = "underline", colors = {}, typog
     )
   }
 
-  // sidebar fallback
+  // sidebar variant — used for sidebar sections
   return (
-    <div style={{ marginBottom: compact ? 5 : 8 }}>
-      <h2 style={{ ...base, fontSize: 9.5, color: c.primary, margin: 0, letterSpacing: "0.16em" }}>{title}</h2>
-      <div style={{ width: 24, height: 2.5, backgroundColor: c.primary, marginTop: 5, borderRadius: 1 }} />
+    <div style={{ marginBottom: compact ? 5 : 7 }}>
+      <h2 style={{ ...base, fontSize: 10, color: c.primary, margin: 0, letterSpacing: "0.12em" }}>{title}</h2>
+      <div style={{ width: 20, height: 2, backgroundColor: c.primary, marginTop: 4, borderRadius: 1 }} />
     </div>
   )
 }

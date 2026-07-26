@@ -17,7 +17,7 @@ export type MarginPreset = keyof typeof pageMargins
 export const gridSystems = {
   single:        { columns: [1], gap: 0 },
   singleWide:    { columns: [1], gap: 0 },
-  split3070:     { columns: [0.30, 0.70], gap: 24 },
+  split3070:     { columns: [0.30, 0.70], gap: 20 },
   split3565:     { columns: [0.35, 0.65], gap: 24 },
   split4060:     { columns: [0.40, 0.60], gap: 24 },
   goldenRatio:   { columns: [0.382, 0.618], gap: 24 },

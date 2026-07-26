@@ -12,20 +12,20 @@ export const fontFamilies = {
 export type FontFamily = keyof typeof fontFamilies
 
 export const typeScale = {
-  nameXL:    { fontSize: 34, lineHeight: 1.1, fontWeight: 800 as const, letterSpacing: "-0.03em" },
+  nameXL:    { fontSize: 38, lineHeight: 1.1, fontWeight: 700 as const, letterSpacing: "-0.02em" },
   nameLG:    { fontSize: 28, lineHeight: 1.15, fontWeight: 700 as const, letterSpacing: "-0.02em" },
   nameMD:    { fontSize: 22, lineHeight: 1.2, fontWeight: 700 as const, letterSpacing: "-0.01em" },
   titleLG:   { fontSize: 15, lineHeight: 1.3, fontWeight: 400 as const, letterSpacing: "0.01em" },
-  titleMD:   { fontSize: 13, lineHeight: 1.35, fontWeight: 400 as const, letterSpacing: "0" },
+  titleMD:   { fontSize: 13, lineHeight: 1.35, fontWeight: 500 as const, letterSpacing: "0" },
   titleSM:   { fontSize: 11, lineHeight: 1.4, fontWeight: 500 as const, letterSpacing: "0.01em" },
-  headingLG: { fontSize: 12, lineHeight: 1.3, fontWeight: 700 as const, letterSpacing: "0.06em" },
+  headingLG: { fontSize: 13, lineHeight: 1.3, fontWeight: 700 as const, letterSpacing: "0.08em" },
   headingMD: { fontSize: 11, lineHeight: 1.35, fontWeight: 700 as const, letterSpacing: "0.08em" },
   headingSM: { fontSize: 10, lineHeight: 1.4, fontWeight: 600 as const, letterSpacing: "0.1em" },
-  bodyLG:    { fontSize: 11, lineHeight: 1.6, fontWeight: 400 as const, letterSpacing: "0" },
-  bodyMD:    { fontSize: 10.5, lineHeight: 1.55, fontWeight: 400 as const, letterSpacing: "0" },
+  bodyLG:    { fontSize: 11, lineHeight: 1.65, fontWeight: 400 as const, letterSpacing: "0" },
+  bodyMD:    { fontSize: 10.5, lineHeight: 1.6, fontWeight: 400 as const, letterSpacing: "0" },
   bodySM:    { fontSize: 10, lineHeight: 1.5, fontWeight: 400 as const, letterSpacing: "0" },
   metaMD:    { fontSize: 10, lineHeight: 1.4, fontWeight: 500 as const, letterSpacing: "0.01em" },
-  metaSM:    { fontSize: 9.5, lineHeight: 1.4, fontWeight: 400 as const, letterSpacing: "0" },
+  metaSM:    { fontSize: 9.5, lineHeight: 1.4, fontWeight: 500 as const, letterSpacing: "0" },
   captionMD: { fontSize: 9.5, lineHeight: 1.4, fontWeight: 400 as const, letterSpacing: "0" },
   captionSM: { fontSize: 9, lineHeight: 1.35, fontWeight: 400 as const, letterSpacing: "0.01em" },
 } as const

@@ -81,7 +81,7 @@ export function SectionRenderer({
           )))
         }
         if (section.type === "skills" && content.skills.length > 0) {
-          elements.push(<SkillGroup key="skills" skills={content.skills} variant={sectionVariants.skills as any} colors={{ primary: palette.primary, text: textColors.primary, muted: textColors.muted, border: palette.muted }} />)
+          elements.push(            <SkillGroup key="skills" skills={content.skills} variant={sectionVariants.skills as any} colors={{ primary: palette.primary, text: textColors.primary, muted: textColors.muted, border: "#E5E7EB" }} />)
         }
         if (section.type === "projects") {
           elements.push(...content.projects.map(item => (

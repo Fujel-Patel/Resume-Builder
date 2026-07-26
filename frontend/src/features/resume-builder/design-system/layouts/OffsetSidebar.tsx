@@ -12,18 +12,62 @@ type OffsetSidebarProps = {
   compact?: boolean
 }
 
-export function OffsetSidebar({ topBar, sidebar, main, sidebarWidth = 28, sidebarBg = "#f1f5f9", gap = 24, margin, compact }: OffsetSidebarProps) {
+export function OffsetSidebar({ topBar, sidebar, main, sidebarWidth = 28, sidebarBg = "#f8fafc", gap = 20, margin, compact }: OffsetSidebarProps) {
   const m = { top: 28, right: 28, bottom: 28, left: 28, ...margin }
+  const sidebarPad = compact ? 14 : 16
+
   return (
-    <div style={{ width: 794, minHeight: 1123, backgroundColor: "#ffffff", fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif", lineHeight: 1.4, color: "#333333", boxSizing: "border-box" as const }}>
-      <div style={{ padding: compact ? `${m.top + 16}px ${m.right}px 8px ${m.left}px` : `${m.top + 32}px ${m.right}px 16px ${m.left}px` }}>
+    <div style={{
+      width: 794,
+      minHeight: 1123,
+      backgroundColor: "#ffffff",
+      fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+      lineHeight: 1.4,
+      color: "#111827",
+      boxSizing: "border-box" as const,
+    }}>
+      {/* Header zone: name + title + contact */}
+      <div style={{
+        padding: compact
+          ? `${m.top + 8}px ${m.right}px 12px ${m.left}px`
+          : `${m.top + 12}px ${m.right}px 16px ${m.left}px`,
+      }}>
         {topBar}
       </div>
-      <div style={{ display: "flex", padding: `0 ${m.right}px ${m.bottom}px ${m.left}px`, gap }}>
-        <div style={{ width: `${sidebarWidth}%`, flexShrink: 0, backgroundColor: sidebarBg, borderRadius: 6, padding: compact ? "12px 10px" : "0 20px", alignSelf: "flex-start" }}>
+
+      {/* Thin divider between header and body */}
+      <div style={{
+        height: 1,
+        backgroundColor: "#E5E7EB",
+        marginLeft: m.left,
+        marginRight: m.right,
+      }} />
+
+      {/* Body zone: sidebar + main */}
+      <div style={{
+        display: "flex",
+        padding: `0 ${m.right}px ${m.bottom}px ${m.left}px`,
+        gap,
+        alignItems: "flex-start",
+      }}>
+        {/* Sidebar panel */}
+        <div style={{
+          width: `${sidebarWidth}%`,
+          flexShrink: 0,
+          backgroundColor: sidebarBg,
+          borderRadius: 3,
+          padding: `${sidebarPad}px`,
+          marginTop: compact ? 12 : 16,
+        }}>
           {sidebar}
         </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
+
+        {/* Main content */}
+        <div style={{
+          flex: 1,
+          minWidth: 0,
+          paddingTop: compact ? 12 : 16,
+        }}>
           {main}
         </div>
       </div>

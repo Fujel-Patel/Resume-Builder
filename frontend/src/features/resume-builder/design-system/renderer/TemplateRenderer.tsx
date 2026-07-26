@@ -347,15 +347,29 @@ export function ConfigTemplateRenderer({ config, resume }: ConfigTemplateRendere
   }
 
   if (config.layout === "offset-sidebar") {
+    const contactForHeader = contactSection ? (
+      <ContactInfo
+        contact={content.contact}
+        variant={cv as any}
+        colors={{ primary: palette.primary, text, secondary: textSecondary, muted: textMuted }}
+        showIcons={config.features.showIcons}
+      />
+    ) : null
+
     const topBar = (
       <div style={{ fontFamily: headingFont }}>
-        <h1 style={{ fontSize: 30, fontWeight: 700, color: text, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em" }}>
+        <h1 style={{ fontSize: 38, fontWeight: 700, color: text, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em" }}>
           {content.contact.fullName || "Your Name"}
         </h1>
         {content.contact.title && (
-          <p style={{ fontSize: 13, fontWeight: 400, color: palette.primary, margin: "4px 0 0", lineHeight: 1.3 }}>
+          <p style={{ fontSize: 13, fontWeight: 500, color: palette.primary, margin: "4px 0 0", lineHeight: 1.3 }}>
             {content.contact.title}
           </p>
+        )}
+        {contactForHeader && (
+          <div style={{ marginTop: 12 }}>
+            {contactForHeader}
+          </div>
         )}
       </div>
     )
@@ -364,7 +378,7 @@ export function ConfigTemplateRenderer({ config, resume }: ConfigTemplateRendere
         topBar={topBar}
         sidebar={sidebarContent}
         main={mainContent}
-        sidebarWidth={config.grid === "narrowSidebar" ? 22 : config.grid === "split3070" ? 30 : 28}
+        sidebarWidth={config.grid === "narrowSidebar" ? 22 : config.grid === "split3070" ? 28 : 28}
         sidebarBg={palette.light}
         margin={margin}
         compact={isCompact}

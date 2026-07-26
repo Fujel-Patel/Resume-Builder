@@ -6,7 +6,7 @@ type LanguageItemProps = {
   colors?: { primary?: string; text?: string; muted?: string }
 }
 
-const d = { primary: "#1e3a5f", text: "#111827", muted: "#6b7280" }
+const d = { primary: "#2563EB", text: "#111827", muted: "#6B7280" }
 
 const proficiencyLabels: Record<string, string> = {
   native: "Native",
@@ -19,9 +19,9 @@ const proficiencyLabels: Record<string, string> = {
 export function LanguageItem({ item, colors = {} }: LanguageItemProps) {
   const c = { ...d, ...colors }
   return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, fontSize: 10, marginBottom: 4 }}>
+    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8, fontSize: 9.5, marginBottom: 6 }}>
       <span style={{ fontWeight: 500, color: c.text }}>{item.name}</span>
-      <span style={{ color: c.muted, fontSize: 9.5, fontStyle: "italic" }}>{proficiencyLabels[item.proficiency] ?? item.proficiency}</span>
+      <span style={{ color: c.muted, fontSize: 9 }}>{proficiencyLabels[item.proficiency] ?? item.proficiency}</span>
     </div>
   )
 }

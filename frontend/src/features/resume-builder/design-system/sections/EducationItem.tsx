@@ -8,7 +8,7 @@ type EducationItemProps = {
   compact?: boolean
 }
 
-const d = { primary: "#1e3a5f", text: "#111827", secondary: "#374151", muted: "#6b7280" }
+const d = { primary: "#2563EB", text: "#111827", secondary: "#4B5563", muted: "#6B7280" }
 
 export function EducationItem({ item, variant = "standard", colors = {}, compact }: EducationItemProps) {
   const c = { ...d, ...colors }
@@ -18,12 +18,12 @@ export function EducationItem({ item, variant = "standard", colors = {}, compact
     return (
       <div style={{ marginBottom: compact ? 5 : 8 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-          <p style={{ margin: 0, fontSize: 11, fontWeight: 600, color: c.text, lineHeight: 1.3 }}>
+          <p style={{ margin: 0, fontSize: 11.5, fontWeight: 600, color: c.text, lineHeight: 1.3 }}>
             {item.degree}{item.field ? ` in ${item.field}` : ""}
           </p>
           <span style={{ fontSize: 9.5, color: c.muted, whiteSpace: "nowrap", fontWeight: 500 }}>{dateRange}</span>
         </div>
-        <p style={{ margin: "2px 0 0", fontSize: 10, color: c.primary, fontWeight: 500 }}>{item.institution}</p>
+        <p style={{ margin: "2px 0 0", fontSize: 10.5, color: c.primary, fontWeight: 500 }}>{item.institution}</p>
       </div>
     )
   }
@@ -35,10 +35,10 @@ export function EducationItem({ item, variant = "standard", colors = {}, compact
           <p style={{ margin: 0, fontSize: 11.5, fontWeight: 600, color: c.text, lineHeight: 1.3 }}>{item.institution}</p>
           <span style={{ fontSize: 9.5, color: c.muted, whiteSpace: "nowrap", fontWeight: 500 }}>{dateRange}</span>
         </div>
-        <p style={{ margin: "2px 0 0", fontSize: 10, color: c.primary, fontWeight: 500 }}>
+        <p style={{ margin: "2px 0 0", fontSize: 10.5, color: c.primary, fontWeight: 500 }}>
           {item.degree}{item.field ? ` in ${item.field}` : ""}
         </p>
-        {item.gpa && <p style={{ margin: "2px 0 0", fontSize: 9.5, color: c.muted, fontStyle: "italic" }}>GPA: {item.gpa}</p>}
+        {item.gpa && <p style={{ margin: "2px 0 0", fontSize: 9.5, color: c.muted }}>GPA: {item.gpa}</p>}
       </div>
     )
   }
@@ -46,7 +46,7 @@ export function EducationItem({ item, variant = "standard", colors = {}, compact
   if (variant === "timeline") {
     return (
       <div style={{ display: "flex", gap: 10, marginBottom: compact ? 7 : 10, alignItems: "flex-start" }}>
-        <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: c.primary, flexShrink: 0, marginTop: 4 }} />
+        <div style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: c.primary, flexShrink: 0, marginTop: 4 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
             <p style={{ margin: 0, fontSize: 11.5, fontWeight: 600, color: c.text, lineHeight: 1.3 }}>
@@ -54,7 +54,7 @@ export function EducationItem({ item, variant = "standard", colors = {}, compact
             </p>
             <span style={{ fontSize: 9.5, color: c.muted, whiteSpace: "nowrap", fontWeight: 500 }}>{dateRange}</span>
           </div>
-          <p style={{ margin: "2px 0 0", fontSize: 10, color: c.primary, fontWeight: 500 }}>{item.institution}</p>
+          <p style={{ margin: "2px 0 0", fontSize: 10.5, color: c.primary, fontWeight: 500 }}>{item.institution}</p>
           {item.gpa && <p style={{ margin: "2px 0 0", fontSize: 9.5, color: c.muted }}>GPA: {item.gpa}</p>}
         </div>
       </div>
