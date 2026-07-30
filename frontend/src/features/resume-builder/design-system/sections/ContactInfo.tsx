@@ -35,7 +35,7 @@ export function ContactInfo({ contact, variant = "inline", colors = {}, showIcon
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 14px", fontSize: 9.5, color: c.secondary }}>
         {items.map(i => (
           <div key={i.label} style={{ display: "flex", gap: 4, minWidth: 0 }}>
-            <span style={{ color: c.muted, flexShrink: 0 }}>{i.value}</span>
+            <span style={{ color: c.muted, flexShrink: 0, fontSize: 9.5 }}>{i.value}</span>
           </div>
         ))}
       </div>
@@ -44,17 +44,17 @@ export function ContactInfo({ contact, variant = "inline", colors = {}, showIcon
 
   if (variant === "sidebar") {
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: 5, fontSize: 9.5 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 9.5 }}>
         {items.map(i => (
           <div key={i.label} style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
             <span style={{
-              width: 5,
-              height: 5,
+              width: 4,
+              height: 4,
               borderRadius: "50%",
               backgroundColor: c.primary,
               flexShrink: 0,
             }} />
-            <span style={{ color: c.secondary, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i.value}</span>
+            <span style={{ color: c.secondary, fontSize: 9.5, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{i.value}</span>
           </div>
         ))}
       </div>
@@ -63,9 +63,9 @@ export function ContactInfo({ contact, variant = "inline", colors = {}, showIcon
 
   if (variant === "chips") {
     return (
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 4, fontSize: 9 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 3, fontSize: 9 }}>
         {items.map(i => (
-          <span key={i.label} style={{ display: "inline-flex", alignItems: "center", gap: 3, padding: "1px 7px", backgroundColor: c.primary + "08", border: `1px solid ${c.primary}18`, borderRadius: 99, color: c.secondary, lineHeight: 1.5 }}>
+          <span key={i.label} style={{ display: "inline-flex", alignItems: "center", gap: 3, padding: "2px 7px", backgroundColor: c.primary + "08", border: `1px solid ${c.primary}18`, borderRadius: 99, color: c.secondary, lineHeight: 1.4, fontSize: 9.5 }}>
             {i.value}
           </span>
         ))}
@@ -75,12 +75,12 @@ export function ContactInfo({ contact, variant = "inline", colors = {}, showIcon
 
   if (variant === "right-aligned") {
     return (
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "3px 0", justifyContent: "flex-end", fontSize: 9.5, color: c.secondary, alignItems: "center" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 0, justifyContent: "flex-end", fontSize: 9.5, color: c.secondary, alignItems: "center" }}>
         {items.map((item, idx) => (
-          <span key={item.label} style={{ display: "inline-flex", alignItems: "center" }}>
-            {showIcons && <span style={{ color: c.muted, fontSize: 8, marginRight: 3 }}>{iconMap[item.label] ?? "\u2022"}</span>}
-            <span>{item.value}</span>
-            {idx < items.length - 1 && <span style={{ color: c.muted, margin: "0 7px", fontSize: 7 }}>\u2022</span>}
+          <span key={item.label} style={{ display: "inline-flex", alignItems: "center", lineHeight: 1.4 }}>
+            {showIcons && <span style={{ color: c.muted, fontSize: 7, marginRight: 2, lineHeight: 1 }}>{iconMap[item.label] ?? "\u2022"}</span>}
+            <span style={{ fontSize: 9.5 }}>{item.value}</span>
+            {idx < items.length - 1 && <span style={{ color: c.muted, margin: "0 6px", fontSize: 6, lineHeight: 1 }}>\u2022</span>}
           </span>
         ))}
       </div>
@@ -89,15 +89,15 @@ export function ContactInfo({ contact, variant = "inline", colors = {}, showIcon
 
   if (variant === "compact-icons") {
     return (
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 12px", fontSize: 9.5, color: c.secondary, alignItems: "center" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 10px", fontSize: 9.5, color: c.secondary, alignItems: "center" }}>
         {items.map(item => (
-          <span key={item.label} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+          <span key={item.label} style={{ display: "inline-flex", alignItems: "center", gap: 3, lineHeight: 1.4 }}>
             {showIcons && (
-              <span style={{ color: c.muted, fontSize: 8, lineHeight: 1, flexShrink: 0 }}>
+              <span style={{ color: c.muted, fontSize: 7, lineHeight: 1, flexShrink: 0 }}>
                 {iconMap[item.label] ?? "\u2022"}
               </span>
             )}
-            <span>{item.value}</span>
+            <span style={{ fontSize: 9.5 }}>{item.value}</span>
           </span>
         ))}
       </div>
@@ -110,21 +110,21 @@ export function ContactInfo({ contact, variant = "inline", colors = {}, showIcon
     const row2 = items.slice(mid)
     return (
       <div style={{ fontSize: 9.5, color: c.secondary }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "3px 0", alignItems: "center" }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 0, alignItems: "center" }}>
           {row1.map((item, idx) => (
-            <span key={item.label} style={{ display: "inline-flex", alignItems: "center" }}>
-              {showIcons && <span style={{ color: c.muted, fontSize: 8, marginRight: 3 }}>{iconMap[item.label] ?? "\u2022"}</span>}
-              <span>{item.value}</span>
-              {idx < row1.length - 1 && <span style={{ color: c.muted, margin: "0 7px", fontSize: 7 }}>\u2022</span>}
+            <span key={item.label} style={{ display: "inline-flex", alignItems: "center", lineHeight: 1.4 }}>
+              {showIcons && <span style={{ color: c.muted, fontSize: 7, marginRight: 2, lineHeight: 1 }}>{iconMap[item.label] ?? "\u2022"}</span>}
+              <span style={{ fontSize: 9.5 }}>{item.value}</span>
+              {idx < row1.length - 1 && <span style={{ color: c.muted, margin: "0 6px", fontSize: 6, lineHeight: 1 }}>\u2022</span>}
             </span>
           ))}
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "3px 0", alignItems: "center", marginTop: 2 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 0, alignItems: "center", marginTop: 2 }}>
           {row2.map((item, idx) => (
-            <span key={item.label} style={{ display: "inline-flex", alignItems: "center" }}>
-              {showIcons && <span style={{ color: c.muted, fontSize: 8, marginRight: 3 }}>{iconMap[item.label] ?? "\u2022"}</span>}
-              <span>{item.value}</span>
-              {idx < row2.length - 1 && <span style={{ color: c.muted, margin: "0 7px", fontSize: 7 }}>\u2022</span>}
+            <span key={item.label} style={{ display: "inline-flex", alignItems: "center", lineHeight: 1.4 }}>
+              {showIcons && <span style={{ color: c.muted, fontSize: 7, marginRight: 2, lineHeight: 1 }}>{iconMap[item.label] ?? "\u2022"}</span>}
+              <span style={{ fontSize: 9.5 }}>{item.value}</span>
+              {idx < row2.length - 1 && <span style={{ color: c.muted, margin: "0 6px", fontSize: 6, lineHeight: 1 }}>\u2022</span>}
             </span>
           ))}
         </div>
@@ -134,12 +134,12 @@ export function ContactInfo({ contact, variant = "inline", colors = {}, showIcon
 
   // inline (default)
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: "3px 0", fontSize: 9.5, color: c.secondary, alignItems: "center" }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 0, fontSize: 9.5, color: c.secondary, alignItems: "center" }}>
       {items.map((item, idx) => (
-        <span key={item.label} style={{ display: "inline-flex", alignItems: "center" }}>
-          {showIcons && <span style={{ color: c.muted, fontSize: 8, marginRight: 3 }}>{iconMap[item.label] ?? "\u2022"}</span>}
-          <span>{item.value}</span>
-          {idx < items.length - 1 && <span style={{ color: c.muted, margin: "0 7px", fontSize: 7 }}>\u2022</span>}
+        <span key={item.label} style={{ display: "inline-flex", alignItems: "center", lineHeight: 1.4 }}>
+          {showIcons && <span style={{ color: c.muted, fontSize: 7, marginRight: 2, lineHeight: 1 }}>{iconMap[item.label] ?? "\u2022"}</span>}
+          <span style={{ fontSize: 9.5 }}>{item.value}</span>
+          {idx < items.length - 1 && <span style={{ color: c.muted, margin: "0 6px", fontSize: 6, lineHeight: 1 }}>\u2022</span>}
         </span>
       ))}
     </div>

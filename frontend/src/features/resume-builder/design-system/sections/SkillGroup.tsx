@@ -14,8 +14,8 @@ const chipStyle = (c: { text: string; border: string }): React.CSSProperties => 
   fontSize: 9.5,
   color: c.text,
   border: `1px solid ${c.border}`,
-  borderRadius: 3,
-  padding: "2px 6px",
+  borderRadius: 2,
+  padding: "3px 8px",
   lineHeight: 1.4,
   fontWeight: 500,
   whiteSpace: "nowrap" as const,
@@ -29,7 +29,7 @@ export function SkillGroup({ skills, variant = "grouped", colors = {}, columns =
     if (!hasNamed) {
       const all = skills.flatMap(g => g.skills)
       return (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
           {all.map(s => (
             <span key={s} style={chipStyle(c)}>{s}</span>
           ))}
@@ -54,7 +54,7 @@ export function SkillGroup({ skills, variant = "grouped", colors = {}, columns =
                   {g.name.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
                 </p>
                 {g.skills.length > 0 && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginTop: 4 }}>
                     {g.skills.map(s => (
                       <span key={s} style={chipStyle(c)}>{s}</span>
                     ))}
@@ -62,7 +62,7 @@ export function SkillGroup({ skills, variant = "grouped", colors = {}, columns =
                 )}
               </>
             ) : (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
                 {g.skills.map(s => (
                   <span key={s} style={chipStyle(c)}>{s}</span>
                 ))}
@@ -77,7 +77,7 @@ export function SkillGroup({ skills, variant = "grouped", colors = {}, columns =
   if (variant === "tags") {
     const all = skills.flatMap(g => g.skills)
     return (
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
         {all.map(s => (
           <span key={s} style={chipStyle(c)}>{s}</span>
         ))}
@@ -88,9 +88,9 @@ export function SkillGroup({ skills, variant = "grouped", colors = {}, columns =
   if (variant === "pills") {
     const all = skills.flatMap(g => g.skills)
     return (
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
         {all.map(s => (
-          <span key={s} style={{ fontSize: 9, color: c.primary, backgroundColor: c.primary + "10", borderRadius: 99, padding: "2px 8px", lineHeight: 1.5, fontWeight: 500 }}>{s}</span>
+          <span key={s} style={{ fontSize: 9, color: c.primary, backgroundColor: c.primary + "10", borderRadius: 99, padding: "3px 8px", lineHeight: 1.4, fontWeight: 500 }}>{s}</span>
         ))}
       </div>
     )
@@ -146,7 +146,7 @@ export function SkillGroup({ skills, variant = "grouped", colors = {}, columns =
   if (!hasNamed) {
     const all = skills.flatMap(g => g.skills)
     return (
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
         {all.map(s => (
           <span key={s} style={chipStyle(c)}>{s}</span>
         ))}
@@ -161,7 +161,7 @@ export function SkillGroup({ skills, variant = "grouped", colors = {}, columns =
             {g.name?.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
           </p>
           {g.skills.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 3, marginTop: 4 }}>
               {g.skills.map(s => (
                 <span key={s} style={chipStyle(c)}>{s}</span>
               ))}

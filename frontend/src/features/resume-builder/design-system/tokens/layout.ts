@@ -6,10 +6,10 @@ export const A4 = {
 } as const
 
 export const pageMargins = {
-  standard:   { top: 36, right: 36, bottom: 36, left: 36 },
-  narrow:     { top: 28, right: 28, bottom: 28, left: 28 },
+  standard:   { top: 34, right: 36, bottom: 28, left: 36 },
+  narrow:     { top: 32, right: 28, bottom: 26, left: 28 },
   wide:       { top: 44, right: 44, bottom: 44, left: 44 },
-  asymmetric: { top: 36, right: 36, bottom: 36, left: 44 },
+  asymmetric: { top: 34, right: 36, bottom: 28, left: 44 },
 } as const
 
 export type MarginPreset = keyof typeof pageMargins

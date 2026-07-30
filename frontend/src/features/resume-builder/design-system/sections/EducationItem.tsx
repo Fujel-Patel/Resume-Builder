@@ -16,26 +16,26 @@ export function EducationItem({ item, variant = "standard", colors = {}, compact
 
   if (variant === "compact") {
     return (
-      <div style={{ marginBottom: compact ? 5 : 8 }}>
+      <div style={{ marginBottom: compact ? 8 : 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-          <p style={{ margin: 0, fontSize: 11.5, fontWeight: 600, color: c.text, lineHeight: 1.3 }}>
+          <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: c.text, lineHeight: 1.3 }}>
             {item.degree}{item.field ? ` in ${item.field}` : ""}
           </p>
-          <span style={{ fontSize: 9.5, color: c.muted, whiteSpace: "nowrap", fontWeight: 500 }}>{dateRange}</span>
+          <span style={{ fontSize: 9, color: c.muted, whiteSpace: "nowrap", fontWeight: 400 }}>{dateRange}</span>
         </div>
-        <p style={{ margin: "2px 0 0", fontSize: 10.5, color: c.primary, fontWeight: 500 }}>{item.institution}</p>
+        <p style={{ margin: "3px 0 0", fontSize: 10.5, color: c.primary, fontWeight: 500 }}>{item.institution}</p>
       </div>
     )
   }
 
   if (variant === "detailed") {
     return (
-      <div style={{ marginBottom: compact ? 7 : 10 }}>
+      <div style={{ marginBottom: compact ? 10 : 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-          <p style={{ margin: 0, fontSize: 11.5, fontWeight: 600, color: c.text, lineHeight: 1.3 }}>{item.institution}</p>
-          <span style={{ fontSize: 9.5, color: c.muted, whiteSpace: "nowrap", fontWeight: 500 }}>{dateRange}</span>
+          <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: c.text, lineHeight: 1.3 }}>{item.institution}</p>
+          <span style={{ fontSize: 9, color: c.muted, whiteSpace: "nowrap", fontWeight: 400 }}>{dateRange}</span>
         </div>
-        <p style={{ margin: "2px 0 0", fontSize: 10.5, color: c.primary, fontWeight: 500 }}>
+        <p style={{ margin: "3px 0 0", fontSize: 10.5, color: c.primary, fontWeight: 500 }}>
           {item.degree}{item.field ? ` in ${item.field}` : ""}
         </p>
         {item.gpa && <p style={{ margin: "2px 0 0", fontSize: 9.5, color: c.muted }}>GPA: {item.gpa}</p>}
@@ -45,16 +45,16 @@ export function EducationItem({ item, variant = "standard", colors = {}, compact
 
   if (variant === "timeline") {
     return (
-      <div style={{ display: "flex", gap: 10, marginBottom: compact ? 7 : 10, alignItems: "flex-start" }}>
+      <div style={{ display: "flex", gap: 10, marginBottom: compact ? 10 : 12, alignItems: "flex-start" }}>
         <div style={{ width: 7, height: 7, borderRadius: "50%", backgroundColor: c.primary, flexShrink: 0, marginTop: 4 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-            <p style={{ margin: 0, fontSize: 11.5, fontWeight: 600, color: c.text, lineHeight: 1.3 }}>
+            <p style={{ margin: 0, fontSize: 13.5, fontWeight: 600, color: c.text, lineHeight: 1.3 }}>
               {item.degree}{item.field ? ` in ${item.field}` : ""}
             </p>
-            <span style={{ fontSize: 9.5, color: c.muted, whiteSpace: "nowrap", fontWeight: 500 }}>{dateRange}</span>
+            <span style={{ fontSize: 9, color: c.muted, whiteSpace: "nowrap", fontWeight: 400 }}>{dateRange}</span>
           </div>
-          <p style={{ margin: "2px 0 0", fontSize: 10.5, color: c.primary, fontWeight: 500 }}>{item.institution}</p>
+          <p style={{ margin: "3px 0 0", fontSize: 10.5, color: c.primary, fontWeight: 500 }}>{item.institution}</p>
           {item.gpa && <p style={{ margin: "2px 0 0", fontSize: 9.5, color: c.muted }}>GPA: {item.gpa}</p>}
         </div>
       </div>
@@ -63,12 +63,12 @@ export function EducationItem({ item, variant = "standard", colors = {}, compact
 
   if (variant === "magazine") {
     return (
-      <div style={{ marginBottom: compact ? 8 : 12 }}>
+      <div style={{ marginBottom: compact ? 10 : 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-          <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: c.text, lineHeight: 1.25 }}>{item.institution}</p>
-          <span style={{ fontSize: 9.5, color: c.muted, whiteSpace: "nowrap", fontWeight: 500 }}>{dateRange}</span>
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: c.text, lineHeight: 1.25 }}>{item.institution}</p>
+          <span style={{ fontSize: 9, color: c.muted, whiteSpace: "nowrap", fontWeight: 400 }}>{dateRange}</span>
         </div>
-        <p style={{ margin: "2px 0 0", fontSize: 10.5, color: c.primary, fontWeight: 500, fontStyle: "italic" }}>
+        <p style={{ margin: "3px 0 0", fontSize: 10.5, color: c.primary, fontWeight: 500, fontStyle: "italic" }}>
           {item.degree}{item.field ? ` in ${item.field}` : ""}
         </p>
         {item.gpa && <p style={{ margin: "2px 0 0", fontSize: 9.5, color: c.muted }}>GPA: {item.gpa}</p>}
@@ -78,12 +78,12 @@ export function EducationItem({ item, variant = "standard", colors = {}, compact
 
   // standard
   return (
-    <div style={{ marginBottom: compact ? 5 : 8 }}>
+    <div style={{ marginBottom: compact ? 8 : 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <span style={{ fontSize: 11.5, fontWeight: 600, color: c.text }}>{item.institution}</span>
-        <span style={{ fontSize: 9.5, color: c.muted, whiteSpace: "nowrap", fontWeight: 500 }}>{dateRange}</span>
+        <span style={{ fontSize: 13.5, fontWeight: 600, color: c.text }}>{item.institution}</span>
+        <span style={{ fontSize: 9, color: c.muted, whiteSpace: "nowrap", fontWeight: 400 }}>{dateRange}</span>
       </div>
-      <p style={{ margin: "2px 0 0", fontSize: 10.5, color: c.secondary }}>
+      <p style={{ margin: "3px 0 0", fontSize: 10.5, color: c.secondary }}>
         {item.degree}{item.field ? ` in ${item.field}` : ""}
         {item.gpa ? ` \u00b7 GPA: ${item.gpa}` : ""}
       </p>

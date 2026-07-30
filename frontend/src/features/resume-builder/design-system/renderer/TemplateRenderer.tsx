@@ -20,7 +20,6 @@ import { ProfileImage } from "../sections/ProfileImage"
 import { ContactInfo } from "../sections/ContactInfo"
 import { SectionRenderer } from "./SectionRenderer"
 import { shouldUseCompact } from "./estimateHeight"
-import type { ReactNode } from "react"
 
 type ConfigTemplateRendererProps = {
   config: TemplateConfig
@@ -141,11 +140,11 @@ export function ConfigTemplateRenderer({ config, resume }: ConfigTemplateRendere
             />
           </div>
         )}
-        <h1 style={{ fontSize: 32, fontWeight: 700, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em", textAlign: "center" as const, color: palette.text }}>
+        <h1 style={{ fontSize: 34, fontWeight: 700, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em", textAlign: "center" as const, color: palette.text }}>
           {content.contact.fullName || "Your Name"}
         </h1>
         {content.contact.title && (
-          <p style={{ fontSize: 14, fontWeight: 400, margin: "6px 0 0", lineHeight: 1.3, textAlign: "center" as const, opacity: 0.85, color: palette.text }}>
+          <p style={{ fontSize: 16, fontWeight: 400, margin: "6px 0 0", lineHeight: 1.3, textAlign: "center" as const, opacity: 0.85, color: palette.text }}>
             {content.contact.title}
           </p>
         )}
@@ -179,11 +178,11 @@ export function ConfigTemplateRenderer({ config, resume }: ConfigTemplateRendere
           />
         )}
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: 34, fontWeight: 700, color: palette.primary, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em" }}>
+          <h1 style={{ fontSize: 36, fontWeight: 700, color: palette.primary, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em" }}>
             {content.contact.fullName || "Your Name"}
           </h1>
           {content.contact.title && (
-            <p style={{ fontSize: 14, fontWeight: 500, color: palette.primary + "99", margin: "4px 0 0", lineHeight: 1.3 }}>
+            <p style={{ fontSize: 16, fontWeight: 500, color: palette.primary + "99", margin: "4px 0 0", lineHeight: 1.3 }}>
               {content.contact.title}
             </p>
           )}
@@ -230,11 +229,11 @@ export function ConfigTemplateRenderer({ config, resume }: ConfigTemplateRendere
             />
           </div>
         )}
-        <h1 style={{ fontSize: 30, fontWeight: 700, color: text, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em" }}>
+        <h1 style={{ fontSize: 34, fontWeight: 700, color: text, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em" }}>
           {content.contact.fullName || "Your Name"}
         </h1>
         {content.contact.title && (
-          <p style={{ fontSize: 14, fontWeight: 400, color: palette.primary, margin: "5px 0 0", lineHeight: 1.3 }}>
+          <p style={{ fontSize: 16, fontWeight: 400, color: palette.primary, margin: "5px 0 0", lineHeight: 1.3 }}>
             {content.contact.title}
           </p>
         )}
@@ -273,11 +272,11 @@ export function ConfigTemplateRenderer({ config, resume }: ConfigTemplateRendere
   if (config.layout === "split-header") {
     const left = (
       <div style={{ fontFamily: headingFont }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: text, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em" }}>
+        <h1 style={{ fontSize: 32, fontWeight: 700, color: text, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em" }}>
           {content.contact.fullName || "Your Name"}
         </h1>
         {content.contact.title && (
-          <p style={{ fontSize: 13, fontWeight: 400, color: palette.primary, margin: "4px 0 0", lineHeight: 1.3 }}>
+          <p style={{ fontSize: 16, fontWeight: 400, color: palette.primary, margin: "4px 0 0", lineHeight: 1.3 }}>
             {content.contact.title}
           </p>
         )}
@@ -314,11 +313,11 @@ export function ConfigTemplateRenderer({ config, resume }: ConfigTemplateRendere
             />
           </div>
         )}
-        <h1 style={{ fontSize: 28, fontWeight: 700, color: text, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em" }}>
+        <h1 style={{ fontSize: 32, fontWeight: 700, color: text, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em" }}>
           {content.contact.fullName || "Your Name"}
         </h1>
         {content.contact.title && (
-          <p style={{ fontSize: 13, fontWeight: 400, color: palette.primary, margin: "4px 0 0", lineHeight: 1.3 }}>
+          <p style={{ fontSize: 16, fontWeight: 400, color: palette.primary, margin: "4px 0 0", lineHeight: 1.3 }}>
             {content.contact.title}
           </p>
         )}
@@ -358,11 +357,11 @@ export function ConfigTemplateRenderer({ config, resume }: ConfigTemplateRendere
 
     const topBar = (
       <div style={{ fontFamily: headingFont }}>
-        <h1 style={{ fontSize: 38, fontWeight: 700, color: text, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em" }}>
+        <h1 style={{ fontSize: 34, fontWeight: 700, color: text, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em" }}>
           {content.contact.fullName || "Your Name"}
         </h1>
         {content.contact.title && (
-          <p style={{ fontSize: 13, fontWeight: 500, color: palette.primary, margin: "4px 0 0", lineHeight: 1.3 }}>
+          <p style={{ fontSize: 16, fontWeight: 500, color: palette.primary, margin: "4px 0 0", lineHeight: 1.3 }}>
             {content.contact.title}
           </p>
         )}
@@ -421,11 +420,11 @@ function renderContactBlock(
 
   const nameTitle = (
     <div>
-      <h1 style={{ fontSize: 30, fontWeight: 700, color: text, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em", fontFamily: headingFont }}>
+      <h1 style={{ fontSize: 34, fontWeight: 700, color: text, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em", fontFamily: headingFont }}>
         {content.contact.fullName || "Your Name"}
       </h1>
       {content.contact.title && (
-        <p style={{ fontSize: 13, fontWeight: 400, color: palette.primary, margin: "3px 0 0", lineHeight: 1.3, letterSpacing: "0.01em" }}>
+        <p style={{ fontSize: 16, fontWeight: 400, color: palette.primary, margin: "3px 0 0", lineHeight: 1.3, letterSpacing: "0.01em" }}>
           {content.contact.title}
         </p>
       )}
@@ -447,13 +446,13 @@ function renderContactBlock(
         {photo && <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>{photo}</div>}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
           <div style={{ flex: 1, height: 0.75, backgroundColor: palette.muted }} />
-          <h1 style={{ fontSize: 30, fontWeight: 700, color: text, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em", fontFamily: headingFont, whiteSpace: "nowrap" as const }}>
+          <h1 style={{ fontSize: 34, fontWeight: 700, color: text, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em", fontFamily: headingFont, whiteSpace: "nowrap" as const }}>
             {content.contact.fullName || "Your Name"}
           </h1>
           <div style={{ flex: 1, height: 0.75, backgroundColor: palette.muted }} />
         </div>
         {content.contact.title && (
-          <p style={{ fontSize: 13, fontWeight: 400, color: palette.primary, margin: "0 0 8px", lineHeight: 1.3, letterSpacing: "0.01em" }}>
+          <p style={{ fontSize: 16, fontWeight: 400, color: palette.primary, margin: "0 0 8px", lineHeight: 1.3, letterSpacing: "0.01em" }}>
             {content.contact.title}
           </p>
         )}
@@ -466,11 +465,11 @@ function renderContactBlock(
     return (
       <div style={{ marginBottom: spacing.sectionGap, backgroundColor: palette.primary, margin: "0 0 " + spacing.sectionGap + "px", padding: "18px 24px", borderRadius: 3 }}>
         {photo && <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>{photo}</div>}
-        <h1 style={{ fontSize: 30, fontWeight: 700, color: "#ffffff", margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em", fontFamily: headingFont, textAlign: "center" as const }}>
+        <h1 style={{ fontSize: 34, fontWeight: 700, color: "#ffffff", margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em", fontFamily: headingFont, textAlign: "center" as const }}>
           {content.contact.fullName || "Your Name"}
         </h1>
         {content.contact.title && (
-          <p style={{ fontSize: 13, fontWeight: 400, color: "#ffffffcc", margin: "4px 0 0", lineHeight: 1.3, textAlign: "center" as const }}>
+          <p style={{ fontSize: 16, fontWeight: 400, color: "#ffffffcc", margin: "4px 0 0", lineHeight: 1.3, textAlign: "center" as const }}>
             {content.contact.title}
           </p>
         )}
@@ -492,11 +491,11 @@ function renderContactBlock(
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
           {photo}
           <div>
-            <h1 style={{ fontSize: 30, fontWeight: 700, color: text, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em", fontFamily: headingFont }}>
+            <h1 style={{ fontSize: 34, fontWeight: 700, color: text, margin: 0, lineHeight: 1.1, letterSpacing: "-0.02em", fontFamily: headingFont }}>
               {content.contact.fullName || "Your Name"}
             </h1>
             {content.contact.title && (
-              <p style={{ fontSize: 13, fontWeight: 400, color: palette.primary, margin: "3px 0 0", lineHeight: 1.3 }}>
+              <p style={{ fontSize: 16, fontWeight: 400, color: palette.primary, margin: "3px 0 0", lineHeight: 1.3 }}>
                 {content.contact.title}
               </p>
             )}
@@ -513,11 +512,11 @@ function renderContactBlock(
     return (
       <div style={{ marginBottom: spacing.sectionGap }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10, paddingBottom: 6, borderBottom: `1px solid ${palette.muted}` }}>
-          <h1 style={{ fontSize: 22, fontWeight: 700, color: text, margin: 0, lineHeight: 1.15, letterSpacing: "-0.01em", fontFamily: headingFont }}>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: text, margin: 0, lineHeight: 1.15, letterSpacing: "-0.01em", fontFamily: headingFont }}>
             {content.contact.fullName || "Your Name"}
           </h1>
           {content.contact.title && (
-            <span style={{ fontSize: 11, color: palette.primary, fontWeight: 500 }}>
+            <span style={{ fontSize: 13, color: palette.primary, fontWeight: 500 }}>
               {content.contact.title}
             </span>
           )}

@@ -30,17 +30,17 @@ const styles = {
     minWidth: "32%",
     backgroundColor: palette.dark,
     color: palette.text,
-    padding: "30px 18px",
+    padding: "32px 16px",
     boxSizing: "border-box" as const,
   },
   sidebarTitle: {
     fontFamily: mono,
-    fontSize: "9px",
+    fontSize: "11px",
     fontWeight: 600,
     letterSpacing: "0.12em",
     textTransform: "uppercase" as const,
     color: "#818cf8",
-    marginBottom: "10px",
+    marginBottom: "8px",
     paddingBottom: "0",
     borderBottom: "none",
     display: "flex" as const,
@@ -55,8 +55,8 @@ const styles = {
   contactRow: {
     display: "flex",
     alignItems: "center",
-    gap: "7px",
-    marginBottom: "6px",
+    gap: "5px",
+    marginBottom: "4px",
     fontSize: "9px",
     color: "#c7d2fe",
     fontFamily: mono,
@@ -65,9 +65,9 @@ const styles = {
   },
   contactIcon: {
     flexShrink: 0,
-    width: "14px",
+    width: "10px",
     textAlign: "center" as const,
-    fontSize: "10px",
+    fontSize: "8px",
     color: "#818cf8",
   },
   skillGroup: {
@@ -75,7 +75,7 @@ const styles = {
   },
   skillGroupLabel: {
     fontFamily: mono,
-    fontSize: "8.5px",
+    fontSize: "9.5px",
     fontWeight: 600,
     color: "#a5b4fc",
     marginBottom: "5px",
@@ -85,11 +85,11 @@ const styles = {
   skillTag: {
     display: "inline-block",
     fontFamily: mono,
-    fontSize: "8.5px",
-    padding: "2.5px 8px",
+    fontSize: "9.5px",
+    padding: "3px 8px",
     backgroundColor: "#3730a3",
     color: "#c7d2fe",
-    borderRadius: "4px",
+    borderRadius: "2px",
     marginRight: "3px",
     marginBottom: "3px",
     letterSpacing: "0.01em",
@@ -109,32 +109,32 @@ const styles = {
   },
   main: {
     flex: 1,
-    padding: "30px 26px",
+    padding: "28px 24px",
     boxSizing: "border-box" as const,
   },
   headerName: {
-    fontSize: "22px",
+    fontSize: "24px",
     fontWeight: 700,
     color: palette.dark,
-    marginBottom: "2px",
+    marginBottom: "4px",
     fontFamily: sans,
     letterSpacing: "-0.02em",
   },
   headerTitle: {
-    fontSize: "11.5px",
+    fontSize: "13px",
     color: palette.primary,
-    fontFamily: mono,
+    fontFamily: sans,
     marginBottom: "14px",
-    letterSpacing: "0.02em",
+    letterSpacing: "0.01em",
   },
   sectionTitle: {
     fontFamily: mono,
-    fontSize: "10px",
+    fontSize: "11px",
     fontWeight: 700,
     letterSpacing: "0.08em",
     textTransform: "uppercase" as const,
     color: palette.primary,
-    marginBottom: "8px",
+    marginBottom: "10px",
     paddingBottom: "0",
     borderBottom: "none",
     display: "flex" as const,
@@ -148,7 +148,7 @@ const styles = {
   },
   summaryText: {
     fontSize: "11px",
-    lineHeight: "1.65",
+    lineHeight: "1.5",
     color: "#374151",
     marginBottom: "16px",
   },
@@ -162,28 +162,29 @@ const styles = {
     gap: "8px",
   },
   expRole: {
-    fontSize: "12px",
-    fontWeight: 600,
+    fontSize: "15px",
+    fontWeight: 700,
     color: "#1e1b4b",
     lineHeight: 1.3,
   },
   expCompany: {
-    fontSize: "10px",
+    fontSize: "11.5px",
+    fontWeight: 600,
     color: "#6366f1",
     fontFamily: mono,
     lineHeight: 1.3,
   },
   expDate: {
-    fontSize: "9.5px",
-    color: "#9ca3af",
+    fontSize: "9px",
+    color: "#a1a1aa",
     whiteSpace: "nowrap" as const,
     flexShrink: 0,
     fontFamily: mono,
-    fontWeight: 500,
+    fontWeight: 400,
   },
   bullet: {
     fontSize: "10.5px",
-    lineHeight: "1.55",
+    lineHeight: "1.5",
     color: "#374151",
     paddingLeft: "16px",
     position: "relative" as const,
@@ -193,12 +194,12 @@ const styles = {
     position: "absolute" as const,
     left: "0",
     color: palette.primary,
-    fontWeight: 700,
+    fontWeight: 400,
     fontFamily: mono,
     fontSize: "10px",
   },
   eduDegree: {
-    fontSize: "12px",
+    fontSize: "13.5px",
     fontWeight: 600,
     color: "#1e1b4b",
     lineHeight: 1.3,
@@ -253,15 +254,6 @@ export function DeveloperPortfolioTemplate({ resume }: { resume: ResumeData }) {
     <div style={styles.page}>
       {/* Sidebar */}
       <aside style={styles.sidebar}>
-        <div style={{ marginBottom: "20px" }}>
-          <div style={{ fontSize: "16px", fontWeight: 700, color: "#ffffff", marginBottom: "3px", letterSpacing: "-0.01em" }}>
-            {contact.fullName || "Your Name"}
-          </div>
-          <div style={{ fontSize: "10px", fontFamily: mono, color: "#818cf8", letterSpacing: "0.02em" }}>
-            {contact.title || "Job Title"}
-          </div>
-        </div>
-
         {/* Contact */}
         {sidebarSections.some((s) => s.type === "contact") && (
           <div style={{ marginBottom: "16px" }}>
@@ -295,7 +287,7 @@ export function DeveloperPortfolioTemplate({ resume }: { resume: ResumeData }) {
             )}
             {contact.linkedin && (
               <div style={styles.contactRow}>
-                <span style={{ ...styles.contactIcon, fontWeight: 700, fontSize: "9px" }}>in</span>
+                <span style={{ ...styles.contactIcon, fontWeight: 600, fontSize: "8px" }}>in</span>
                 <span>{contact.linkedin}</span>
               </div>
             )}

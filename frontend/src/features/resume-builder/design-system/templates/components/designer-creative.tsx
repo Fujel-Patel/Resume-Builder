@@ -28,7 +28,7 @@ const styles = {
     minWidth: "35%",
     backgroundColor: palette.primary,
     color: palette.text,
-    padding: "34px 22px",
+    padding: "32px 20px",
     boxSizing: "border-box" as const,
   },
   photo: {
@@ -47,12 +47,12 @@ const styles = {
     boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
   },
   contactSectionTitle: {
-    fontSize: "9px",
+    fontSize: "11px",
     fontWeight: 700,
-    letterSpacing: "0.14em",
+    letterSpacing: "0.12em",
     textTransform: "uppercase" as const,
     color: "#c4b5fd",
-    marginBottom: "10px",
+    marginBottom: "8px",
     paddingBottom: "0",
     borderBottom: "none",
     display: "flex" as const,
@@ -67,8 +67,8 @@ const styles = {
   contactRow: {
     display: "flex",
     alignItems: "center",
-    gap: "8px",
-    marginBottom: "6px",
+    gap: "6px",
+    marginBottom: "4px",
     fontSize: "9px",
     color: "#ddd6fe",
     wordBreak: "break-word" as const,
@@ -76,15 +76,15 @@ const styles = {
   },
   contactIcon: {
     flexShrink: 0,
-    width: "14px",
+    width: "10px",
     textAlign: "center" as const,
-    fontSize: "10px",
+    fontSize: "7px",
   },
   skillGroup: {
     marginBottom: "12px",
   },
   skillLabel: {
-    fontSize: "9px",
+    fontSize: "9.5px",
     fontWeight: 600,
     color: "#e9d5ff",
     marginBottom: "6px",
@@ -123,32 +123,32 @@ const styles = {
   },
   interestTag: {
     display: "inline-block",
-    fontSize: "8.5px",
+    fontSize: "9.5px",
     padding: "3px 8px",
     backgroundColor: "rgba(255,255,255,0.12)",
     color: "#ddd6fe",
-    borderRadius: "12px",
+    borderRadius: "2px",
     marginRight: "3px",
     marginBottom: "4px",
   },
   rightCol: {
     flex: 1,
-    padding: "34px 26px",
+    padding: "32px 24px",
     boxSizing: "border-box" as const,
   },
   nameBlock: {
-    marginBottom: "22px",
+    marginBottom: "16px",
   },
   fullName: {
-    fontSize: "24px",
+    fontSize: "28px",
     fontWeight: 700,
     color: "#1e1b4b",
-    marginBottom: "3px",
+    marginBottom: "4px",
     letterSpacing: "-0.02em",
     lineHeight: 1.1,
   },
   jobTitle: {
-    fontSize: "12.5px",
+    fontSize: "16px",
     color: palette.primary,
     fontWeight: 500,
     letterSpacing: "0.02em",
@@ -157,7 +157,7 @@ const styles = {
     fontSize: "11px",
     fontWeight: 700,
     color: "#1e1b4b",
-    marginBottom: "10px",
+    marginBottom: "8px",
     paddingBottom: "0",
     paddingLeft: "12px",
     borderLeft: `3px solid ${palette.primary}`,
@@ -165,12 +165,12 @@ const styles = {
   },
   summaryText: {
     fontSize: "11px",
-    lineHeight: "1.65",
+    lineHeight: "1.5",
     color: "#374151",
-    marginBottom: "18px",
+    marginBottom: "12px",
   },
   expBlock: {
-    marginBottom: "14px",
+    marginBottom: "16px",
   },
   expHeader: {
     display: "flex",
@@ -179,42 +179,43 @@ const styles = {
     gap: "8px",
   },
   expRole: {
-    fontSize: "12px",
-    fontWeight: 600,
+    fontSize: "15px",
+    fontWeight: 700,
     color: "#1e1b4b",
     lineHeight: 1.3,
   },
   expCompany: {
-    fontSize: "10.5px",
+    fontSize: "11.5px",
+    fontWeight: 600,
     color: "#7c3aed",
     lineHeight: 1.3,
   },
   expDate: {
-    fontSize: "9.5px",
+    fontSize: "9px",
     color: "#9ca3af",
     whiteSpace: "nowrap" as const,
     flexShrink: 0,
-    fontWeight: 500,
+    fontWeight: 400,
   },
   bullet: {
     fontSize: "10.5px",
-    lineHeight: "1.55",
+    lineHeight: "1.5",
     color: "#374151",
-    paddingLeft: "12px",
+    paddingLeft: "14px",
     position: "relative" as const,
     marginBottom: "3px",
   },
   bulletMarker: {
     position: "absolute" as const,
     left: "0",
-    top: "6.5px",
+    top: "7px",
     width: "4px",
     height: "4px",
     borderRadius: "50%",
     backgroundColor: palette.primary,
   },
   eduDegree: {
-    fontSize: "12px",
+    fontSize: "13.5px",
     fontWeight: 600,
     color: "#1e1b4b",
     lineHeight: 1.3,
@@ -240,8 +241,8 @@ const styles = {
     color: "#9ca3af",
   },
   awardDesc: {
-    fontSize: "9.5px",
-    color: "#6b7280",
+    fontSize: "9px",
+    color: "#9ca3af",
     marginTop: "2px",
     lineHeight: "1.5",
   },
@@ -289,7 +290,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Contact */}
         {sidebarSections.some((s) => s.type === "contact") && (
-          <div style={{ marginBottom: "18px" }}>
+          <div style={{ marginBottom: "16px" }}>
             <div style={styles.contactSectionTitle}>
               Contact
               <div style={styles.sidebarDivider} />
@@ -320,7 +321,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
             )}
             {contact.linkedin && (
               <div style={styles.contactRow}>
-                <span style={{ ...styles.contactIcon, fontWeight: 700, fontSize: "9px" }}>in</span>
+                <span style={{ ...styles.contactIcon, fontWeight: 700, fontSize: "8px" }}>in</span>
                 <span>{contact.linkedin}</span>
               </div>
             )}
@@ -335,7 +336,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Skills */}
         {skills.length > 0 && sidebarSections.some((s) => s.type === "skills") && (
-          <div style={{ marginBottom: "18px" }}>
+          <div style={{ marginBottom: "16px" }}>
             <div style={styles.contactSectionTitle}>
               Skills
               <div style={styles.sidebarDivider} />
@@ -345,7 +346,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
                 <div style={styles.skillLabel}>{group.name}</div>
                 {group.skills.map((skill, i) => (
                   <div key={i}>
-                    <div style={{ fontSize: "8.5px", color: "#ddd6fe", marginBottom: "2px" }}>{skill}</div>
+                    <div style={{ fontSize: "9.5px", color: "#ddd6fe", marginBottom: "2px" }}>{skill}</div>
                     <div style={styles.skillBar}>
                       <div style={{ ...styles.skillFill, width: `${skillPercent(85 - i * 10)}%` }} />
                     </div>
@@ -358,7 +359,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Languages */}
         {languages.length > 0 && sidebarSections.some((s) => s.type === "languages") && (
-          <div style={{ marginBottom: "18px" }}>
+          <div style={{ marginBottom: "16px" }}>
             <div style={styles.contactSectionTitle}>
               Languages
               <div style={styles.sidebarDivider} />
@@ -374,7 +375,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Interests */}
         {interests.length > 0 && sidebarSections.some((s) => s.type === "interests") && (
-          <div style={{ marginBottom: "18px" }}>
+          <div style={{ marginBottom: "16px" }}>
             <div style={styles.contactSectionTitle}>
               Interests
               <div style={styles.sidebarDivider} />
@@ -389,7 +390,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* References */}
         {references.length > 0 && sidebarSections.some((s) => s.type === "references") && (
-          <div style={{ marginBottom: "18px" }}>
+          <div style={{ marginBottom: "16px" }}>
             <div style={styles.contactSectionTitle}>
               References
               <div style={styles.sidebarDivider} />
@@ -416,7 +417,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Summary */}
         {summary && mainSections.some((s) => s.type === "summary") && (
-          <section style={{ marginBottom: "18px" }}>
+          <section style={{ marginBottom: "16px" }}>
             <div style={styles.sectionTitle}>Professional Summary</div>
             <p style={styles.summaryText}>{summary}</p>
           </section>
@@ -424,7 +425,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Experience */}
         {experience.length > 0 && mainSections.some((s) => s.type === "experience") && (
-          <section style={{ marginBottom: "18px" }}>
+          <section style={{ marginBottom: "16px" }}>
             <div style={styles.sectionTitle}>Experience</div>
             {experience.map((exp) => (
               <div key={exp.id} style={styles.expBlock}>
@@ -460,7 +461,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Projects */}
         {projects.length > 0 && mainSections.some((s) => s.type === "projects") && (
-          <section style={{ marginBottom: "18px" }}>
+          <section style={{ marginBottom: "16px" }}>
             <div style={styles.sectionTitle}>Projects</div>
             {projects.map((proj) => (
               <div key={proj.id} style={styles.expBlock}>
@@ -495,7 +496,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Education */}
         {education.length > 0 && mainSections.some((s) => s.type === "education") && (
-          <section style={{ marginBottom: "18px" }}>
+          <section style={{ marginBottom: "16px" }}>
             <div style={styles.sectionTitle}>Education</div>
             {education.map((edu) => (
               <div key={edu.id} style={styles.expBlock}>
@@ -522,7 +523,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Certifications */}
         {certifications.length > 0 && mainSections.some((s) => s.type === "certifications") && (
-          <section style={{ marginBottom: "18px" }}>
+          <section style={{ marginBottom: "16px" }}>
             <div style={styles.sectionTitle}>Certifications</div>
             {certifications.map((cert) => (
               <div key={cert.id} style={styles.expBlock}>
@@ -540,7 +541,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
 
         {/* Awards */}
         {awards.length > 0 && mainSections.some((s) => s.type === "awards") && (
-          <section style={{ marginBottom: "18px" }}>
+          <section style={{ marginBottom: "16px" }}>
             <div style={styles.sectionTitle}>Awards</div>
             {awards.map((award) => (
               <div key={award.id} style={styles.expBlock}>
@@ -561,7 +562,7 @@ export function DesignerCreativeTemplate({ resume }: { resume: ResumeData }) {
         {custom.length > 0 && mainSections.some((s) => s.type === "custom") && (
           <>
             {custom.map((section) => (
-              <section key={section.id} style={{ marginBottom: "18px" }}>
+              <section key={section.id} style={{ marginBottom: "16px" }}>
                 <div style={styles.sectionTitle}>{section.title}</div>
                 {section.content && <p style={styles.summaryText}>{section.content}</p>}
                 {section.bullets.length > 0 && (

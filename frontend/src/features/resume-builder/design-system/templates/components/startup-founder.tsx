@@ -26,7 +26,7 @@ const styles = {
   header: {
     backgroundColor: palette.primary,
     color: palette.text,
-    padding: "32px 36px",
+    padding: "32px 32px",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
@@ -46,7 +46,7 @@ const styles = {
     fontSize: "15px",
     fontWeight: 400,
     color: "#a7f3d0",
-    marginBottom: "12px",
+    marginBottom: "8px",
   },
   contactRow: {
     display: "flex",
@@ -64,7 +64,7 @@ const styles = {
     fontSize: "11px",
   },
   body: {
-    padding: "28px 36px",
+    padding: "32px 32px",
   },
   sectionTitle: {
     fontSize: "11px",
@@ -72,23 +72,23 @@ const styles = {
     letterSpacing: "0.1em",
     textTransform: "uppercase" as const,
     color: palette.primary,
-    marginBottom: "10px",
+    marginBottom: "8px",
     paddingBottom: "4px",
     borderBottom: `2px solid ${palette.muted}`,
   },
   section: {
-    marginBottom: "22px",
+    marginBottom: "24px",
   },
   summaryText: {
-    fontSize: "12px",
-    lineHeight: "1.65",
+    fontSize: "11px",
+    lineHeight: "1.5",
     color: "#374151",
   },
   expBlock: {
     marginBottom: "14px",
     padding: "10px 14px",
-    backgroundColor: palette.light,
-    borderRadius: "6px",
+    backgroundColor: "transparent",
+    borderRadius: "0",
     borderLeft: `3px solid ${palette.primary}`,
   },
   expHeader: {
@@ -98,12 +98,12 @@ const styles = {
     gap: "8px",
   },
   expRole: {
-    fontSize: "13px",
-    fontWeight: 600,
+    fontSize: "15px",
+    fontWeight: 700,
     color: "#064e3b",
   },
   expCompany: {
-    fontSize: "11px",
+    fontSize: "10.5px",
     color: "#059669",
   },
   expDate: {
@@ -131,8 +131,8 @@ const styles = {
   },
   projectCard: {
     padding: "12px 14px",
-    backgroundColor: "#f9fafb",
-    borderRadius: "6px",
+    backgroundColor: "transparent",
+    borderRadius: "0",
     border: "1px solid #e5e7eb",
     marginBottom: "10px",
   },

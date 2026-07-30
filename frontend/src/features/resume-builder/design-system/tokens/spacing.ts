@@ -19,13 +19,13 @@ export type SpacingToken = keyof typeof spacing
 
 export const spacingPresets = {
   compact:    { sectionGap: 14, itemGap: 8,  intraGap: 4 },
-  normal:     { sectionGap: 18, itemGap: 10, intraGap: 6 },
-  spacious:   { sectionGap: 26, itemGap: 14, intraGap: 8 },
-  editorial:  { sectionGap: 28, itemGap: 16, intraGap: 8 },
+  normal:     { sectionGap: 18, itemGap: 14, intraGap: 5 },
+  spacious:   { sectionGap: 26, itemGap: 16, intraGap: 6 },
+  editorial:  { sectionGap: 28, itemGap: 18, intraGap: 7 },
   dense:      { sectionGap: 12, itemGap: 6,  intraGap: 3 },
-  airy:       { sectionGap: 32, itemGap: 18, intraGap: 10 },
-  executive:  { sectionGap: 24, itemGap: 12, intraGap: 7 },
-  nova:       { sectionGap: 16, itemGap: 10, intraGap: 5 },
+  airy:       { sectionGap: 32, itemGap: 20, intraGap: 8 },
+  executive:  { sectionGap: 24, itemGap: 16, intraGap: 5 },
+  nova:       { sectionGap: 16, itemGap: 12, intraGap: 4 },
 } as const
 
 export type SpacingPreset = keyof typeof spacingPresets

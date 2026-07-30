@@ -69,9 +69,32 @@ next-env.d.ts
 uploads/
 backend/uploads/
 
+# Generated QA documentation screenshots
+frontend/screenshots/
+
 # Tooling
 .opencode/
+.agent/
+.sisyphus/
+
+# Claude settings (may contain API tokens)
+.claude/settings.json
 .claude/settings.local.json
+
+# Generated tool outputs
+repomix-output.xml
+repomix.config.json
+.repomixignore
+docs/superpowers/
+
+# Large binary archives
+*.tar.gz
+
+# Generated QA/before-after screenshots (root level)
+template-*.png
+*-before.png
+*-after.png
+qa-*.png
 
 # Misc
 awscliv2.zip

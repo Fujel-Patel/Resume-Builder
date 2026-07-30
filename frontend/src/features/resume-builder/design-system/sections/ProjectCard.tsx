@@ -16,14 +16,14 @@ export function ProjectCard({ item, variant = "standard", colors = {}, compact }
 
   if (variant === "compact") {
     return (
-      <div style={{ marginBottom: compact ? 5 : 8 }}>
+      <div style={{ marginBottom: compact ? 6 : 10 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-          <p style={{ margin: 0, fontSize: 11, fontWeight: 600, color: c.text, lineHeight: 1.3 }}>{item.name}</p>
-          {dateRange && <span style={{ fontSize: 9.5, color: c.muted, whiteSpace: "nowrap", fontWeight: 500 }}>{dateRange}</span>}
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: c.text, lineHeight: 1.3 }}>{item.name}</p>
+          {dateRange && <span style={{ fontSize: 9, color: c.muted, whiteSpace: "nowrap", fontWeight: 400 }}>{dateRange}</span>}
         </div>
         {item.role && <p style={{ margin: "2px 0 0", fontSize: 10.5, color: c.primary, fontWeight: 500 }}>{item.role}</p>}
         {item.bullets.length > 0 && (
-          <p style={{ margin: "4px 0 0", fontSize: 10.5, color: c.secondary, lineHeight: 1.6 }}>{item.bullets.join(" \u00b7 ")}</p>
+          <p style={{ margin: "4px 0 0", fontSize: 10.5, color: c.secondary, lineHeight: 1.5 }}>{item.bullets.join(" \u00b7 ")}</p>
         )}
       </div>
     )
@@ -31,16 +31,16 @@ export function ProjectCard({ item, variant = "standard", colors = {}, compact }
 
   if (variant === "detailed") {
     return (
-      <div style={{ marginBottom: compact ? 7 : 10, borderLeft: `2px solid ${c.primary}40`, paddingLeft: 10 }}>
+      <div style={{ marginBottom: compact ? 10 : 14, borderLeft: `2px solid ${c.primary}40`, paddingLeft: 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-          <p style={{ margin: 0, fontSize: 11.5, fontWeight: 600, color: c.text, lineHeight: 1.3 }}>{item.name}</p>
-          {dateRange && <span style={{ fontSize: 9.5, color: c.muted, whiteSpace: "nowrap", fontWeight: 500 }}>{dateRange}</span>}
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: c.text, lineHeight: 1.3 }}>{item.name}</p>
+          {dateRange && <span style={{ fontSize: 9, color: c.muted, whiteSpace: "nowrap", fontWeight: 400 }}>{dateRange}</span>}
         </div>
         {item.role && <p style={{ margin: "2px 0 0", fontSize: 10.5, color: c.primary, fontWeight: 500 }}>{item.role}</p>}
         {item.url && <p style={{ margin: "2px 0 0", fontSize: 9, color: c.muted }}>{item.url}</p>}
         {item.bullets.length > 0 && (
-          <ul style={{ margin: "4px 0 0", paddingLeft: 14, fontSize: 10.5, color: c.secondary, lineHeight: 1.6 }}>
-            {item.bullets.map((b, i) => <li key={i} style={{ marginBottom: compact ? 1 : 2 }}>{b}</li>)}
+          <ul style={{ margin: "5px 0 0", paddingLeft: 14, fontSize: 10.5, color: c.secondary, lineHeight: 1.5 }}>
+            {item.bullets.map((b, i) => <li key={i} style={{ marginBottom: compact ? 2 : 3 }}>{b}</li>)}
           </ul>
         )}
       </div>
@@ -49,16 +49,16 @@ export function ProjectCard({ item, variant = "standard", colors = {}, compact }
 
   if (variant === "card") {
     return (
-      <div style={{ marginBottom: compact ? 7 : 10, border: `1px solid ${c.primary}15`, borderRadius: 3, padding: "8px 10px", backgroundColor: "#fafbfc" }}>
+      <div style={{ marginBottom: compact ? 10 : 14, border: `1px solid ${c.primary}15`, borderRadius: 3, padding: "12px 14px", backgroundColor: "#fafbfc" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-          <p style={{ margin: 0, fontSize: 11.5, fontWeight: 600, color: c.text, lineHeight: 1.3 }}>{item.name}</p>
-          {dateRange && <span style={{ fontSize: 9.5, color: c.muted, whiteSpace: "nowrap", fontWeight: 500 }}>{dateRange}</span>}
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: c.text, lineHeight: 1.3 }}>{item.name}</p>
+          {dateRange && <span style={{ fontSize: 9, color: c.muted, whiteSpace: "nowrap", fontWeight: 400 }}>{dateRange}</span>}
         </div>
         {item.role && <p style={{ margin: "2px 0 0", fontSize: 10.5, color: c.primary, fontWeight: 500 }}>{item.role}</p>}
         {item.url && <p style={{ margin: "2px 0 0", fontSize: 9, color: c.muted }}>{item.url}</p>}
         {item.bullets.length > 0 && (
-          <ul style={{ margin: "4px 0 0", paddingLeft: 14, fontSize: 10.5, color: c.secondary, lineHeight: 1.6 }}>
-            {item.bullets.map((b, i) => <li key={i} style={{ marginBottom: compact ? 1 : 2 }}>{b}</li>)}
+          <ul style={{ margin: "5px 0 0", paddingLeft: 14, fontSize: 10.5, color: c.secondary, lineHeight: 1.5 }}>
+            {item.bullets.map((b, i) => <li key={i} style={{ marginBottom: compact ? 2 : 3 }}>{b}</li>)}
           </ul>
         )}
       </div>
@@ -67,16 +67,16 @@ export function ProjectCard({ item, variant = "standard", colors = {}, compact }
 
   if (variant === "featured") {
     return (
-      <div style={{ marginBottom: compact ? 8 : 12, backgroundColor: c.primary + "08", borderLeft: `3px solid ${c.primary}`, borderRadius: "0 4px 4px 0", padding: "8px 10px" }}>
+      <div style={{ marginBottom: compact ? 12 : 16, backgroundColor: c.primary + "08", borderLeft: `3px solid ${c.primary}`, borderRadius: "0 4px 4px 0", padding: "12px 14px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-          <p style={{ margin: 0, fontSize: 12, fontWeight: 700, color: c.text, lineHeight: 1.3 }}>{item.name}</p>
-          {dateRange && <span style={{ fontSize: 9.5, color: c.muted, whiteSpace: "nowrap", fontWeight: 500 }}>{dateRange}</span>}
+          <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: c.text, lineHeight: 1.3 }}>{item.name}</p>
+          {dateRange && <span style={{ fontSize: 9, color: c.muted, whiteSpace: "nowrap", fontWeight: 400 }}>{dateRange}</span>}
         </div>
         {item.role && <p style={{ margin: "2px 0 0", fontSize: 10.5, fontWeight: 500, color: c.primary }}>{item.role}</p>}
         {item.url && <p style={{ margin: "2px 0 0", fontSize: 9, color: c.muted }}>{item.url}</p>}
         {item.bullets.length > 0 && (
-          <ul style={{ margin: "5px 0 0", paddingLeft: 14, fontSize: 10.5, color: c.secondary, lineHeight: 1.65 }}>
-            {item.bullets.map((b, i) => <li key={i} style={{ marginBottom: compact ? 1 : 3 }}>{b}</li>)}
+          <ul style={{ margin: "5px 0 0", paddingLeft: 14, fontSize: 10.5, color: c.secondary, lineHeight: 1.5 }}>
+            {item.bullets.map((b, i) => <li key={i} style={{ marginBottom: compact ? 2 : 3 }}>{b}</li>)}
           </ul>
         )}
       </div>
@@ -85,16 +85,16 @@ export function ProjectCard({ item, variant = "standard", colors = {}, compact }
 
   // standard
   return (
-    <div style={{ marginBottom: compact ? 5 : 8 }}>
+    <div style={{ marginBottom: compact ? 8 : 12 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <p style={{ margin: 0, fontSize: 11.5, fontWeight: 600, color: c.text, lineHeight: 1.3 }}>{item.name}</p>
-        {dateRange && <span style={{ fontSize: 9.5, color: c.muted, whiteSpace: "nowrap", fontWeight: 500 }}>{dateRange}</span>}
+        <p style={{ margin: 0, fontSize: 14, fontWeight: 700, color: c.text, lineHeight: 1.3 }}>{item.name}</p>
+        {dateRange && <span style={{ fontSize: 9, color: c.muted, whiteSpace: "nowrap", fontWeight: 400 }}>{dateRange}</span>}
       </div>
       {item.role && <p style={{ margin: "2px 0 0", fontSize: 10.5, color: c.primary, fontWeight: 500 }}>{item.role}</p>}
       {item.url && <p style={{ margin: "2px 0 0", fontSize: 9, color: c.muted }}>{item.url}</p>}
       {item.bullets.length > 0 && (
-        <ul style={{ margin: "4px 0 0", paddingLeft: 14, fontSize: 10.5, color: c.secondary, lineHeight: 1.6 }}>
-          {item.bullets.map((b, i) => <li key={i} style={{ marginBottom: compact ? 1 : 2 }}>{b}</li>)}
+        <ul style={{ margin: "5px 0 0", paddingLeft: 14, fontSize: 10.5, color: c.secondary, lineHeight: 1.5 }}>
+          {item.bullets.map((b, i) => <li key={i} style={{ marginBottom: compact ? 2 : 3 }}>{b}</li>)}
         </ul>
       )}
     </div>

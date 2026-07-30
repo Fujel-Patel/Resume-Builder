@@ -13,11 +13,11 @@ export function AwardItem({ item, colors = {} }: AwardItemProps) {
   return (
     <div style={{ marginBottom: 6 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <p style={{ margin: 0, fontSize: 10, fontWeight: 600, color: c.text, lineHeight: 1.3 }}>{item.name}</p>
-        {item.date && <span style={{ fontSize: 9.5, color: c.muted, whiteSpace: "nowrap", fontWeight: 500 }}>{item.date}</span>}
+        <p style={{ margin: 0, fontSize: 11, fontWeight: 600, color: c.text, lineHeight: 1.3 }}>{item.name}</p>
+        {item.date && <span style={{ fontSize: 9, color: c.muted, whiteSpace: "nowrap", fontWeight: 400 }}>{item.date}</span>}
       </div>
-      {item.issuer && <p style={{ margin: "2px 0 0", fontSize: 9.5, color: c.secondary }}>{item.issuer}</p>}
-      {item.description && <p style={{ margin: "2px 0 0", fontSize: 9.5, color: c.muted, lineHeight: 1.5 }}>{item.description}</p>}
+      {item.issuer && <p style={{ margin: "2px 0 0", fontSize: 9, color: c.secondary }}>{item.issuer}</p>}
+      {item.description && <p style={{ margin: "2px 0 0", fontSize: 9, color: c.muted, lineHeight: 1.5 }}>{item.description}</p>}
     </div>
   )
 }

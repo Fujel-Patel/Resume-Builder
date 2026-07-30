@@ -28,16 +28,16 @@ const styles = {
     minWidth: "30%",
     backgroundColor: palette.primary,
     color: palette.text,
-    padding: "30px 20px",
+    padding: "24px 16px",
     boxSizing: "border-box" as const,
   },
   sidebarSectionTitle: {
-    fontSize: "9px",
+    fontSize: "11px",
     fontWeight: 700,
-    letterSpacing: "0.14em",
+    letterSpacing: "0.12em",
     textTransform: "uppercase" as const,
     color: "#71717a",
-    marginBottom: "10px",
+    marginBottom: "8px",
     paddingBottom: "0",
     borderBottom: "none",
     display: "flex" as const,
@@ -52,17 +52,17 @@ const styles = {
   contactItem: {
     display: "flex",
     alignItems: "center",
-    gap: "8px",
-    marginBottom: "6px",
-    fontSize: "9.5px",
+    gap: "6px",
+    marginBottom: "4px",
+    fontSize: "9px",
     color: "#d4d4d8",
     wordBreak: "break-word" as const,
   },
   contactIcon: {
     flexShrink: 0,
-    width: "14px",
+    width: "10px",
     textAlign: "center" as const,
-    fontSize: "10px",
+    fontSize: "8px",
     color: "#71717a",
   },
   skillGroup: {
@@ -77,49 +77,49 @@ const styles = {
   },
   skillTag: {
     display: "inline-block",
-    fontSize: "8.5px",
-    padding: "2px 7px",
+    fontSize: "9.5px",
+    padding: "3px 8px",
     backgroundColor: "#27272a",
     color: "#d4d4d8",
-    borderRadius: "3px",
+    borderRadius: "2px",
     marginRight: "3px",
     marginBottom: "3px",
     letterSpacing: "0.01em",
   },
   mainArea: {
     flex: 1,
-    padding: "24px 28px",
+    padding: "24px 24px",
     position: "relative" as const,
     boxSizing: "border-box" as const,
   },
   timelineLine: {
     position: "absolute" as const,
-    left: "14px",
-    top: "30px",
-    bottom: "30px",
+    left: "12px",
+    top: "28px",
+    bottom: "28px",
     width: "1.5px",
-    background: "linear-gradient(to bottom, #e4e4e7 0%, #d4d4d8 50%, #e4e4e7 100%)",
+    background: "linear-gradient(to bottom, #e4e4e7 0%, #d4d4d8 30%, #e4e4e7 100%)",
   },
   timelineDot: {
     position: "absolute" as const,
-    left: "10px",
-    top: "2px",
-    width: "9px",
-    height: "9px",
+    left: "9px",
+    top: "3px",
+    width: "8px",
+    height: "8px",
     borderRadius: "50%",
     backgroundColor: palette.primary,
-    border: "2.5px solid #ffffff",
+    border: "2px solid #ffffff",
     zIndex: 1,
   },
   section: {
     position: "relative" as const,
-    marginBottom: "12px",
-    paddingLeft: "18px",
+    marginBottom: "16px",
+    paddingLeft: "16px",
   },
   sectionTitle: {
-    fontSize: "10px",
+    fontSize: "11px",
     fontWeight: 700,
-    letterSpacing: "0.1em",
+    letterSpacing: "0.08em",
     textTransform: "uppercase" as const,
     color: palette.primary,
     marginBottom: "8px",
@@ -128,7 +128,7 @@ const styles = {
   },
   summaryText: {
     fontSize: "11px",
-    lineHeight: "1.65",
+    lineHeight: "1.5",
     color: "#52525b",
   },
   expHeader: {
@@ -138,28 +138,29 @@ const styles = {
     gap: "8px",
   },
   expRole: {
-    fontSize: "12px",
-    fontWeight: 600,
+    fontSize: "15px",
+    fontWeight: 700,
     color: "#18181b",
     lineHeight: 1.35,
   },
   expCompany: {
-    fontSize: "10.5px",
+    fontSize: "11.5px",
+    fontWeight: 600,
     color: "#71717a",
     lineHeight: 1.35,
   },
   expDate: {
-    fontSize: "9.5px",
+    fontSize: "9px",
     color: "#a1a1aa",
     whiteSpace: "nowrap" as const,
     flexShrink: 0,
-    fontWeight: 500,
+    fontWeight: 400,
   },
   bullet: {
     fontSize: "10.5px",
-    lineHeight: "1.55",
+    lineHeight: "1.5",
     color: "#52525b",
-    paddingLeft: "12px",
+    paddingLeft: "14px",
     position: "relative" as const,
     marginBottom: "3px",
   },
@@ -173,7 +174,7 @@ const styles = {
     backgroundColor: "#a1a1aa",
   },
   itemBlock: {
-    marginBottom: "8px",
+    marginBottom: "12px",
   },
   langItem: {
     display: "flex",
@@ -194,7 +195,7 @@ const styles = {
     borderRadius: "3px",
   },
   eduDegree: {
-    fontSize: "12px",
+    fontSize: "13.5px",
     fontWeight: 600,
     color: "#18181b",
     lineHeight: 1.35,
@@ -251,8 +252,8 @@ export function MinimalTimelineTemplate({ resume }: { resume: ResumeData }) {
       {/* Sidebar */}
       <aside style={styles.sidebar}>
         {/* Name */}
-        <div style={{ marginBottom: "20px" }}>
-          <div style={{ fontSize: "16px", fontWeight: 700, color: "#ffffff", marginBottom: "3px", letterSpacing: "-0.01em" }}>
+        <div style={{ marginBottom: "16px" }}>
+          <div style={{ fontSize: "20px", fontWeight: 700, color: "#ffffff", marginBottom: "4px", letterSpacing: "-0.02em" }}>
             {contact.fullName || "Your Name"}
           </div>
           <div style={{ fontSize: "10px", color: "#a1a1aa", letterSpacing: "0.02em" }}>
@@ -293,7 +294,7 @@ export function MinimalTimelineTemplate({ resume }: { resume: ResumeData }) {
             )}
             {contact.linkedin && (
               <div style={styles.contactItem}>
-                <span style={{ ...styles.contactIcon, fontWeight: 700, fontSize: "9px" }}>in</span>
+                <span style={{ ...styles.contactIcon, fontWeight: 600, fontSize: "8px" }}>in</span>
                 <span>{contact.linkedin}</span>
               </div>
             )}
